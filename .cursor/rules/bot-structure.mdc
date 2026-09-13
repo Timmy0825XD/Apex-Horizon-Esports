@@ -1,0 +1,25 @@
+---
+description: Node + npm + MongoDB. Agrupar por contexto de comando. SOLID/GRASP sin sobreingeniería.
+alwaysApply: true
+---
+
+# Estructura y calidad del bot
+
+Stack: **Node.js + TypeScript + npm + MongoDB**. Deploy: **HiddenCloud**. Detalle: [context/platform/stack.md](context/platform/stack.md) y [context/platform/structure.md](context/platform/structure.md).
+
+## Agrupar por contexto, no por capa técnica
+
+Todo lo de un comando (subcomandos, autocomplete, guards, schema, lógica) vive en **su carpeta**. No partas un comando en `commands/` + `services/` + `guards/` + `autocomplete/` + `schemas/` + `types/` paralelos.
+
+```text
+❌ src/autocomplete/schedule.ts + src/commands/schedule.ts + src/services/schedule.ts
+✅ src/commands/schedule/   (create, update, autocomplete, lógica de ese contexto)
+```
+
+Compartido **solo** si es realmente transversal (`emojis.ts`, formatters, DB, webhook de audit). No anticipes carpetas “por si acaso”.
+
+## Calidad
+
+- SOLID y GRASP: una responsabilidad clara, bajo acoplamiento.
+- Sencillo, seguro, mantenible. **Cero sobreingeniería** (no factories, DI ni repos extra sin necesidad actual).
+- No implementes comandos ni carpetas vacías hasta que el usuario lo pida.

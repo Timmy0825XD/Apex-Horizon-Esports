@@ -1,0 +1,29 @@
+---
+description: Menciones con helpers, markdown, emojis.ts. Componentes reutilizables sin copy redundante.
+alwaysApply: true
+---
+
+# UI de Discord (mensajes al usuario)
+
+Detalle: [context/platform/discord-ui.md](context/platform/discord-ui.md).
+
+## Entidades
+
+En embeds y texto visible **no** uses `role.name`, `user.tag`, `user.username` ni `channel.name`. Usa helpers (`formatRole`, `formatChannel`, `formatUser`, …) para menciones (`<@&id>`, `<#id>`, `<@id>`). CSV/Excel y nombres de archivo de audit pueden ir en texto plano.
+
+Menciones de slash: `</name:id>` vía `formatHelpEntry` (cuando exista `bot-info`).
+
+## Énfasis
+
+`**negrita**` nombres/conteos, `*cursiva*` notas, `__vs__` separadores, `` `scores / IDs` ``.
+
+## Emojis y componentes
+
+- Emojis de respuesta: solo desde `emojis.ts`. No hardcodees emoji en cada comando.
+- Se pueden reutilizar **cascarones** (info / error / success: color, emoji, layout).
+- **No** reutilices el mismo texto de success/error/info en varios bloques de la misma respuesta. Cada embed lleva copy de *esa* acción.
+
+```text
+❌ tres embeds con "Operation completed successfully"
+✅ embed 1: schedule created · embed 2: judge assigned (textos distintos)
+```

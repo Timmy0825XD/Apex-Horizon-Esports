@@ -1,0 +1,86 @@
+---
+description: Git Flow, ramas y commits. Clasificar y cambiar de rama antes de editar. Al terminar, entregar bloques add/commit/push/pr y de limpieza.
+alwaysApply: true
+---
+
+# Git Flow
+
+No trabajes directo en `main` ni `develop` (salvo el commit inicial del repo).
+
+## Antes de tocar archivos
+
+1. Clasifica el trabajo (tabla de ramas).
+2. Ejecuta `git branch --show-current` y `git status`.
+3. Si no hay repo: no edites código de producto; solo indica el bootstrap.
+4. Si la rama no coincide: créala o cámbiate. Origen:
+   - `hotfix/*` sale de `main`
+   - `release/*` sale de `develop`
+   - el resto sale de `develop`
+5. Si sigues en `main`, `develop` o una rama de otro tema: **detente**. Cero edits.
+
+Nombre: `tipo/nombre-descriptivo` en kebab-case, corto, en español o inglés consistente.
+
+## Ramas
+
+| Rama | Sale de | Vuelve a | Uso |
+|---|---|---|---|
+| `main` | — | — | Producción. Nunca trabajo directo. |
+| `develop` | — | — | Integración. Nunca trabajo directo. |
+| `feature/*` | develop | develop | Funcionalidad nueva |
+| `bugfix/*` | develop | develop | Error antes de producción |
+| `docs/*` | develop | develop | Solo documentación |
+| `refactor/*` | develop | develop | Reestructurar sin cambiar comportamiento |
+| `test/*` | develop | develop | Tests sin cambio funcional |
+| `perf/*` | develop | develop | Rendimiento |
+| `style/*` | develop | develop | Formato, sin lógica |
+| `chore/*` | develop | develop | Mantenimiento (no código de producción) |
+| `ci/*` | develop | develop | Integración continua |
+| `build/*` | develop | develop | Build o dependencias |
+| `release/*` | develop | main **y** develop | Preparar versión |
+| `hotfix/*` | main | main **y** develop | Error urgente en producción |
+
+Flujo normal: rama de soporte → merge a `develop` → `release/*` cuando toque → merge a `main` (tag) y a `develop`. Hotfix: desde `main`, merge a `main` y a `develop`.
+
+## Al terminar
+
+En la respuesta van **siempre** estos dos bloques (corto). El segundo no espera a que el usuario lo pida: lo entregas en la misma respuesta, para que lo corra **después de aprobar/mergear el PR**.
+
+```
+# add
+git add <archivos>
+
+# commit
+git commit -m "tipo(alcance): descripcion"
+
+# push
+git push -u origin HEAD
+
+# pr
+gh pr create --base develop --title "tipo(alcance): descripcion" --body "<1-2 lineas>"
+```
+
+```
+# despues de aprobar el PR (borrar local + GitHub y volver a develop)
+git checkout develop
+git pull origin develop
+git branch -d <rama>
+git push origin --delete <rama>
+```
+
+- Sustituye `<rama>` por el nombre real (`feature/auth-api`, etc.).
+- `hotfix/*` y merge de `release/*` a producción: `--base main` (y luego también merge a `develop`).
+- Primera línea 50–72 caracteres, imperativo, sin punto.
+- Cuerpo solo si hace falta el **por qué** (1 línea).
+- Relación rama ↔ commit: `feature`→`feat`, `bugfix`/`hotfix`→`fix`, y el resto el mismo tipo que el prefijo.
+- Tag al mergear `release`→`main`: `fix` patch, `feat` minor, `BREAKING CHANGE` major.
+- `hotfix/*` o post-release: el bloque de limpieza hace `checkout`/`pull` de `main` y de `develop`, luego borra la rama local y `origin`.
+
+## Commits
+
+`tipo(alcance opcional): descripcion` — cuerpo y footer opcionales.
+
+Tipos: `feat` `fix` `docs` `style` `refactor` `perf` `test` `chore` `ci` `build`.
+
+Breaking: `tipo!:` o `tipo(alcance)!:` y footer `BREAKING CHANGE`.
+
+No ejecutes commit/push/pr salvo que el usuario lo pida. Los bloques sí van siempre.
