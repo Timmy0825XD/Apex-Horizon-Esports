@@ -8,7 +8,7 @@ Un fichero de constantes (`emojis.ts`) guarda los emojis del bot. Cualquier resp
 
 ## Componentes reutilizables
 
-Se pueden reutilizar **cascarones** (info / error / success: color, emoji del tipo, layout).
+Se pueden reutilizar **cascarones** (info / error / success: color, emoji del tipo, layout). Los paneles de `/bot` usan **Components V2** (`Container`, `Section`, `Text Display`), no un embed clásico.
 
 **No** reutilizar el mismo texto en varios bloques de la misma respuesta. Si hay tres embeds de éxito, cada uno describe **su** hecho, no un “Success” genérico repetido.
 
@@ -30,7 +30,7 @@ Preferir helpers frente a `` `<@&${id}>` `` inline.
 
 **Excepciones:** CSV/Excel y nombres de archivo de audit pueden llevar identificadores en texto plano (no son UI de Discord). El ID *es* el dato en banlist/sheet.
 
-Menciones de slash commands: `</name:id>` vía `formatHelpEntry` en `bot-info` (cuando exista).
+Menciones de slash commands: `</name:id>` vía `formatHelpEntry` (en `/bot help` para subcomandos de `bot`; el resto del catálogo usa `` `/comando` `` hasta estar registrados).
 
 ## Énfasis (markdown de Discord)
 
