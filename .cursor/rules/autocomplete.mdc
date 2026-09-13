@@ -1,0 +1,17 @@
+---
+description: Campos de opciones almacenadas por el bot usan autocomplete (nombre visible), no texto libre.
+alwaysApply: true
+---
+
+# Autocomplete de opciones del bot
+
+Detalle: [context/platform/autocomplete.md](context/platform/autocomplete.md).
+
+Si el campo elige **datos que el bot ya guarda** (torneos, partidos, formatos fijos de negocio, etc.), es **autocomplete** (o `Choice` si la lista es corta y cerrada). El usuario ve **nombres**, no IDs internos, y **no** puede escribir un valor inventado que el bot acepte como válido.
+
+```text
+❌ /tournament info  tournament: STRING libre
+✅ /tournament info  tournament: STRING + autocomplete con los torneos del servidor
+```
+
+`Choice` = enumeración fija del código (`1vs1`…`5vs5`). Autocomplete = lista viva desde Mongo u otra fuente del bot. STRING libre solo para texto que el humano inventa (nota, reason, link).

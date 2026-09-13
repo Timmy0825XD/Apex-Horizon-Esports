@@ -1,0 +1,38 @@
+---
+description: context/ es la fuente de verdad. Actualizarla al tocar core, reglas o comandos. No implementar sin indicación del usuario.
+alwaysApply: true
+---
+
+# Fuente de verdad y ritmo de desarrollo
+
+`context/` es la **única** fuente de verdad del producto, reglas de negocio y catálogo de comandos. Empieza por [context/README.md](context/README.md). `LOGIC.md` es un puntero histórico: no lo uses ni lo edites como spec.
+
+## Ritmo
+
+- Código y comandos **solo** cuando el usuario lo indique y **en el orden que él decida**.
+- No implementes familias, workers ni features “para adelantar”.
+- Antes de tocar un dominio, lee el `.md` de `context/product/`, `context/domains/`, `context/platform/` o `context/commands/` que corresponda.
+
+## Mantener context alineado con el código
+
+En el **mismo cambio**, actualiza context si:
+
+- nace, se renombra, se cambia o se elimina un comando o interacción
+- cambia una regla de negocio, actor, permiso, flujo o worker
+- cambia el encadenado entre sistemas
+
+Checklist:
+
+1. Dominio o producto afectado (`product/`, `domains/`, `platform/`)
+2. Familia en `commands/` (si aplica)
+3. [context/commands/_index.md](context/commands/_index.md) si el catálogo cambió
+4. [context/product/match-lifecycle.md](context/product/match-lifecycle.md) si cambió el encadenado
+5. [context/platform/audit.md](context/platform/audit.md) si nace un tipo de log o cambia qué se audita
+6. structure / discord-ui / autocomplete en `context/platform/` si cambia cómo se organiza el código o la UI
+
+No dejes reglas solo en el código. Si código y context discrepan, **actualiza context** para describir lo que el bot hace al ejecutarse.
+
+```text
+❌ /schedule create en código y context/commands/schedule.md sin el campo nuevo
+✅ código + schedule.md + domains/schedules.md (si cambió la regla) en el mismo cambio
+```
