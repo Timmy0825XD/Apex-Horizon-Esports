@@ -32,7 +32,7 @@ Si nace un tipo de log nuevo, actualiza `context/platform/audit.md` en el mismo 
 
 ```text
 ❌ /settings setup sin webhook de auditoría
-❌ /ping o /tournament list escribiendo en bot_logs
+❌ /bot ping o /tournament list escribiendo en bot_logs
 ❌ mandar un log de commit/PR al canal de Discord
 ✅ /ticket delete → webhook título "Ticket System"
 ✅ /upload_score → webhook título "Score Upload"

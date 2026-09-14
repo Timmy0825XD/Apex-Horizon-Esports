@@ -40,12 +40,12 @@ El desarrollo de código y comandos sigue **el orden y las indicaciones del usua
 
 | Archivo | Contenido |
 |---|---|
-| [platform/stack.md](platform/stack.md) | Node, TypeScript, npm, MongoDB, HiddenCloud |
+| [platform/stack.md](platform/stack.md) | Node, TypeScript, npm, MongoDB, Prisma, discord.js, HiddenCloud |
 | [platform/structure.md](platform/structure.md) | Agrupar por contexto de comando; SOLID/GRASP |
 | [platform/discord-ui.md](platform/discord-ui.md) | Emojis, componentes, menciones, markdown |
 | [platform/autocomplete.md](platform/autocomplete.md) | Campos vivos = autocomplete por nombre |
 | [platform/workers.md](platform/workers.md) | Bucles de fondo |
-| [platform/gateway.md](platform/gateway.md) | WebSocket, latencia, `/ping` |
+| [platform/gateway.md](platform/gateway.md) | WebSocket, latencia, `/bot ping` |
 | [platform/audit.md](platform/audit.md) | Webhooks, identidades, mapa de eventos |
 | [platform/ux.md](platform/ux.md) | Idioma, forma, multi-servidor, fallos |
 

@@ -3,6 +3,8 @@
 Tipos Discord: `STRING`, `INTEGER`, `BOOLEAN`, `USER`, `ROLE`, `CHANNEL`, `ATTACHMENT`.  
 **Autocomplete** = lista buscable. **Choice** = opciones fijas.
 
+Los comandos se invocan por **slash** y, cuando exista el mismo gesto, por **prefix** `a?` (ejemplo: `/bot ping` y `a?ping`). About y help: `/bot about` · `a?about`, `/bot help` · `a?help`. El bot solo sirve gremios de `ALLOWED_GUILDS`.
+
 Si una regla de `context/` y un comando en Discord discrepan, **gana lo que el bot hace al ejecutarse**. Estos archivos describen el ser operativo que esos comandos están obligados a respetar.
 
 Al nacer, renombrarse o eliminarse un comando: actualizar **este índice** y el archivo de su familia.
@@ -11,7 +13,7 @@ Al nacer, renombrarse o eliminarse un comando: actualizar **este índice** y el 
 
 | Familia | Archivo | Comandos |
 |---|---|---|
-| Bot | [bot.md](bot.md) | `/ping` · `/bot about` · `/bot help` |
+| Bot | [bot.md](bot.md) | `/bot ping` · `a?ping` · `/bot about` · `a?about` · `/bot help` · `a?help` |
 | Settings | [settings.md](settings.md) | `/settings setup` · `edit` · `show` |
 | Staff | [staff.md](staff.md) | `/staff config set` · `edit` · `view` · `/staff recruit` · `fire` · `work` |
 | Tournament | [tournament.md](tournament.md) | `/tournament add` · `edit` · `delete` · `info` · `list` |

@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Guild {
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  guildId   String         @unique
+  settings  GuildSettings?
+  staff     StaffConfig?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@map("guilds")
+}
+
+type GuildSettings {
+  adminRoleId             String
+  challongeLogsChannelId  String
+  transcriptLogsChannelId String
+  botLogsChannelId        String
+  thumbnailChannelId      String
+}
+
+type StaffConfig {
+  staffRoleId                String
+  judgeRoleId                String
+  recorderRoleId             String
+  t1AdminRoleId              String?
+  t2AdminRoleId              String?
+  bestStaffRoleId            String
+  serverHelperRoleId         String
+  managerRoleId              String
+  challongeModRoleId         String
+  scheduleChannelId          String
+  staffchatChannelId         String
+  staffAnnouncementChannelId String
+  staffInstructionsChannelId String
+  staffDetailsChannelId      String
+}
+
+model Tournament {
+  id                     String   @id @default(auto()) @map("_id") @db.ObjectId
+  guildId                String
+  name                   String
+  challongeId            String
+  challongeKeyEnc        String
+  sheetLink              String
+  adminRoleId            String
+  helperRoleId           String
+  attendanceChannelId    String
+  transcriptChannelId    String
+  rulesChannelId         String
+  deadlineChannelId      String
+  resultChannelId        String
+  eventsLinksChannelId   String?
+  closedTicketCategoryId String
+  closeTicketCategory2Id String?
+  ticketOpenCategoryIds  String[]
+  autoRoomCapable        Boolean
+  autoRoomRunning        Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@unique([guildId, challongeId])
+  @@index([guildId, name])
+  @@map("tournaments")
+}
+
+model Match {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  guildId          String
+  tournamentId     String   @db.ObjectId
+  challongeMatchId Int
+  state            String
+  round            Int
+  group            String?
+  player1Name      String
+  player2Name      String
+  updatedAt        DateTime @updatedAt
+
+  @@unique([tournamentId, challongeMatchId])
+  @@index([guildId, tournamentId, state])
+  @@map("matches")
+}
+
+model Room {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  guildId          String
+  tournamentId     String   @db.ObjectId
+  challongeMatchId Int
+  channelId        String   @unique
+  categoryId       String
+  status           String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([tournamentId, challongeMatchId])
+  @@index([guildId, tournamentId, status])
+  @@map("rooms")
+}
+
+model Schedule {
+  id               String                 @id @default(auto()) @map("_id") @db.ObjectId
+  guildId          String
+  tournamentId     String                 @db.ObjectId
+  challongeMatchId Int
+  channelId        String
+  scheduledAt      DateTime
+  judgeId          String?
+  recorderId       String?
+  remark           String?
+  messages         ScheduleMessages
+  confirmations    ScheduleConfirmations
+  reminderPhase    String
+  results          ScheduleResults?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@unique([tournamentId, challongeMatchId])
+  @@index([scheduledAt, reminderPhase])
+  @@map("schedules")
+}
+
+type ScheduleMessages {
+  ticketMessageId          String
+  scheduleChannelMessageId String
+  thumbnailMessageId       String?
+  t10MessageId             String?
+  t0MessageId              String?
+}
+
+type ScheduleConfirmations {
+  judge    Boolean
+  recorder Boolean
+}
+
+type ScheduleResults {
+  team1Score Int
+  team2Score Int
+  notes      String?
+  imageUrls  String[]
+  messageId  String
+  declaredAt DateTime
+}
+
+model Attendance {
+  id                         String    @id @default(auto()) @map("_id") @db.ObjectId
+  guildId                    String
+  tournamentId               String    @db.ObjectId
+  challongeMatchId           Int
+  scheduleId                 String    @db.ObjectId
+  judgeId                    String
+  recorderId                 String
+  team1Score                 Int
+  team2Score                 Int
+  remark                     String?
+  links                      String[]
+  eventsLinksMessageIds      String[]
+  ticketMessageId            String
+  attendanceChannelMessageId String
+  createdBy                  String
+  deletedAt                  DateTime?
+  deletedReason              String?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  @@index([tournamentId, recorderId, deletedAt])
+  @@index([tournamentId, judgeId, deletedAt])
+  @@map("attendances")
+}
+
+model Ban {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  guildId   String
+  userId    String
+  duration  String
+  expiresAt DateTime?
+  reason    String?
+  createdBy String
+  createdAt DateTime  @default(now())
+
+  @@unique([guildId, userId])
+  @@index([expiresAt])
+  @@map("bans")
+}

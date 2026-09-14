@@ -1,5 +1,5 @@
 ---
-description: Git Flow, ramas y commits. Clasificar y cambiar de rama antes de editar. Al terminar, entregar bloques add/commit/push/pr y de limpieza.
+description: Git Flow y ramas. Cambiar de rama antes de editar. Add/commit/push/PR solo con _GIT; luego dejar solo el bloque de limpieza.
 alwaysApply: true
 ---
 
@@ -41,23 +41,14 @@ Nombre: `tipo/nombre-descriptivo` en kebab-case, corto, en español o inglés co
 
 Flujo normal: rama de soporte → merge a `develop` → `release/*` cuando toque → merge a `main` (tag) y a `develop`. Hotfix: desde `main`, merge a `main` y a `develop`.
 
-## Al terminar
+## Trigger `_GIT`
 
-En la respuesta van **siempre** estos dos bloques (corto). El segundo no espera a que el usuario lo pida: lo entregas en la misma respuesta, para que lo corra **después de aprobar/mergear el PR**.
+Por defecto: **no** ejecutes ni muestres add, commit, push, PR ni el bloque de limpieza. El trabajo termina en la rama de soporte. No pegues comandos de git al final de cada respuesta.
 
-```
-# add
-git add <archivos>
+Solo cuando el usuario escriba `_GIT` (token exacto, en cualquier mensaje):
 
-# commit
-git commit -m "tipo(alcance): descripcion"
-
-# push
-git push -u origin HEAD
-
-# pr
-gh pr create --base develop --title "tipo(alcance): descripcion" --body "<1-2 lineas>"
-```
+1. Ejecuta tú, en este orden: `git add` → `git commit` → `git push -u origin HEAD` → `gh pr create`.
+2. En la respuesta deja **solo** el bloque de limpieza, para que el usuario lo corra **después de aprobar/mergear el PR**.
 
 ```
 # despues de aprobar el PR (borrar local + GitHub y volver a develop)
@@ -68,12 +59,13 @@ git push origin --delete <rama>
 ```
 
 - Sustituye `<rama>` por el nombre real (`feature/auth-api`, etc.).
-- `hotfix/*` y merge de `release/*` a producción: `--base main` (y luego también merge a `develop`).
-- Primera línea 50–72 caracteres, imperativo, sin punto.
+- Base del PR: `develop`. `hotfix/*` y merge de `release/*` a producción: `--base main` (y luego también merge a `develop`).
+- Primera línea del commit 50–72 caracteres, imperativo, sin punto.
 - Cuerpo solo si hace falta el **por qué** (1 línea).
 - Relación rama ↔ commit: `feature`→`feat`, `bugfix`/`hotfix`→`fix`, y el resto el mismo tipo que el prefijo.
 - Tag al mergear `release`→`main`: `fix` patch, `feat` minor, `BREAKING CHANGE` major.
 - `hotfix/*` o post-release: el bloque de limpieza hace `checkout`/`pull` de `main` y de `develop`, luego borra la rama local y `origin`.
+- Sin cambios: no crees commit vacío ni PR.
 
 ## Commits
 
@@ -82,5 +74,3 @@ git push origin --delete <rama>
 Tipos: `feat` `fix` `docs` `style` `refactor` `perf` `test` `chore` `ci` `build`.
 
 Breaking: `tipo!:` o `tipo(alcance)!:` y footer `BREAKING CHANGE`.
-
-No ejecutes commit/push/pr salvo que el usuario lo pida. Los bloques sí van siempre.
