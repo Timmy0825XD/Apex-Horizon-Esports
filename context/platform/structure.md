@@ -45,6 +45,8 @@ src/
   lib/                 # compartido real, delgado
   commands/
     bot/               # /bot ping|about|help y a?ping|about|help
+    settings/          # /settings set|edit|show
+    server/            # /server info|banlist|tree|invites
     schedule/          # /schedule y todo lo suyo (cuando exista)
     ...
   workers/

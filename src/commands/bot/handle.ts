@@ -6,7 +6,7 @@ import {
   type Message,
 } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
-import { botCommandIdFor } from "../../lib/register-slash.js";
+import { botCommandIdFor, serverCommandIdFor, settingsCommandIdFor } from "../../lib/register-slash.js";
 import { buildAboutContainer } from "./about.js";
 import { buildHelpContainer, normalizeHelpPage } from "./help.js";
 import { buildPingContainer } from "./ping.js";
@@ -40,6 +40,8 @@ export async function handleBotSlash(interaction: ChatInputCommandInteraction, c
       client,
       createdTimestamp: interaction.createdTimestamp,
       commandId: botCommandIdFor(interaction.guildId) ?? interaction.commandId,
+      settingsCommandId: settingsCommandIdFor(interaction.guildId),
+      serverCommandId: serverCommandIdFor(interaction.guildId),
       helpPage: 0,
     }),
   );
@@ -78,6 +80,8 @@ export async function handleBotButton(interaction: ButtonInteraction, client: Cl
       client,
       createdTimestamp: interaction.createdTimestamp,
       commandId: botCommandIdFor(interaction.guildId),
+      settingsCommandId: settingsCommandIdFor(interaction.guildId),
+      serverCommandId: serverCommandIdFor(interaction.guildId),
       helpPage,
     }),
   );
@@ -93,6 +97,8 @@ export async function handleBotPrefix(message: Message, panel: BotPanel, client:
       client,
       createdTimestamp: message.createdTimestamp,
       commandId: botCommandIdFor(message.guildId),
+      settingsCommandId: settingsCommandIdFor(message.guildId),
+      serverCommandId: serverCommandIdFor(message.guildId),
       helpPage: 0,
     }),
   );

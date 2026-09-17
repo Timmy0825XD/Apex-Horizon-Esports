@@ -22,7 +22,7 @@ Los tres paneles son **Components V2** (container + color de acento, no embed cl
 
 ## `/bot help` · `a?help`
 
-**Para qué:** Mapa de comandos por sección y quién puede usarlos. El heading de cada página es el comando raíz de esa familia. Los de `/bot` se mencionan como slash; el resto del catálogo va en monospace hasta que existan en Discord.
+**Para qué:** Mapa de comandos por sección y quién puede usarlos. El heading de cada página es el comando raíz de esa familia. Los de `/bot`, `/settings` y `/server` se mencionan como slash; el resto del catálogo va en monospace hasta que existan en Discord.
 
 **Campos:** ninguno.
 

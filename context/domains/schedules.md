@@ -2,7 +2,7 @@
 
 Un partido tiene **como máximo un schedule activo**. Se crea **dentro del ticket**. La hora es UTC y debe quedar **al menos 10 minutos en el futuro**.
 
-Sin `schedule_channel` de `/staff config` no hay `/schedule create`.
+Sin `schedules_channel` de `/settings` no hay `/schedule create`.
 
 ## Al crear
 

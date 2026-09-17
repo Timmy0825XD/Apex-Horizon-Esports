@@ -14,7 +14,7 @@ Al nacer, renombrarse o eliminarse un comando: actualizar **este índice** y el 
 | Familia | Archivo | Comandos |
 |---|---|---|
 | Bot | [bot.md](bot.md) | `/bot ping` · `a?ping` · `/bot about` · `a?about` · `/bot help` · `a?help` |
-| Settings | [settings.md](settings.md) | `/settings setup` · `edit` · `show` |
+| Settings | [settings.md](settings.md) | `/settings set` · `edit` · `show` |
 | Staff | [staff.md](staff.md) | `/staff config set` · `edit` · `view` · `/staff recruit` · `fire` · `work` |
 | Tournament | [tournament.md](tournament.md) | `/tournament add` · `edit` · `delete` · `info` · `list` |
 | Sheet y equipos | [sheet-teams.md](sheet-teams.md) | `/sheet headers` · `validate` · `/team info` · `list` · `/assign_role` · `/utility discord_tag` |
@@ -23,7 +23,7 @@ Al nacer, renombrarse o eliminarse un comando: actualizar **este índice** y el 
 | Attendance | [attendance.md](attendance.md) | `/attendance mark` · `delete` · `/get attendance` · `/get sheet` · `/link add` · `delete` · `missing` · `/work_done` |
 | Tickets | [tickets.md](tickets.md) | `/ticket close` · `reopen` · `delete` |
 | Roles | [roles.md](roles.md) | `/role user` · `add all` · `remove all` · `list` |
-| Server y usuario | [server-user.md](server-user.md) | `/server info` · `banlist` · `/user ban` · `unban` |
+| Server y usuario | [server-user.md](server-user.md) | `/server info` · `banlist` · `tree` · `invites` · `/user ban` · `unban` |
 | Utility | [utility.md](utility.md) | `/utility *` (clear, utc, embed, …) |
 | Interacciones | [interactions.md](interactions.md) | Botones y menús (no slash) |
 | Permisos | [permissions.md](permissions.md) | Resumen de etiquetas |

@@ -3,16 +3,14 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ContainerBuilder,
-  MessageFlags,
-  SectionBuilder,
-  SeparatorBuilder,
-  TextDisplayBuilder,
-  ThumbnailBuilder,
   type Client,
 } from "discord.js";
 import { emojis } from "../../emojis.js";
 import { customEmoji } from "../../lib/custom-emoji.js";
+import { divider, textBlock, v2Flags } from "../../lib/v2.js";
 import { helpCatalog } from "./catalog.js";
+
+export { divider, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
 
 export type BotPanel = "about" | "help" | "ping";
 
@@ -20,24 +18,10 @@ export type BotViewContext = {
   client: Client;
   createdTimestamp: number;
   commandId?: string;
+  settingsCommandId?: string;
+  serverCommandId?: string;
   helpPage?: number;
 };
-
-export const v2Flags = [MessageFlags.IsComponentsV2] as const;
-
-export function textBlock(content: string): TextDisplayBuilder {
-  return new TextDisplayBuilder().setContent(content);
-}
-
-export function divider(): SeparatorBuilder {
-  return new SeparatorBuilder().setDivider(true);
-}
-
-export function headingWithThumbnail(heading: string, thumbnailUrl: string): SectionBuilder {
-  return new SectionBuilder()
-    .addTextDisplayComponents(textBlock(heading))
-    .setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbnailUrl));
-}
 
 export function botAvatarUrl(client: Client): string | undefined {
   return client.user?.displayAvatarURL({ size: 256 });

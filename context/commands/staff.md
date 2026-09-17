@@ -4,7 +4,7 @@ Actores: [../product/actors.md](../product/actors.md). Nómina: [../domains/atte
 
 ## `/staff config set`
 
-**Para qué:** Definir roles operativos y canales de coordinación. Sin `schedule_channel` no hay `/schedule create`.
+**Para qué:** Definir roles operativos y canales de coordinación. El canal público de schedules vive en `/settings` (`schedules_channel`).
 
 | Campo | Tipo | Obligatorio | Uso |
 |---|---|---|---|
@@ -17,7 +17,6 @@ Actores: [../product/actors.md](../product/actors.md). Nómina: [../domains/atte
 | server_helper_role | ROLE | Sí | Helper de servidor |
 | manager_role | ROLE | Sí | **Organiser** (salas, tickets, roles, bans) |
 | challonge_mod | ROLE | Sí | Acciones de bracket |
-| schedule_channel | CHANNEL | Sí | Publicación de horarios y urgencias T-0 |
 | staffchat_channel | CHANNEL | Sí | Bienvenida al reclutar |
 | staff_announcement_channel | CHANNEL | Sí | Enlace en welcome |
 | staff_instructions_channel | CHANNEL | Sí | Enlace en welcome |

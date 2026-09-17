@@ -6,7 +6,8 @@ Independiente del bracket, el bot ayuda a gobernar el servidor.
 
 - **Ban por ID** con duración (7 días, 1 mes, 2 meses, 6 meses, permanente). Las duraciones no permanentes se **recuerdan** y, al vencer, un proceso de fondo quita el ban.
 - **Unban por ID.**
-- **Banlist** (lista o Excel).
+- **Banlist** (`.txt` o `.xlsx`: ID, fecha, razón).
+- **Árbol de canales** y **invites** (incluido vanity), como export de lectura.
 - No se banea a uno mismo, al owner, al bot ni a otros bots.
 
 Un ban de Discord **no** es el cruce con la lista de IDs de juego baneados. Esa lista solo interviene al validar la hoja y al asignar roles de torneo. Ver [sheet.md](sheet.md).
