@@ -32,7 +32,7 @@ Regla dura: **un partido, una sala**. Si ya existe ticket para ese match, no se 
 
 | Capa | Qué define | Quién la configura |
 |---|---|---|
-| **Servidor** | Quién es admin del bot, canales de logs, canal de thumbnails, jerarquía de staff, canal de schedules | `/settings` + `/staff config` |
+| **Servidor** | Admin del bot, verificado, bracket admin, schedules, thumbnails, bans y canales de logs; jerarquía de staff | `/settings` + `/staff config` |
 | **Torneo** | Bracket, hoja, roles de organizer/helper de *ese* torneo, categorías de tickets, canales de asistencia / transcripts / reglas / deadlines / resultados / links de grabación, si auto-room está habilitado | `/tournament add` / `edit` |
 
 Sin la capa servidor, no hay auditoría ni schedules publicados. Sin la capa torneo, no hay partidos que operar.

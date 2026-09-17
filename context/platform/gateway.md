@@ -2,7 +2,7 @@
 
 El bot no “entra y sale” de Discord en cada comando. Mantiene una **sesión persistente por WebSocket** (el Gateway):
 
-- Ahí llegan slash commands, mensajes prefix (`a?`), botones, autocompletados, altas/bajas de miembros, y la prueba de que el proceso sigue vivo. El prefix exige el privileged intent **Message Content**.
+- Ahí llegan slash commands, mensajes prefix (`a?`), botones, autocompletados, altas/bajas de miembros, y la prueba de que el proceso sigue vivo. El prefix exige el privileged intent **Message Content**. `/server info` usa el privileged intent **Server Members** para contar humanos y bots.
 - El “ping WebSocket” de `/bot ping` y `a?ping` es el **latido de esa sesión**, no el tiempo de un comando concreto.
 - El “bot latency” es el tiempo de ida y vuelta de **esa** interacción o mensaje.
 - El “database latency” es si Prisma / Mongo responde (`ping`). El embed de `/bot ping` también muestra RAM, uptime y alcance.

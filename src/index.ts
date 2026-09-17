@@ -1,13 +1,20 @@
 import "./lib/env.js";
 import { Client, Events, GatewayIntentBits, MessageFlags } from "discord.js";
 import { handleBotButton, handleBotPrefix, handleBotSlash, prefixBotPanel } from "./commands/bot/handle.js";
+import { handleServerSlash } from "./commands/server/handle.js";
+import { handleSettingsSlash } from "./commands/settings/handle.js";
 import { isAllowedGuild } from "./lib/allowed-guilds.js";
 import { COMMAND_PREFIX, env } from "./lib/env.js";
 import { prisma } from "./lib/prisma.js";
 import { registerSlashCommands } from "./lib/register-slash.js";
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
 async function leaveIfUnauthorized(guildId: string, leave: () => Promise<unknown>): Promise<void> {
@@ -33,6 +40,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
   try {
     if (interaction.isChatInputCommand() && interaction.commandName === "bot") {
       await handleBotSlash(interaction, client);
+      return;
+    }
+
+    if (interaction.isChatInputCommand() && interaction.commandName === "settings") {
+      await handleSettingsSlash(interaction);
+      return;
+    }
+
+    if (interaction.isChatInputCommand() && interaction.commandName === "server") {
+      await handleServerSlash(interaction);
       return;
     }
 

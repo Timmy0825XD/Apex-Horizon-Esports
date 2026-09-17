@@ -22,10 +22,10 @@ export const helpCatalog: HelpCategory[] = [
   },
   {
     title: "Settings",
-    description: "Server-layer logs, admin role, and thumbnails.",
+    description: "Server-layer roles, schedules, thumbnails, bans, and audit channels.",
     entries: [
-      { slash: "settings setup", summary: "First-time audit channels and bot admin role.", access: "Admin" },
-      { slash: "settings edit", summary: "Change a configured channel or the admin role.", access: "Admin" },
+      { slash: "settings set", summary: "First-time server roles and log channels. All fields required.", access: "Discord Administrator" },
+      { slash: "settings edit", summary: "Change a configured role or channel.", access: "Admin" },
       { slash: "settings show", summary: "Review whether roles and channels still exist.", access: "Admin" },
     ],
   },
@@ -127,10 +127,12 @@ export const helpCatalog: HelpCategory[] = [
   },
   {
     title: "Server",
-    description: "Server snapshot and Discord bans the bot tracks.",
+    description: "Server snapshot, bans, channel tree, and invites.",
     entries: [
       { slash: "server info", summary: "Live server statistics.", access: "Public" },
-      { slash: "server banlist", summary: "List or export tracked bans.", access: "Organiser" },
+      { slash: "server banlist", summary: "Export banned Discord IDs, dates, and reasons as .txt or Excel.", access: "Organiser" },
+      { slash: "server tree", summary: "Export the category and channel tree as .txt or Excel.", access: "Organiser" },
+      { slash: "server invites", summary: "Export active invites and vanity uses as .txt or Excel.", access: "Organiser" },
       { slash: "user ban", summary: "Ban a Discord ID for a set duration.", access: "Organiser" },
       { slash: "user unban", summary: "Remove a tracked ban.", access: "Organiser" },
     ],

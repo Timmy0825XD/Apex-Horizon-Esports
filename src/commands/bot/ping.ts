@@ -61,7 +61,7 @@ export async function buildPingContainer(ctx: BotViewContext): Promise<Container
     .addTextDisplayComponents(
       textBlock(
         [
-          `## ${emojis.runtime} Runtime`,
+          `## Runtime`,
           `${emojis.memory} **RAM:** \`${memoryLine()}\``,
           `${emojis.uptime} **Uptime:** \`${formatDuration(process.uptime())}\``,
         ].join("\n"),
@@ -71,7 +71,7 @@ export async function buildPingContainer(ctx: BotViewContext): Promise<Container
     .addTextDisplayComponents(
       textBlock(
         [
-          `## ${emojis.size} Reach`,
+          `## Reach`,
           `${emojis.server} **Servers:** \`${servers}\``,
           `${emojis.members} **Members:** \`${members}\``,
         ].join("\n"),

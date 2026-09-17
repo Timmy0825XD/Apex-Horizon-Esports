@@ -19,11 +19,14 @@ model Guild {
 }
 
 type GuildSettings {
-  adminRoleId             String
-  challongeLogsChannelId  String
-  transcriptLogsChannelId String
-  botLogsChannelId        String
-  thumbnailChannelId      String
+  adminRoleId            String
+  verifiedRoleId         String
+  bracketAdminRoleId     String
+  schedulesChannelId     String
+  thumbnailChannelId     String
+  bansChannelId          String
+  challongeLogsChannelId String
+  botLogsChannelId       String
 }
 
 type StaffConfig {
@@ -36,7 +39,6 @@ type StaffConfig {
   serverHelperRoleId         String
   managerRoleId              String
   challongeModRoleId         String
-  scheduleChannelId          String
   staffchatChannelId         String
   staffAnnouncementChannelId String
   staffInstructionsChannelId String

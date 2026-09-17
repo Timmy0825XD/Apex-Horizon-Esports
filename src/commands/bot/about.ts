@@ -56,7 +56,7 @@ export async function buildAboutContainer(ctx: BotViewContext): Promise<Containe
     .addSeparatorComponents(divider())
     .addTextDisplayComponents(
       textBlock(
-        [`## ${emojis.size} Size`, `${emojis.server} **Servers:** \`${servers}\``, `${emojis.members} **Members:** \`${members}\``].join(
+        [`## Size`, `${emojis.server} **Servers:** \`${servers}\``, `${emojis.members} **Members:** \`${members}\``].join(
           "\n",
         ),
       ),
@@ -65,7 +65,7 @@ export async function buildAboutContainer(ctx: BotViewContext): Promise<Containe
     .addTextDisplayComponents(
       textBlock(
         [
-          `## ${emojis.server} Server`,
+          `## Server`,
           `${emojis.uptime} **Uptime:** \`${formatDuration(process.uptime())}\``,
           `${emojis.memory} **RAM:** \`${memoryLine()}\``,
           `${emojis.settings} **CPU:** \`${cpuModel()}\``,
@@ -73,5 +73,5 @@ export async function buildAboutContainer(ctx: BotViewContext): Promise<Containe
       ),
     )
     .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock([`## ${emojis.runtime} Runtime`, ...runtime].join("\n")));
+    .addTextDisplayComponents(textBlock([`## Runtime`, ...runtime].join("\n")));
 }

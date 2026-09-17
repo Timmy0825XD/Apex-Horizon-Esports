@@ -10,7 +10,7 @@ Solo se auditan mutaciones. Extraer o visualizar información **no** genera log.
 
 | Acción | ¿Audita? | Ejemplos |
 |---|---|---|
-| **Crear / registrar** | Sí | `/settings setup`, `/tournament add`, `/schedule create`, `/attendance mark` |
+| **Crear / registrar** | Sí | `/settings set`, `/tournament add`, `/schedule create`, `/attendance mark` |
 | **Modificar** | Sí | `/settings edit`, `/upload_score`, `/schedule update`, `/staff recruit` |
 | **Borrar** | Sí | `/tournament delete`, `/ticket delete`, `/attendance delete`, `/user unban` |
 | **Leer / listar / extraer** | No | `/bot ping`, `/settings show`, `/tournament list`, `/team info`, `/staff work`, `/server banlist` |
@@ -38,7 +38,7 @@ Cada embed de auditoría, en inglés, lleva al menos: **qué pasó**, **Triggere
 
 | Familia | Eventos |
 |---|---|
-| Servidor | Settings setup/edit; staff config set/edit; recruit; fire; rol individual; rol masivo; ban; unban |
+| Servidor | Settings set/edit; staff config set/edit; recruit; fire; rol individual; rol masivo; ban; unban |
 | Torneo | Alta, edición, baja; auto-room on/off; salas creadas |
 | Bracket | Score subido; score corregido (marcador viejo → nuevo + ganador) |
 | Schedule | Crear, actualizar (con motivo), borrar, refresh, resign, asignar por botón, resultado declarado, resultado borrado |
