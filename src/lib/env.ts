@@ -21,9 +21,21 @@ function parseAllowedGuilds(raw: string): string[] {
   return ids;
 }
 
+function optionalHexKey(name: string): string | undefined {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    return undefined;
+  }
+  if (!/^[0-9a-fA-F]{64}$/.test(value)) {
+    throw new Error(`${name} must be 64 hex characters (32 bytes)`);
+  }
+  return value.toLowerCase();
+}
+
 export const env = {
   discordToken: required("DISCORD_TOKEN"),
   discordClientId: required("DISCORD_CLIENT_ID"),
   databaseUrl: required("DATABASE_URL"),
   allowedGuilds: parseAllowedGuilds(required("ALLOWED_GUILDS")),
+  encryptionKey: optionalHexKey("ENCRYPTION_KEY"),
 };

@@ -11,6 +11,7 @@ import { formatUserFromUser } from "./formatters.js";
 
 export const auditLogTitles = {
   botLogs: "Bot Logs",
+  challongeLogs: "Challonge Logs",
 } as const;
 
 type AuditPayload = {
@@ -21,6 +22,27 @@ type AuditPayload = {
   details: string[];
   actor: User;
 };
+
+function chunkLines(lines: string[], max = 1024): string[] {
+  const chunks: string[] = [];
+  let current = "";
+  for (const line of lines) {
+    const piece = line.length > max ? `${line.slice(0, max - 1)}…` : line;
+    const next = current ? `${current}\n${piece}` : piece;
+    if (next.length > max) {
+      if (current) {
+        chunks.push(current);
+      }
+      current = piece;
+    } else {
+      current = next;
+    }
+  }
+  if (current) {
+    chunks.push(current);
+  }
+  return chunks;
+}
 
 function auditEmbed(payload: AuditPayload): EmbedBuilder {
   const embed = new EmbedBuilder()
@@ -37,9 +59,10 @@ function auditEmbed(payload: AuditPayload): EmbedBuilder {
   if (avatar) {
     embed.setThumbnail(avatar);
   }
-  if (payload.details.length > 0) {
-    embed.addFields({ name: "Details", value: payload.details.join("\n") });
-  }
+  const chunks = chunkLines(payload.details);
+  chunks.forEach((chunk, index) => {
+    embed.addFields({ name: index === 0 ? "Details" : `Details (${index + 1})`, value: chunk });
+  });
   return embed;
 }
 

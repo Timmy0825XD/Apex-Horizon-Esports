@@ -34,7 +34,7 @@ Público. Salida efímera, un username por línea.
 | user | USER | No* |
 | gameid_username | STRING | No* |
 
-\*Uno de los dos. Relación: hoja **viva** de ese torneo. Para buscar en **todas** las copias almacenadas: `/tournament find_player`.
+\*Uno de los dos. Relación: hoja **viva** de ese torneo. Los campos extra de esa fila (si los hay) van **al final** del V2, con el nombre de cada header. Para buscar en **todas** las copias almacenadas del bot: `/tournament find_player`.
 
 ## `/team list`
 
@@ -43,7 +43,7 @@ Público. Salida efímera, un username por línea.
 | tournament | STRING (Autocomplete) | Sí |
 | header | STRING (Choice) | Sí |
 
-Choices: Captain Discord Tag · Captain Discord ID · Captain In-game name · Captain In-game ID.
+Choices: Captain Discord Tag · Captain Discord ID · Captain In-game name · Captain In-game ID · Captain Current Title.
 
 ## `/assign_role`
 

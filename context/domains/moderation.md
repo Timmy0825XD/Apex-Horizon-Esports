@@ -10,7 +10,7 @@ Independiente del bracket, el bot ayuda a gobernar el servidor.
 - **Árbol de canales** y **invites** (incluido vanity), como export de lectura.
 - No se banea a uno mismo, al owner, al bot ni a otros bots.
 
-Un ban de Discord **no** es el cruce con la lista de IDs de juego baneados. Esa lista solo interviene al validar la hoja y al asignar roles de torneo. Ver [sheet.md](sheet.md).
+Un ban de Discord **no** es el cruce con la lista de IDs de juego baneados. Esa lista interviene al validar la hoja, al crear o cambiar la sheet de un torneo, y al asignar roles de torneo. Ver [sheet.md](sheet.md).
 
 ## Roles (Discord, no torneo)
 

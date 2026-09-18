@@ -95,4 +95,4 @@ Un choice suelto quita **ese** rol de puesto, no el paquete de recruit (p. ej. f
 
 **Relación:** Lee asistencias no borradas de `/attendance mark`. Cubetas: [../domains/attendance-payroll.md](../domains/attendance-payroll.md).
 
-Tres embeds: **Judges** / **Recorders** / **Dual**. Por persona: mención, rounds, matches (`team1_score + team2_score`), gold. Gold usa tarifas 1v1–3v3 por evento (450 / 450 / 575) mientras el torneo no guarde formato. El `.txt` de degradaciones (misma persona sin link, contada como Judge) solo se adjunta aquí si hay filas.
+Tres embeds: **Judges** / **Recorders** / **Dual**. Por persona: mención, rounds, matches (`team1_score + team2_score`), gold. Gold usa el **formato guardado del torneo**: 1v1–3v3 por evento (450 / 450 / 575) o 4v4–5v5 por partida (325 / 325 / 425). El `.txt` de degradaciones (misma persona sin link, contada como Judge) solo se adjunta aquí si hay filas.

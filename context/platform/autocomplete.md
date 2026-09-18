@@ -17,7 +17,7 @@ El autocomplete vive **dentro de la carpeta del comando** que lo usa. Ver [struc
 
 Filtro: se busca por nombre. El valor que Discord envía al comando es el identificador interno; lo que se **enseña** es el nombre.
 
-Ámbito: solo entidades de **ese servidor** (y de ese torneo, si el campo es de un torneo). Nada se mezcla entre gremios.
+Ámbito: solo entidades de **ese servidor** (y de ese torneo, si el campo es de un torneo). Nada se mezcla entre gremios, **salvo** el archivo global de sheets: `/tournament get_sheet` `name` lista copias de **todo el bot** (se enseña nombre · servidor).
 
 ## Relacionado
 

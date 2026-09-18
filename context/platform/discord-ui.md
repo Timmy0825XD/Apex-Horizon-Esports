@@ -8,7 +8,7 @@ Un fichero de constantes (`emojis.ts`) guarda los emojis del bot. Cualquier resp
 
 ## Componentes reutilizables
 
-Se pueden reutilizar **cascarones** (info / error / success: color, emoji del tipo, layout). Los paneles de `/bot`, `/settings`, `/server`, `/staff config` y el **welcome de `/staff recruit`** usan **Components V2** (`Container`, `Section`, `Text Display`), no un embed clásico. `/staff work` sí usa **tres embeds clásicos** (Judges / Recorders / Dual) más el `.txt` de degradaciones. `/utility embed` publica un **embed clásico**; `/utility v2` publica **Components V2**. Un adjunto en V2 (p. ej. `/server banlist`) lleva un componente **File** que apunta a `attachment://nombre`; si solo se sube el archivo sin ese componente, Discord lo descarta.
+Se pueden reutilizar **cascarones** (info / error / success: color, emoji del tipo, layout). Los paneles de `/bot`, `/settings`, `/server`, `/staff config`, el **welcome de `/staff recruit`** y **`/tournament`** (add / edit / delete / add_sheet / get_sheet / find_player / info / list) usan **Components V2** (`Container`, `Section`, `Text Display`), no un embed clásico. En add / edit / info de torneo, cada bloque (Identity, Roles, Channels, Ticket categories) va separado con `Separator`; el footer es `-# Created by` con `formatUser` (sin ping). El V2 de `delete` separa **Cleared from the bot** y **Left in place**. Categorías de ticket no configuradas no se listan. En `find_player` y `get_sheet`, cada sheet lista el **nombre del servidor** de origen (texto plano; Discord no menciona guilds). `get_sheet` con `csv` adjunta un **File** V2 (`tournament-sheets.csv`). El aviso de `find_player` en el éxito de `add_sheet` va en un bloque aparte para que el slash no se corte. `/staff work` sí usa **tres embeds clásicos** (Judges / Recorders / Dual) más el `.txt` de degradaciones. `/utility embed` publica un **embed clásico**; `/utility v2` publica **Components V2**. Un adjunto en V2 (p. ej. `/server banlist`) lleva un componente **File** que apunta a `attachment://nombre`; si solo se sube el archivo sin ese componente, Discord lo descarta.
 
 **No** reutilizar el mismo texto en varios bloques de la misma respuesta. Si hay tres embeds de éxito, cada uno describe **su** hecho, no un “Success” genérico repetido.
 
@@ -30,7 +30,7 @@ Preferir helpers frente a `` `<@&${id}>` `` inline.
 
 **Excepciones:** CSV/Excel y nombres de archivo de audit pueden llevar identificadores en texto plano (no son UI de Discord). El ID *es* el dato en banlist/sheet.
 
-Menciones de slash commands: `</name:id>` vía `formatHelpEntry` (en `/bot help` para subcomandos de `bot`, `settings`, `server`, `staff` y `utility`; el resto del catálogo usa `` `/comando` `` hasta estar registrados).
+Menciones de slash commands: `</name:id>` vía `formatHelpEntry` (en `/bot help` para subcomandos de `bot`, `settings`, `server`, `staff`, `tournament` y `utility`; el resto del catálogo usa `` `/comando` `` hasta estar registrados).
 
 ## Énfasis (markdown de Discord)
 
