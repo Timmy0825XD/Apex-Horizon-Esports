@@ -52,6 +52,8 @@ model Tournament {
   challongeId            String
   challongeKeyEnc        String
   sheetLink              String
+  format                 String
+  additionalFieldCount   Int      @default(0)
   adminRoleId            String
   helperRoleId           String
   attendanceChannelId    String
@@ -65,12 +67,34 @@ model Tournament {
   ticketOpenCategoryIds  String[]
   autoRoomCapable        Boolean
   autoRoomRunning        Boolean  @default(false)
+  createdBy              String
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 
   @@unique([guildId, challongeId])
   @@index([guildId, name])
   @@map("tournaments")
+}
+
+model StoredSheet {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  guildId        String
+  guildName      String   @default("")
+  sheetLink      String
+  format         String
+  additionalFieldCount Int      @default(0)
+  origin         String
+  tournamentId   String?  @db.ObjectId
+  tournamentName String?
+  headers        String[]
+  teams          Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([sheetLink])
+  @@index([guildId, origin])
+  @@index([guildId, tournamentId])
+  @@map("stored_sheets")
 }
 
 model Match {

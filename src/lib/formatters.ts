@@ -34,3 +34,7 @@ export function formatHelpEntry(commandPath: string, commandId?: string): string
   }
   return `\`/${commandPath}\``;
 }
+
+export function formatSheetLink(url: string): string {
+  return `[Click Here](${url})`;
+}

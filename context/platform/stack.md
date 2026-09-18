@@ -14,7 +14,7 @@ El bot habla con Discord por Gateway (comandos slash, botones) y publica auditor
 
 Los slash se registran **solo** en los gremios de `ALLOWED_GUILDS`. No se introduce otro runtime ni cola hasta que haga falta de verdad.
 
-El esquema Prisma vive en `prisma/schema.prisma`. Una base (`apex_horizon`): `guilds`, `tournaments`, `matches`, `rooms`, `schedules`, `attendances`, `bans`. El cliente está en `src/lib/prisma.ts`.
+El esquema Prisma vive en `prisma/schema.prisma`. Una base (`apex_horizon`): `guilds`, `tournaments`, `stored_sheets`, `matches`, `rooms`, `schedules`, `attendances`, `bans`. El cliente está en `src/lib/prisma.ts`. Las claves de Challonge se guardan cifradas (`ENCRYPTION_KEY`, AES-256-GCM).
 
 ## Relacionado
 

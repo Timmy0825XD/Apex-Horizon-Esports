@@ -29,7 +29,7 @@ El desarrollo de código y comandos sigue **el orden y las indicaciones del usua
 
 | Archivo | Contenido |
 |---|---|
-| [domains/sheet.md](domains/sheet.md) | Hoja viva + copias en BD, histórico, find_player |
+| [domains/sheet.md](domains/sheet.md) | Hoja viva + archivo global, histórico, find_player |
 | [domains/bracket-rooms.md](domains/bracket-rooms.md) | Challonge, estados, auto-room, salas |
 | [domains/schedules.md](domains/schedules.md) | Horarios, staff, T-10/T-0, results |
 | [domains/attendance-payroll.md](domains/attendance-payroll.md) | Asistencia, links, cubetas, gold |

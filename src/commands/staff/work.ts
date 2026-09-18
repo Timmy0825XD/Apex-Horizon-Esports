@@ -8,11 +8,24 @@ import { deferStaff, respondStaff } from "./respond.js";
 import { loadGuildStaffState } from "./store.js";
 import { staffErrorMessage } from "./view.js";
 
-const EVENT_RATES = {
+const SMALL_EVENT_RATES = {
   judge: 450,
   recorder: 450,
   dual: 575,
 } as const;
+
+const LARGE_MATCH_RATES = {
+  judge: 325,
+  recorder: 325,
+  dual: 425,
+} as const;
+
+function ratesFor(format: string | null | undefined) {
+  if (format === "4vs4" || format === "5vs5") {
+    return LARGE_MATCH_RATES;
+  }
+  return SMALL_EVENT_RATES;
+}
 
 type Bucket = "judge" | "recorder" | "dual";
 
@@ -40,11 +53,17 @@ function objectIdLike(value: string): boolean {
   return /^[a-fA-F0-9]{24}$/.test(value);
 }
 
-function addStat(map: Map<string, PersonStats>, userId: string, bucket: Bucket, matches: number): void {
+function addStat(
+  map: Map<string, PersonStats>,
+  userId: string,
+  bucket: Bucket,
+  matches: number,
+  rates: { judge: number; recorder: number; dual: number },
+): void {
   const current = map.get(userId) ?? { userId, rounds: 0, matches: 0, gold: 0 };
   current.rounds += 1;
   current.matches += matches;
-  current.gold += EVENT_RATES[bucket];
+  current.gold += rates[bucket];
   map.set(userId, current);
 }
 
@@ -158,7 +177,7 @@ export async function handleStaffWork(interaction: ChatInputCommandInteraction):
   const tournament = await prisma.tournament
     .findFirst({
       where: { id: tournamentId, guildId: guild.id },
-      select: { id: true, name: true },
+      select: { id: true, name: true, format: true },
     })
     .catch(() => null);
 
@@ -170,6 +189,11 @@ export async function handleStaffWork(interaction: ChatInputCommandInteraction):
     return;
   }
 
+  const rates = ratesFor(tournament.format);
+  const rateNote =
+    tournament.format === "4vs4" || tournament.format === "5vs5"
+      ? `${tournament.format} rates: 325 / 325 / 425 gold per match.`
+      : `${tournament.format || "1v1–3v3"} rates: 450 / 450 / 575 gold per event.`;
   const includeDw = interaction.options.getBoolean("include_default_wins") ?? false;
   const records = await prisma.attendance.findMany({
     where: {
@@ -200,17 +224,17 @@ export async function handleStaffWork(interaction: ChatInputCommandInteraction):
 
     const matches = row.team1Score + row.team2Score;
     if (row.judgeId !== row.recorderId) {
-      addStat(judges, row.judgeId, "judge", matches);
-      addStat(recorders, row.recorderId, "recorder", matches);
+      addStat(judges, row.judgeId, "judge", matches, rates);
+      addStat(recorders, row.recorderId, "recorder", matches, rates);
       continue;
     }
 
     if (hasRecordingLink(row.links)) {
-      addStat(duals, row.judgeId, "dual", matches);
+      addStat(duals, row.judgeId, "dual", matches, rates);
       continue;
     }
 
-    addStat(judges, row.judgeId, "judge", matches);
+    addStat(judges, row.judgeId, "judge", matches, rates);
     degradations.push({ userId: row.judgeId, matchId: row.challongeMatchId });
   }
 
@@ -224,21 +248,21 @@ export async function handleStaffWork(interaction: ChatInputCommandInteraction):
       `${emojis.members} Judges`,
       `No judge-only attendance for **${tournament.name}**.`,
       `**${judgeRows.length}** judges in **${tournament.name}**. ${dw}`,
-      "Judge-only credit. 450 gold per event (1v1–3v3 rates).",
+      `Judge-only credit. ${rateNote}`,
       judgeRows,
     ),
     bucketEmbed(
       `${emojis.members} Recorders`,
       `No recorder-only attendance for **${tournament.name}**.`,
       `**${recorderRows.length}** recorders in **${tournament.name}**.`,
-      "Recorder-only credit. 450 gold per event (1v1–3v3 rates).",
+      `Recorder-only credit. ${rateNote}`,
       recorderRows,
     ),
     bucketEmbed(
       `${emojis.gem} Dual (Judge & Recorder)`,
       `No dual attendance (same person with a recording link) for **${tournament.name}**.`,
       `**${dualRows.length}** dual staff in **${tournament.name}**.`,
-      "Same person with a recording link. 575 gold per event (1v1–3v3 rates).",
+      `Same person with a recording link. ${rateNote}`,
       dualRows,
     ),
   ];
