@@ -55,7 +55,13 @@ Se puede marcar asistencia sin haber subido el score, y se puede subir el score 
         → limpian la hoja
 
 /tournament add
-        → nace el mundo del torneo (bracket + hoja + canales)
+        → nace el mundo del torneo; la sheet se copia a la BD
+
+/tournament add_sheet
+        → otra sheet entra al archivo (link + formato)
+
+/tournament find_player
+        → busca en todas las copias (activas, manuales, histórico)
 
 /assign_role + /team *
         → el servidor reconoce a los jugadores
