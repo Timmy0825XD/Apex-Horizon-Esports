@@ -139,18 +139,21 @@ export const helpCatalog: HelpCategory[] = [
   },
   {
     title: "Utility",
-    description: "Cleanup, UTC clock, embeds, and small server tools.",
+    description: "Cleanup, UTC clock, embeds, Components V2, and small server tools.",
     entries: [
       { slash: "utility clear_category", summary: "Delete every channel under a category (confirmation).", access: "Discord Administrator" },
       { slash: "utility clear", summary: "Purge messages in the current channel.", access: "Manage Messages" },
       { slash: "utility emoji_steal", summary: "Remove a custom emoji and show its image.", access: "Manage Emojis" },
       { slash: "utility random", summary: "Pick from a list of options.", access: "Public" },
       { slash: "utility utc", summary: "Build a UTC timestamp the same way schedules do.", access: "Public" },
+      { slash: "utility discord_tag", summary: "Turn pasted Discord IDs into usernames for the sheet.", access: "Public" },
       { slash: "utility avatar", summary: "Show a user's avatar.", access: "Public" },
       { slash: "utility toss", summary: "Coin flip.", access: "Public" },
       { slash: "utility enlarge", summary: "Show an emoji at full size.", access: "Public" },
       { slash: "utility embed", summary: "Interactive embed builder.", access: "Manage Messages" },
       { slash: "utility edit_embed", summary: "Rewrite an embed posted by the bot.", access: "Manage Messages" },
+      { slash: "utility v2", summary: "Interactive Components V2 builder.", access: "Manage Messages" },
+      { slash: "utility edit_v2", summary: "Rewrite a Components V2 message posted by the bot.", access: "Manage Messages" },
     ],
   },
 ];

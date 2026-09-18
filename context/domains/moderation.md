@@ -23,7 +23,8 @@ Jerarquía Discord siempre gana. Ver [../product/actors.md](../product/actors.md
 ## Utilidades de gobierno
 
 - Limpieza de mensajes o de todos los canales bajo una categoría (con confirmación).
-- Utilidades de timing UTC (la misma idea de reloj que los schedules), azar, embeds, avatares, emojis.
+- Utilidades de timing UTC (la misma idea de reloj que los schedules), azar, avatares, emojis.
+- Constructores de **embed clásico** y de **Components V2** (crear y reescribir mensajes del bot).
 
 `/utility clear_category` muta el servidor de forma destructiva.
 

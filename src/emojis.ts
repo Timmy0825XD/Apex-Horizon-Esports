@@ -29,5 +29,28 @@ export const emojis = {
   gem : "<:gem:1549932657838788718>",
   creation : "<:creation:1549933732528652390>",
   party : "<:party:1550319983626813541>",
-  
+  random: "<:random:1550334540977807481>",
+  numero1: "<:numero1:1550338500442853457>",
+  numero2: "<:numero2:1550338501550284850>",
+  numero3: "<:numero3:1550338502506586232>",
+  numero4: "<:numero4:1550338503810875412>",
+  numero5: "<:numero5:1550338505794785320>",
+  numero6: "<:numero6:1550338507401338912>",
+  numero7: "<:numero7:1550338509414604870>",
+  numero8: "<:numero8:1550338511138201731>",
+  numero9: "<:numero9:1550338512291762197>",
+  numero10: "<:numero10:1550338513717825807>",
 } as const;
+
+export const numberEmojis = [
+  emojis.numero1,
+  emojis.numero2,
+  emojis.numero3,
+  emojis.numero4,
+  emojis.numero5,
+  emojis.numero6,
+  emojis.numero7,
+  emojis.numero8,
+  emojis.numero9,
+  emojis.numero10,
+] as const;

@@ -3,6 +3,7 @@ import { botSlash } from "../commands/bot/slash.js";
 import { serverSlash } from "../commands/server/slash.js";
 import { settingsSlash } from "../commands/settings/slash.js";
 import { staffSlash } from "../commands/staff/slash.js";
+import { utilitySlash } from "../commands/utility/slash.js";
 import { env } from "./env.js";
 
 const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
@@ -10,12 +11,14 @@ const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
   settingsSlash.toJSON(),
   serverSlash.toJSON(),
   staffSlash.toJSON(),
+  utilitySlash.toJSON(),
 ];
 
 export const botCommandIds = new Map<string, string>();
 export const settingsCommandIds = new Map<string, string>();
 export const serverCommandIds = new Map<string, string>();
 export const staffCommandIds = new Map<string, string>();
+export const utilityCommandIds = new Map<string, string>();
 
 export function botCommandIdFor(guildId: string | null | undefined): string | undefined {
   if (!guildId) {
@@ -45,6 +48,13 @@ export function staffCommandIdFor(guildId: string | null | undefined): string | 
   return staffCommandIds.get(guildId);
 }
 
+export function utilityCommandIdFor(guildId: string | null | undefined): string | undefined {
+  if (!guildId) {
+    return undefined;
+  }
+  return utilityCommandIds.get(guildId);
+}
+
 export async function registerSlashCommands(): Promise<void> {
   const rest = new REST({ version: "10" }).setToken(env.discordToken);
 
@@ -71,6 +81,11 @@ export async function registerSlashCommands(): Promise<void> {
     const staff = registered.find((command) => command.name === "staff");
     if (staff) {
       staffCommandIds.set(guildId, staff.id);
+    }
+
+    const utility = registered.find((command) => command.name === "utility");
+    if (utility) {
+      utilityCommandIds.set(guildId, utility.id);
     }
   }
 }

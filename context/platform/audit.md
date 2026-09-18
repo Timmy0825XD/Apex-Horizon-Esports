@@ -44,6 +44,7 @@ Cada embed de auditoría, en inglés, lleva al menos: **qué pasó**, **Triggere
 | Schedule | Crear, actualizar (con motivo), borrar, refresh, resign, asignar por botón, resultado declarado, resultado borrado |
 | Asistencia | Marcar, borrar, añadir link, borrar links |
 | Ticket | Close, reopen, delete |
+| Utility | Purga de canal; wipe de categoría; emoji robado; embed publicado o reescrito; Components V2 publicado o reescrito |
 
 Los transcripts **no** son este sistema: son el archivo del chat, en otro canal, con otra identidad.
 

@@ -4,13 +4,14 @@ import { handleBotButton, handleBotSlash } from "./commands/bot/handle.js";
 import { handleServerSlash } from "./commands/server/handle.js";
 import { handleSettingsSlash } from "./commands/settings/handle.js";
 import { handleStaffAuto, handleStaffSlash } from "./commands/staff/handle.js";
+import { handleUtilityButton, handleUtilityModal, handleUtilitySlash } from "./commands/utility/handle.js";
 import { isAllowedGuild } from "./lib/allowed-guilds.js";
 import { env } from "./lib/env.js";
 import { prisma } from "./lib/prisma.js";
 import { registerSlashCommands } from "./lib/register-slash.js";
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages],
 });
 
 async function leaveIfUnauthorized(guildId: string, leave: () => Promise<unknown>): Promise<void> {
@@ -54,8 +55,23 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    if (interaction.isChatInputCommand() && interaction.commandName === "utility") {
+      await handleUtilitySlash(interaction);
+      return;
+    }
+
     if (interaction.isAutocomplete() && interaction.commandName === "staff") {
       await handleStaffAuto(interaction);
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith("utility:")) {
+      await handleUtilityButton(interaction);
+      return;
+    }
+
+    if (interaction.isModalSubmit() && interaction.customId.startsWith("utility:")) {
+      await handleUtilityModal(interaction);
       return;
     }
 

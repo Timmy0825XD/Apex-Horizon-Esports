@@ -48,6 +48,7 @@ src/
     settings/          # /settings set|edit|show
     server/            # /server info|banlist|tree|invites
     staff/             # /staff config, recruit, fire, work
+    utility/           # /utility clear, utc, embed, v2, …
     schedule/          # /schedule y todo lo suyo (cuando exista)
     ...
   workers/
