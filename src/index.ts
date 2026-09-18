@@ -1,20 +1,15 @@
 import "./lib/env.js";
 import { Client, Events, GatewayIntentBits, MessageFlags } from "discord.js";
-import { handleBotButton, handleBotPrefix, handleBotSlash, prefixBotPanel } from "./commands/bot/handle.js";
+import { handleBotButton, handleBotSlash } from "./commands/bot/handle.js";
 import { handleServerSlash } from "./commands/server/handle.js";
 import { handleSettingsSlash } from "./commands/settings/handle.js";
 import { isAllowedGuild } from "./lib/allowed-guilds.js";
-import { COMMAND_PREFIX, env } from "./lib/env.js";
+import { env } from "./lib/env.js";
 import { prisma } from "./lib/prisma.js";
 import { registerSlashCommands } from "./lib/register-slash.js";
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
 
 async function leaveIfUnauthorized(guildId: string, leave: () => Promise<unknown>): Promise<void> {
@@ -63,28 +58,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
         .reply({ content: "Something went wrong while running that command.", flags: MessageFlags.Ephemeral })
         .catch(() => undefined);
     }
-  }
-});
-
-client.on(Events.MessageCreate, async (message) => {
-  if (message.author.bot || !message.guildId) {
-    return;
-  }
-
-  const content = message.content.trim();
-  if (!content.startsWith(COMMAND_PREFIX)) {
-    return;
-  }
-
-  const panel = prefixBotPanel(content.slice(COMMAND_PREFIX.length).trim().toLowerCase());
-  if (!panel) {
-    return;
-  }
-
-  try {
-    await handleBotPrefix(message, panel, client);
-  } catch (error) {
-    console.error("Prefix command failed", error);
   }
 });
 

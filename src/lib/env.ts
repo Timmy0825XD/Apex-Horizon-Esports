@@ -27,5 +27,3 @@ export const env = {
   databaseUrl: required("DATABASE_URL"),
   allowedGuilds: parseAllowedGuilds(required("ALLOWED_GUILDS")),
 };
-
-export const COMMAND_PREFIX = "a?";

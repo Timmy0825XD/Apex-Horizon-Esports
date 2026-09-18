@@ -10,9 +10,9 @@
 | ORM | **Prisma** (conector MongoDB) |
 | Deploy | **HiddenCloud** |
 
-El bot habla con Discord por Gateway (comandos slash, prefix `a?`, botones) y publica auditoría por **webhooks**. Ver [gateway.md](gateway.md) y [audit.md](audit.md).
+El bot habla con Discord por Gateway (comandos slash, botones) y publica auditoría por **webhooks**. Ver [gateway.md](gateway.md) y [audit.md](audit.md).
 
-Los slash se registran **solo** en los gremios de `ALLOWED_GUILDS`. El mismo comando prefix usa el prefijo `a?` (ejemplo: `a?ping`). No se introduce otro runtime ni cola hasta que haga falta de verdad.
+Los slash se registran **solo** en los gremios de `ALLOWED_GUILDS`. No se introduce otro runtime ni cola hasta que haga falta de verdad.
 
 El esquema Prisma vive en `prisma/schema.prisma`. Una base (`apex_horizon`): `guilds`, `tournaments`, `matches`, `rooms`, `schedules`, `attendances`, `bans`. El cliente está en `src/lib/prisma.ts`.
 

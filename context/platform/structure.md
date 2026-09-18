@@ -44,7 +44,7 @@ src/
   emojis.ts
   lib/                 # compartido real, delgado
   commands/
-    bot/               # /bot ping|about|help y a?ping|about|help
+    bot/               # /bot ping|about|help
     settings/          # /settings set|edit|show
     server/            # /server info|banlist|tree|invites
     schedule/          # /schedule y todo lo suyo (cuando exista)
@@ -54,7 +54,7 @@ src/
 
 Dentro de `commands/schedule/` pueden existir varios archivos (`create`, `update`, autocomplete) si cada uno tiene una razón. No se esparcen fuera de esa carpeta.
 
-Slash y prefix del mismo comando viven en **esa** carpeta. El router en `index.ts` solo despacha.
+El slash y sus interacciones viven en **esa** carpeta. El router en `index.ts` solo despacha.
 
 ## SOLID y GRASP (sin sobreingeniería)
 

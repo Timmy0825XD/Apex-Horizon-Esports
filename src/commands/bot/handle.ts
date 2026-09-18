@@ -3,7 +3,6 @@ import {
   type ButtonInteraction,
   type ChatInputCommandInteraction,
   type Client,
-  type Message,
 } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { botCommandIdFor, serverCommandIdFor, settingsCommandIdFor } from "../../lib/register-slash.js";
@@ -85,37 +84,4 @@ export async function handleBotButton(interaction: ButtonInteraction, client: Cl
       helpPage,
     }),
   );
-}
-
-export async function handleBotPrefix(message: Message, panel: BotPanel, client: Client): Promise<void> {
-  if (!isAllowedGuild(message.guildId)) {
-    return;
-  }
-
-  await message.reply(
-    await buildPanel(panel, {
-      client,
-      createdTimestamp: message.createdTimestamp,
-      commandId: botCommandIdFor(message.guildId),
-      settingsCommandId: settingsCommandIdFor(message.guildId),
-      serverCommandId: serverCommandIdFor(message.guildId),
-      helpPage: 0,
-    }),
-  );
-}
-
-export function prefixBotPanel(commandName: string): BotPanel | null {
-  switch (commandName) {
-    case "ping":
-    case "bot ping":
-      return "ping";
-    case "about":
-    case "bot about":
-      return "about";
-    case "help":
-    case "bot help":
-      return "help";
-    default:
-      return null;
-  }
 }
