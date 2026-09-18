@@ -14,6 +14,9 @@ function helpCommandId(slash: string, ctx: BotViewContext): string | undefined {
   if (slash.startsWith("server ")) {
     return ctx.serverCommandId;
   }
+  if (slash.startsWith("staff ")) {
+    return ctx.staffCommandId;
+  }
   return undefined;
 }
 

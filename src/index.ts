@@ -3,6 +3,7 @@ import { Client, Events, GatewayIntentBits, MessageFlags } from "discord.js";
 import { handleBotButton, handleBotSlash } from "./commands/bot/handle.js";
 import { handleServerSlash } from "./commands/server/handle.js";
 import { handleSettingsSlash } from "./commands/settings/handle.js";
+import { handleStaffAuto, handleStaffSlash } from "./commands/staff/handle.js";
 import { isAllowedGuild } from "./lib/allowed-guilds.js";
 import { env } from "./lib/env.js";
 import { prisma } from "./lib/prisma.js";
@@ -45,6 +46,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.isChatInputCommand() && interaction.commandName === "server") {
       await handleServerSlash(interaction);
+      return;
+    }
+
+    if (interaction.isChatInputCommand() && interaction.commandName === "staff") {
+      await handleStaffSlash(interaction);
+      return;
+    }
+
+    if (interaction.isAutocomplete() && interaction.commandName === "staff") {
+      await handleStaffAuto(interaction);
       return;
     }
 

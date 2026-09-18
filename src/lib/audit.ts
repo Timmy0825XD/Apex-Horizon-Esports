@@ -57,18 +57,22 @@ async function resolveLogChannel(guild: Guild, channelId: string): Promise<LogCh
 }
 
 async function sendViaWebhook(channel: LogChannel, title: string, embed: EmbedBuilder): Promise<boolean> {
+  const bot = channel.client.user;
+  const avatarURL = bot?.displayAvatarURL({ size: 256 });
   const existing = (await channel.fetchWebhooks()).find(
-    (webhook) => webhook.name === title && webhook.owner?.id === channel.client.user?.id,
+    (webhook) => webhook.name === title && webhook.owner?.id === bot?.id,
   );
   const webhook =
     existing ??
     (await channel.createWebhook({
       name: title,
+      avatar: avatarURL,
       reason: `Audit log identity: ${title}`,
     }));
 
   await webhook.send({
     username: title,
+    avatarURL,
     embeds: [embed],
     allowedMentions: { parse: [] },
   });

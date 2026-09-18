@@ -41,7 +41,7 @@ type StaffConfig {
   challongeModRoleId         String
   staffchatChannelId         String
   staffAnnouncementChannelId String
-  staffInstructionsChannelId String
+  staffRulesChannelId        String
   staffDetailsChannelId      String
 }
 

@@ -20,7 +20,7 @@ Solo se auditan mutaciones. Extraer o visualizar información **no** genera log.
 
 ## Cómo viaja el log (webhook + título = tipo)
 
-El bot no habla “como el bot” en esos canales si puede evitarlo. Crea o reutiliza un **webhook del canal** (hace falta permiso de gestionar webhooks). El **título** del envío (nombre visible del webhook) **representa el tipo de log**, no un rótulo genérico:
+El bot no habla “como el bot” en esos canales si puede evitarlo. Crea o reutiliza un **webhook del canal** (hace falta permiso de gestionar webhooks). El **título** del envío (nombre visible del webhook) **representa el tipo de log**, no un rótulo genérico. El **icono** del webhook es siempre el del bot:
 
 | Canal configurado | Nombre que aparece | Para qué |
 |---|---|---|

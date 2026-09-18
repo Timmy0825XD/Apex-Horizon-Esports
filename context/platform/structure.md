@@ -47,6 +47,7 @@ src/
     bot/               # /bot ping|about|help
     settings/          # /settings set|edit|show
     server/            # /server info|banlist|tree|invites
+    staff/             # /staff config, recruit, fire, work
     schedule/          # /schedule y todo lo suyo (cuando exista)
     ...
   workers/
