@@ -22,3 +22,11 @@ export function errorEmbed(title: string, description?: string): EmbedBuilder {
   }
   return embed;
 }
+
+export function successEmbed(title: string, description?: string): EmbedBuilder {
+  const embed = new EmbedBuilder().setColor(embedColors.success).setTitle(`${emojis.success} ${title}`);
+  if (description) {
+    embed.setDescription(description);
+  }
+  return embed;
+}

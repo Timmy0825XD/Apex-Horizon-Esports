@@ -6,7 +6,9 @@ Fuente de actores: [../product/actors.md](../product/actors.md).
 |---|---|
 | Admin | Administrator de Discord **o** `admin_role` de `/settings` |
 | Organiser | `manager_role` de `/staff config` **o** Administrator |
-| Discord Administrator | Solo el permiso nativo (recruit/fire, a veces `clear_category`) |
+| Discord Administrator | Solo el permiso nativo (recruit/fire, `clear_category`) |
+| Manage Messages | Permiso nativo Discord (`/utility clear`, builders de embed y V2) |
+| Manage Emojis | Permiso nativo Discord (`/utility emoji_steal`) |
 | Staff de torneo | Roles judge/recorder/staff del servidor, o admin/helper del torneo |
 | Público | Cualquier miembro, solo en servidor |
 

@@ -24,7 +24,7 @@ Al nacer, renombrarse o eliminarse un comando: actualizar **este índice** y el 
 | Tickets | [tickets.md](tickets.md) | `/ticket close` · `reopen` · `delete` |
 | Roles | [roles.md](roles.md) | `/role user` · `add all` · `remove all` · `list` |
 | Server y usuario | [server-user.md](server-user.md) | `/server info` · `banlist` · `tree` · `invites` · `/user ban` · `unban` |
-| Utility | [utility.md](utility.md) | `/utility *` (clear, utc, embed, …) |
+| Utility | [utility.md](utility.md) | `/utility clear_category` · `clear` · `emoji_steal` · `random` · `utc` · `discord_tag` · `avatar` · `toss` · `enlarge` · `embed` · `edit_embed` · `v2` · `edit_v2` |
 | Interacciones | [interactions.md](interactions.md) | Botones y menús (no slash) |
 | Permisos | [permissions.md](permissions.md) | Resumen de etiquetas |
 
