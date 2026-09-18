@@ -49,6 +49,7 @@ src/
     server/            # /server info|banlist|tree|invites
     staff/             # /staff config, recruit, fire, work
     tournament/        # /tournament add|edit|delete|add_sheet|get_sheet|find_player|info|list
+    team/              # /team info|list
     utility/           # /utility clear, utc, embed, v2, …
     schedule/          # /schedule y todo lo suyo (cuando exista)
     ...

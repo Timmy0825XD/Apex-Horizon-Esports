@@ -61,8 +61,8 @@ export const helpCatalog: HelpCategory[] = [
     entries: [
       { slash: "sheet headers", summary: "Show the column contract by format.", access: "Public" },
       { slash: "sheet validate", summary: "Quality-check a sheet before creating a tournament.", access: "Admin" },
-      { slash: "team info", summary: "Look up a player by Discord or in-game identity.", access: "Public" },
-      { slash: "team list", summary: "Dump the roster for a chosen column.", access: "Public" },
+      { slash: "team info", summary: "Look up a player by Discord user or alias (game ID, name, or Discord ID).", access: "Organiser" },
+      { slash: "team list", summary: "Publish every team in a tournament.", access: "Organiser" },
       { slash: "assign_role", summary: "Give captains a Discord role, crossing the banned-ID list.", access: "Organiser" },
       { slash: "utility discord_tag", summary: "Turn pasted Discord IDs into usernames for the sheet.", access: "Public" },
     ],

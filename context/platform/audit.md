@@ -13,7 +13,7 @@ Solo se auditan mutaciones. Extraer o visualizar información **no** genera log.
 | **Crear / registrar** | Sí | `/settings set`, `/tournament add`, `/tournament add_sheet`, `/schedule create`, `/attendance mark` |
 | **Modificar** | Sí | `/settings edit`, `/upload_score`, `/schedule update`, `/staff recruit` |
 | **Borrar** | Sí | `/tournament delete`, `/ticket delete`, `/attendance delete`, `/user unban` |
-| **Leer / listar / extraer** | No | `/bot ping`, `/settings show`, `/tournament list`, `/tournament find_player`, `/tournament get_sheet`, `/team info`, `/staff work`, `/server banlist` |
+| **Leer / listar / extraer** | No | `/bot ping`, `/settings show`, `/tournament list`, `/tournament find_player`, `/tournament get_sheet`, `/team info`, `/team list`, `/staff work`, `/server banlist` |
 
 - Se escribe el embed de log **después de que la mutación tenga éxito**.
 - Fallar al loguear **nunca deshace** el comando. El log es testigo, no parte de la transacción.

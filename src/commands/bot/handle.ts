@@ -5,7 +5,7 @@ import {
   type Client,
 } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
-import { botCommandIdFor, serverCommandIdFor, settingsCommandIdFor, staffCommandIdFor, tournamentCommandIdFor, utilityCommandIdFor } from "../../lib/register-slash.js";
+import { botCommandIdFor, serverCommandIdFor, settingsCommandIdFor, staffCommandIdFor, teamCommandIdFor, tournamentCommandIdFor, utilityCommandIdFor } from "../../lib/register-slash.js";
 import { buildAboutContainer } from "./about.js";
 import { buildHelpContainer, normalizeHelpPage } from "./help.js";
 import { buildPingContainer } from "./ping.js";
@@ -43,6 +43,7 @@ export async function handleBotSlash(interaction: ChatInputCommandInteraction, c
       serverCommandId: serverCommandIdFor(interaction.guildId),
       staffCommandId: staffCommandIdFor(interaction.guildId),
       tournamentCommandId: tournamentCommandIdFor(interaction.guildId),
+      teamCommandId: teamCommandIdFor(interaction.guildId),
       utilityCommandId: utilityCommandIdFor(interaction.guildId),
       helpPage: 0,
     }),
@@ -86,6 +87,7 @@ export async function handleBotButton(interaction: ButtonInteraction, client: Cl
       serverCommandId: serverCommandIdFor(interaction.guildId),
       staffCommandId: staffCommandIdFor(interaction.guildId),
       tournamentCommandId: tournamentCommandIdFor(interaction.guildId),
+      teamCommandId: teamCommandIdFor(interaction.guildId),
       utilityCommandId: utilityCommandIdFor(interaction.guildId),
       helpPage,
     }),

@@ -32,18 +32,21 @@ Público. Salida efímera, un username por línea.
 |---|---|---|
 | tournament | STRING (Autocomplete) | Sí |
 | user | USER | No* |
-| gameid_username | STRING | No* |
+| alias | STRING | No* |
 
-\*Uno de los dos. Relación: hoja **viva** de ese torneo. Los campos extra de esa fila (si los hay) van **al final** del V2, con el nombre de cada header. Para buscar en **todas** las copias almacenadas del bot: `/tournament find_player`.
+\*Al menos uno. Si van los dos, la fila tiene que coincidir en **ambos**. **Organiser**. Lectura de la hoja **viva** de Google de ese torneo (no la copia en BD). No audita.
+
+Busca en **cualquier jugador** de la fila. `user` coincide por Discord ID. `alias` coincide por **game ID**, **in-game name** o **Discord ID** (el bot clasifica el texto: snowflake → Discord ID, hex 8–16 → game ID, si no → nombre; nombre exacto primero, si no contiene con ≥ 3 caracteres).
+
+Un V2 por equipo coincidente. El **título es el nombre del equipo** (sin thumbnail del container). Cada jugador va en su propio **Section** con el avatar de Discord como thumbnail: Discord Tag, Discord ID, Game Name, Game ID, Title (emoji `hero` / `legend` si el título contiene *hero* o *legend*), y **Verification al final**. Verification: **success + In server** si está en el servidor **y** tiene el `verified_role` de `/settings`; **banned + Banned** si está baneado del servidor; si está pero sin el rol, *Not verified*; si no está, *Not in server*. En `2vs2`…`5vs5` el nombre de equipo es el título. Los campos extra van **al final**, con el nombre de cada header. Footer: `-# Requested by` con `formatUser`. Varios equipos → varios V2 (máximo 5 + aviso). Sin coincidencias: V2 de vacío. En Discord **no** menciona la hoja ni `/tournament find_player`.
 
 ## `/team list`
 
 | Campo | Tipo | Obligatorio |
 |---|---|---|
 | tournament | STRING (Autocomplete) | Sí |
-| header | STRING (Choice) | Sí |
 
-Choices: Captain Discord Tag · Captain Discord ID · Captain In-game name · Captain In-game ID · Captain Current Title.
+**Organiser**. Lectura de la hoja **viva**. Publica **en el canal** (no efímero) un V2 por cada equipo o participante, el mismo panel que `/team info` (sin *Matched by*), de forma sucesiva hasta completar todos. No audita. En Discord **no** menciona la hoja.
 
 ## `/assign_role`
 

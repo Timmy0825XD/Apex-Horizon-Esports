@@ -1,16 +1,19 @@
-export const TEAM_FORMATS = ["1vs1", "2vs2", "3vs3", "4vs4", "5vs5"] as const;
+import type { TeamFormat } from "../../lib/sheet.js";
 
-export type TeamFormat = (typeof TEAM_FORMATS)[number];
-
-export const PLAYER_FIELDS = [
-  { key: "discordTag", label: "Discord Tag" },
-  { key: "discordId", label: "Discord ID" },
-  { key: "gameName", label: "In-game name" },
-  { key: "gameId", label: "In-game ID" },
-  { key: "currentTitle", label: "Current Title" },
-] as const;
-
-export type PlayerFieldKey = (typeof PLAYER_FIELDS)[number]["key"];
+export {
+  PLAYER_FIELDS,
+  TEAM_FORMATS,
+  canonicalHeaders,
+  coreColumnCount,
+  detectSheetLayout,
+  formatPlayerCount,
+  hasLeadingTeamName,
+  isTeamFormat,
+  playerBlockStart,
+  playerSlotLabel,
+  type PlayerFieldKey,
+  type TeamFormat,
+} from "../../lib/sheet.js";
 
 export const roleFields = [
   { key: "adminRoleId", option: "admin_role", label: "Tournament Admin" },
@@ -67,59 +70,3 @@ export type TournamentRecord = TournamentWorld & {
   challongeKeyEnc: string;
   createdBy: string;
 };
-
-export function isTeamFormat(value: string): value is TeamFormat {
-  return (TEAM_FORMATS as readonly string[]).includes(value);
-}
-
-export function formatPlayerCount(format: TeamFormat): number {
-  return Number(format[0]);
-}
-
-export function playerSlotLabel(slot: number): string {
-  return slot === 0 ? "Captain" : `Player ${slot + 1}`;
-}
-
-export function hasLeadingTeamName(format: TeamFormat): boolean {
-  return format !== "1vs1";
-}
-
-export function playerBlockStart(format: TeamFormat): number {
-  return hasLeadingTeamName(format) ? 1 : 0;
-}
-
-export function coreColumnCount(format: TeamFormat): number {
-  return playerBlockStart(format) + formatPlayerCount(format) * PLAYER_FIELDS.length;
-}
-
-export function detectSheetLayout(columnCount: number): { format: TeamFormat; additionalFieldCount: number } | null {
-  if (columnCount < PLAYER_FIELDS.length) {
-    return null;
-  }
-  for (let i = TEAM_FORMATS.length - 1; i >= 0; i -= 1) {
-    const format = TEAM_FORMATS[i];
-    if (!format) {
-      continue;
-    }
-    const core = coreColumnCount(format);
-    if (columnCount >= core) {
-      return { format, additionalFieldCount: columnCount - core };
-    }
-  }
-  return null;
-}
-
-export function canonicalHeaders(format: TeamFormat): string[] {
-  const headers: string[] = [];
-  if (hasLeadingTeamName(format)) {
-    headers.push("Team name");
-  }
-  const players = formatPlayerCount(format);
-  for (let slot = 0; slot < players; slot += 1) {
-    const prefix = playerSlotLabel(slot);
-    for (const field of PLAYER_FIELDS) {
-      headers.push(`${prefix} ${field.label}`);
-    }
-  }
-  return headers;
-}

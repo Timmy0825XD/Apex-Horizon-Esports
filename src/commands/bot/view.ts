@@ -22,6 +22,7 @@ export type BotViewContext = {
   serverCommandId?: string;
   staffCommandId?: string;
   tournamentCommandId?: string;
+  teamCommandId?: string;
   utilityCommandId?: string;
   helpPage?: number;
 };
