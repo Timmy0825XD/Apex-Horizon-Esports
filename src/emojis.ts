@@ -40,6 +40,12 @@ export const emojis = {
   numero8: "<:numero8:1550338511138201731>",
   numero9: "<:numero9:1550338512291762197>",
   numero10: "<:numero10:1550338513717825807>",
+  captains: "<:Captains:1550631381141553172>",
+  torneo: "<:torneo:1550632720936210432>",
+  matchBy: "<:match_by:1550636636126060594>",
+  banned: "<:banned:1550638818082824352>",
+  hero: "<:hero:1550643418894442526>",
+  legend: "<:legend:1550643420178030643>",
 } as const;
 
 export const numberEmojis = [

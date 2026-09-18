@@ -1,11 +1,13 @@
-import { PermissionFlagsBits, type ChatInputCommandInteraction } from "discord.js";
+import { PermissionFlagsBits, type AutocompleteInteraction, type ChatInputCommandInteraction } from "discord.js";
 import type { GuildSettings, StaffConfig } from "@prisma/client";
 
-export function isDiscordAdministrator(interaction: ChatInputCommandInteraction): boolean {
+type PermissionInteraction = ChatInputCommandInteraction | AutocompleteInteraction;
+
+export function isDiscordAdministrator(interaction: PermissionInteraction): boolean {
   return interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) ?? false;
 }
 
-export function memberHasRole(interaction: ChatInputCommandInteraction, roleId: string): boolean {
+export function memberHasRole(interaction: PermissionInteraction, roleId: string): boolean {
   const roles = interaction.member?.roles;
   if (!roles) {
     return false;
@@ -23,7 +25,7 @@ export function isGuildAdmin(interaction: ChatInputCommandInteraction, settings:
   return settings != null && memberHasRole(interaction, settings.adminRoleId);
 }
 
-export function isOrganiser(interaction: ChatInputCommandInteraction, staff: StaffConfig | null): boolean {
+export function isOrganiser(interaction: PermissionInteraction, staff: StaffConfig | null): boolean {
   if (isDiscordAdministrator(interaction)) {
     return true;
   }

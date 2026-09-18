@@ -45,8 +45,8 @@ La hoja tiene que ser **visible con el link**. El bot lee **una fila por equipo*
 
 ## Durante el torneo
 
-- `/team info` busca en **la hoja viva de un torneo** por usuario Discord o por ID/nombre de juego. Al final del V2 lista los **campos extra** de esa fila, usando los nombres de header de la hoja.
-- `/team list` vuelca el roster (por la columna que elijas).
+- `/team info` busca en **la hoja viva de un torneo** por usuario Discord (`user`) o por **alias** (game ID, in-game name o Discord ID). Al final del V2 lista los **campos extra** de esa fila, usando los nombres de header de la hoja.
+- `/team list` publica en el canal un V2 por cada equipo o participante de la hoja viva.
 - `/assign_role` asigna un rol Discord a capitanes (por tag o por nombre in-game) y **cruza de nuevo** la lista de baneados: IDs inválidos, no están en el servidor, ya tenían el rol, o están baneados (usuario o ID de juego).
 
 Un ban de Discord **no** es el cruce con la lista de IDs de juego baneados. Esa lista interviene al validar la hoja, al crear o cambiar la sheet de un torneo, y al asignar roles de torneo.

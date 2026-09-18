@@ -4,6 +4,7 @@ import { handleBotButton, handleBotSlash } from "./commands/bot/handle.js";
 import { handleServerSlash } from "./commands/server/handle.js";
 import { handleSettingsSlash } from "./commands/settings/handle.js";
 import { handleStaffAuto, handleStaffSlash } from "./commands/staff/handle.js";
+import { handleTeamAuto, handleTeamSlash } from "./commands/team/handle.js";
 import { handleTournamentAuto, handleTournamentSlash } from "./commands/tournament/handle.js";
 import { handleUtilityButton, handleUtilityModal, handleUtilitySlash } from "./commands/utility/handle.js";
 import { isAllowedGuild } from "./lib/allowed-guilds.js";
@@ -61,6 +62,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    if (interaction.isChatInputCommand() && interaction.commandName === "team") {
+      await handleTeamSlash(interaction);
+      return;
+    }
+
     if (interaction.isChatInputCommand() && interaction.commandName === "utility") {
       await handleUtilitySlash(interaction);
       return;
@@ -73,6 +79,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.isAutocomplete() && interaction.commandName === "tournament") {
       await handleTournamentAuto(interaction);
+      return;
+    }
+
+    if (interaction.isAutocomplete() && interaction.commandName === "team") {
+      await handleTeamAuto(interaction);
       return;
     }
 

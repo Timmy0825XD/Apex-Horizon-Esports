@@ -3,6 +3,7 @@ import { botSlash } from "../commands/bot/slash.js";
 import { serverSlash } from "../commands/server/slash.js";
 import { settingsSlash } from "../commands/settings/slash.js";
 import { staffSlash } from "../commands/staff/slash.js";
+import { teamSlash } from "../commands/team/slash.js";
 import { tournamentSlash } from "../commands/tournament/slash.js";
 import { utilitySlash } from "../commands/utility/slash.js";
 import { env } from "./env.js";
@@ -13,6 +14,7 @@ const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
   serverSlash.toJSON(),
   staffSlash.toJSON(),
   tournamentSlash.toJSON(),
+  teamSlash.toJSON(),
   utilitySlash.toJSON(),
 ];
 
@@ -21,6 +23,7 @@ export const settingsCommandIds = new Map<string, string>();
 export const serverCommandIds = new Map<string, string>();
 export const staffCommandIds = new Map<string, string>();
 export const tournamentCommandIds = new Map<string, string>();
+export const teamCommandIds = new Map<string, string>();
 export const utilityCommandIds = new Map<string, string>();
 
 export function botCommandIdFor(guildId: string | null | undefined): string | undefined {
@@ -56,6 +59,13 @@ export function tournamentCommandIdFor(guildId: string | null | undefined): stri
     return undefined;
   }
   return tournamentCommandIds.get(guildId);
+}
+
+export function teamCommandIdFor(guildId: string | null | undefined): string | undefined {
+  if (!guildId) {
+    return undefined;
+  }
+  return teamCommandIds.get(guildId);
 }
 
 export function utilityCommandIdFor(guildId: string | null | undefined): string | undefined {
@@ -96,6 +106,11 @@ export async function registerSlashCommands(): Promise<void> {
     const tournament = registered.find((command) => command.name === "tournament");
     if (tournament) {
       tournamentCommandIds.set(guildId, tournament.id);
+    }
+
+    const team = registered.find((command) => command.name === "team");
+    if (team) {
+      teamCommandIds.set(guildId, team.id);
     }
 
     const utility = registered.find((command) => command.name === "utility");
