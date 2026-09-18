@@ -10,10 +10,10 @@ Solo se auditan mutaciones. Extraer o visualizar información **no** genera log.
 
 | Acción | ¿Audita? | Ejemplos |
 |---|---|---|
-| **Crear / registrar** | Sí | `/settings set`, `/tournament add`, `/schedule create`, `/attendance mark` |
+| **Crear / registrar** | Sí | `/settings set`, `/tournament add`, `/tournament add_sheet`, `/schedule create`, `/attendance mark` |
 | **Modificar** | Sí | `/settings edit`, `/upload_score`, `/schedule update`, `/staff recruit` |
 | **Borrar** | Sí | `/tournament delete`, `/ticket delete`, `/attendance delete`, `/user unban` |
-| **Leer / listar / extraer** | No | `/bot ping`, `/settings show`, `/tournament list`, `/team info`, `/staff work`, `/server banlist` |
+| **Leer / listar / extraer** | No | `/bot ping`, `/settings show`, `/tournament list`, `/tournament find_player`, `/team info`, `/staff work`, `/server banlist` |
 
 - Se escribe el embed de log **después de que la mutación tenga éxito**.
 - Fallar al loguear **nunca deshace** el comando. El log es testigo, no parte de la transacción.
@@ -39,7 +39,7 @@ Cada embed de auditoría, en inglés, lleva al menos: **qué pasó**, **Triggere
 | Familia | Eventos |
 |---|---|
 | Servidor | Settings set/edit; staff config set/edit; recruit; fire; rol individual; rol masivo; ban; unban |
-| Torneo | Alta, edición, baja; auto-room on/off; salas creadas |
+| Torneo | Alta, edición, baja; add_sheet; auto-room on/off; salas creadas |
 | Bracket | Score subido; score corregido (marcador viejo → nuevo + ganador) |
 | Schedule | Crear, actualizar (con motivo), borrar, refresh, resign, asignar por botón, resultado declarado, resultado borrado |
 | Asistencia | Marcar, borrar, añadir link, borrar links |

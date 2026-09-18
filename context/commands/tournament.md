@@ -1,6 +1,6 @@
 # Tournament
 
-Reglas de producto: [../product/overview.md](../product/overview.md). Bracket: [../domains/bracket-rooms.md](../domains/bracket-rooms.md).
+Reglas de producto: [../product/overview.md](../product/overview.md). Bracket: [../domains/bracket-rooms.md](../domains/bracket-rooms.md). Hojas almacenadas: [../domains/sheet.md](../domains/sheet.md).
 
 ## `/tournament add`
 
@@ -28,11 +28,11 @@ Reglas de producto: [../product/overview.md](../product/overview.md). Bracket: [
 | ticket_open_category_4 | CHANNEL (categoría) | No | Desborde |
 | events_links | CHANNEL | No | Publicación de YouTube |
 
-Valida bracket + orden de columnas de la hoja. Máximo 4 torneos activos. Audita.
+Valida bracket + orden de columnas de la hoja. **Copia la sheet a la BD**. Máximo 4 torneos activos. Audita.
 
 ## `/tournament edit`
 
-**Para qué:** Parchear el mundo del torneo. Mismos campos que add (excepto `id` de alta): `id` (autocomplete, obligatorio) + el resto opcional. Cambiar `auto_room_creation` afecta al worker al instante. Audita.
+**Para qué:** Parchear el mundo del torneo. Mismos campos que add (excepto `id` de alta): `id` (autocomplete, obligatorio) + el resto opcional. Cambiar `auto_room_creation` afecta al worker al instante. Si cambia `sheet_link`, la copia almacenada se **reemplaza**. Audita.
 
 ## `/tournament delete`
 
@@ -40,8 +40,34 @@ Valida bracket + orden de columnas de la hoja. Máximo 4 torneos activos. Audita
 |---|---|---|
 | id | STRING (Autocomplete) | Sí |
 
-Apaga automatización y olvida la config. **No** borra canales Discord, la hoja ni el bracket externo. Audita.
+Apaga automatización y olvida la config. **No** borra canales Discord, la hoja de Google ni el bracket externo. La copia de la sheet en BD **pasa a histórico** (sigue saliendo en `find_player`). Audita.
+
+## `/tournament add_sheet`
+
+**Para qué:** Meter una hoja al archivo **sin** crear un torneo operable. El bot no adivina columnas.
+
+| Campo | Tipo | Obligatorio | Uso |
+|---|---|---|---|
+| sheet_link | STRING | Sí | URL de la hoja |
+| format | STRING (Choice) | Sí | `1vs1` · `2vs2` · `3vs3` · `4vs4` · `5vs5` |
+
+Audita.
+
+## `/tournament find_player`
+
+**Para qué:** Buscar una persona en **todas** las sheets almacenadas de ese servidor. Lectura; no audita. Relación: distinto de `/team info` (ese mira la hoja **viva** de un torneo).
+
+| Campo | Tipo | Obligatorio |
+|---|---|---|
+| game_id | STRING | No* |
+| discord_id | STRING | No* |
+| discord_tag | STRING | No* |
+| player_name | STRING | No* |
+
+\*Al menos uno. Varios rellenos = **OR**.
+
+Un V2 **por jugador distinto**: datos del capitán de su equipo + lista de sheets donde aparece. Varios jugadores → varios V2, cada uno con copy de *ese* jugador.
 
 ## `/tournament info` / `/tournament list`
 
-Info: un torneo completo. List: todos los del servidor (efímero). No mutan. No auditan.
+Info: un torneo completo. List: todos del servidor (efímero). No mutan. No auditan.

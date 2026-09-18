@@ -34,7 +34,7 @@ Público. Salida efímera, un username por línea.
 | user | USER | No* |
 | gameid_username | STRING | No* |
 
-\*Uno de los dos. Relación: hoja del torneo.
+\*Uno de los dos. Relación: hoja **viva** de ese torneo. Para buscar en **todas** las copias almacenadas: `/tournament find_player`.
 
 ## `/team list`
 
