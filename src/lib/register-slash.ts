@@ -2,17 +2,20 @@ import { REST, Routes, type RESTPostAPIChatInputApplicationCommandsJSONBody } fr
 import { botSlash } from "../commands/bot/slash.js";
 import { serverSlash } from "../commands/server/slash.js";
 import { settingsSlash } from "../commands/settings/slash.js";
+import { staffSlash } from "../commands/staff/slash.js";
 import { env } from "./env.js";
 
 const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
   botSlash.toJSON(),
   settingsSlash.toJSON(),
   serverSlash.toJSON(),
+  staffSlash.toJSON(),
 ];
 
 export const botCommandIds = new Map<string, string>();
 export const settingsCommandIds = new Map<string, string>();
 export const serverCommandIds = new Map<string, string>();
+export const staffCommandIds = new Map<string, string>();
 
 export function botCommandIdFor(guildId: string | null | undefined): string | undefined {
   if (!guildId) {
@@ -33,6 +36,13 @@ export function serverCommandIdFor(guildId: string | null | undefined): string |
     return undefined;
   }
   return serverCommandIds.get(guildId);
+}
+
+export function staffCommandIdFor(guildId: string | null | undefined): string | undefined {
+  if (!guildId) {
+    return undefined;
+  }
+  return staffCommandIds.get(guildId);
 }
 
 export async function registerSlashCommands(): Promise<void> {
@@ -56,6 +66,11 @@ export async function registerSlashCommands(): Promise<void> {
     const server = registered.find((command) => command.name === "server");
     if (server) {
       serverCommandIds.set(guildId, server.id);
+    }
+
+    const staff = registered.find((command) => command.name === "staff");
+    if (staff) {
+      staffCommandIds.set(guildId, staff.id);
     }
   }
 }

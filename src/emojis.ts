@@ -28,5 +28,6 @@ export const emojis = {
   size: "<:size:1548841367759888404>",
   gem : "<:gem:1549932657838788718>",
   creation : "<:creation:1549933732528652390>",
+  party : "<:party:1550319983626813541>",
   
 } as const;
