@@ -95,3 +95,19 @@ Un V2 **por jugador distinto**: datos del capitán (y nombre de equipo si no es 
 Info: un torneo completo. List: todos del servidor (efímero). No mutan. No auditan. Público.
 
 El panel V2 de add / edit / info separa **Identity**, **Roles**, **Channels** y **Ticket categories**. Omite categorías de tickets (y el canal Events Links) que no estén configuradas: no muestra *Not configured*. Footer: *Created by* con mención de quien registró el torneo.
+
+## `/tournament role`
+
+**Para qué:** Dar un rol Discord a jugadores de un torneo operable, por columna de **Discord ID**. **Organiser**. Lee la hoja **viva**. Audita si se asignó al menos un rol.
+
+| Campo | Tipo | Obligatorio |
+|---|---|---|
+| tournament | STRING (Autocomplete) | Sí |
+| role | ROLE | Sí |
+| id_header | STRING (Autocomplete) | No |
+
+`tournament` lista los torneos **de ese servidor**. `id_header` lista **solo** las columnas de Discord ID de ese formato: `1vs1` → 1 header, `2vs2` → 2, y así hasta `5vs5`. Los demás headers de la hoja no aparecen. El valor interno es el slot (capitán = 0). Los nombres salen de la fila 1 almacenada, o del contrato canónico (`Captain Discord ID`, `Player 2 Discord ID`, …).
+
+Con `id_header`: asigna el rol a los jugadores de **esa** columna (Discord ID). Sin `id_header`: **todos** los jugadores de todas las columnas de Discord ID, pero **antes** un V2 de confirmación (qué rol, a quién, qué se omite). Botones Confirm / Cancel; solo quien lanzó el comando puede pulsarlos. Sin confirmación no se asigna nada.
+
+Resuelve por Discord ID (snowflake). Omite y reporta: IDs inválidos o vacíos, no están en el servidor, ya tenían el rol, o están baneados (usuario o ID de juego oficial). En Discord **no** menciona la hoja.

@@ -39,7 +39,7 @@ Cada embed de auditoría, en inglés, lleva al menos: **qué pasó**, **Triggere
 | Familia | Eventos |
 |---|---|
 | Servidor | Settings set/edit; staff config set/edit; recruit; fire; rol individual; rol masivo; ban; unban |
-| Torneo | Alta, edición, baja; add_sheet; auto-room on/off; salas creadas |
+| Torneo | Alta, edición, baja; add_sheet; `/tournament role`; auto-room on/off; salas creadas |
 | Bracket | Score subido; score corregido (marcador viejo → nuevo + ganador) |
 | Schedule | Crear, actualizar (con motivo), borrar, refresh, resign, asignar por botón, resultado declarado, resultado borrado |
 | Asistencia | Marcar, borrar, añadir link, borrar links |

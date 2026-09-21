@@ -10,6 +10,7 @@ Las mismas reglas de permiso y de “un partido / un schedule” aplican. Ver [.
 | Paginación de help | `/bot help` | Previous / Next por familia de comandos |
 | Paginación | Validate, attendance, rooms | Recorre listas largas |
 | Confirmar borrar categoría | `/utility clear_category` | Sin confirmación no se borra nada |
+| Confirmar rol a todos | `/tournament role` sin `id_header` | Sin confirmación no se asigna el rol a todo el roster |
 | Builder de embed | `/utility embed` · `/utility edit_embed` | Sesión temporal de edición visual (embed clásico) |
 | Builder de Components V2 | `/utility v2` · `/utility edit_v2` | Sesión temporal de edición visual (container, text, section, media) |
 

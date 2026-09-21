@@ -343,6 +343,14 @@ export async function createManualSheet(
   return toStoredSheet(row) as StoredSheetRecord;
 }
 
+export async function findTournamentSheetHeaders(guildId: string, tournamentId: string): Promise<string[] | null> {
+  const row = await prisma.storedSheet.findFirst({
+    where: { guildId, tournamentId, origin: SHEET_ORIGIN.tournament },
+    select: { headers: true },
+  });
+  return row?.headers ?? null;
+}
+
 export async function findStoredSheetByLink(sheetLink: string): Promise<StoredSheetRecord | null> {
   const row = await prisma.storedSheet.findFirst({ where: { sheetLink } });
   return row ? toStoredSheet(row) : null;

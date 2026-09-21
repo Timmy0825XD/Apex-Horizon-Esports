@@ -53,6 +53,7 @@ export const helpCatalog: HelpCategory[] = [
       { slash: "tournament find_player", summary: "Search every stored sheet across all servers.", access: "Public" },
       { slash: "tournament info", summary: "Show one tournament.", access: "Public" },
       { slash: "tournament list", summary: "List tournaments in this server.", access: "Public" },
+      { slash: "tournament role", summary: "Give a Discord role by Discord ID column, or to every player after confirmation.", access: "Organiser" },
     ],
   },
   {
@@ -63,7 +64,6 @@ export const helpCatalog: HelpCategory[] = [
       { slash: "sheet validate", summary: "Quality-check a sheet before creating a tournament.", access: "Admin" },
       { slash: "team info", summary: "Look up a player by Discord user or alias (game ID, name, or Discord ID).", access: "Organiser" },
       { slash: "team list", summary: "Publish every team in a tournament.", access: "Organiser" },
-      { slash: "assign_role", summary: "Give captains a Discord role, crossing the banned-ID list.", access: "Organiser" },
       { slash: "utility discord_tag", summary: "Turn pasted Discord IDs into usernames for the sheet.", access: "Public" },
     ],
   },

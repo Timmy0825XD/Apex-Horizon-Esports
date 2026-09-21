@@ -53,6 +53,26 @@ export function detectSheetLayout(columnCount: number): { format: TeamFormat; ad
   return null;
 }
 
+export type DiscordIdHeader = {
+  slot: number;
+  label: string;
+};
+
+const DISCORD_ID_OFFSET = PLAYER_FIELDS.findIndex((field) => field.key === "discordId");
+
+export function discordIdHeaders(format: TeamFormat, headers: string[] = []): DiscordIdHeader[] {
+  const start = playerBlockStart(format);
+  const offset = DISCORD_ID_OFFSET >= 0 ? DISCORD_ID_OFFSET : 1;
+  const count = formatPlayerCount(format);
+  const listed: DiscordIdHeader[] = [];
+  for (let slot = 0; slot < count; slot += 1) {
+    const index = start + slot * PLAYER_FIELDS.length + offset;
+    const fallback = `${playerSlotLabel(slot)} ${PLAYER_FIELDS[offset]?.label ?? "Discord ID"}`;
+    listed.push({ slot, label: headers[index]?.trim() || fallback });
+  }
+  return listed;
+}
+
 export function canonicalHeaders(format: TeamFormat): string[] {
   const headers: string[] = [];
   if (hasLeadingTeamName(format)) {

@@ -1,5 +1,5 @@
 import type { GuildSettings } from "@prisma/client";
-import type { ChatInputCommandInteraction, Guild } from "discord.js";
+import type { ButtonInteraction, ChatInputCommandInteraction, Guild } from "discord.js";
 import { auditLogTitles, publishAudit } from "../../lib/audit.js";
 import { formatCategory, formatChannel, formatRole, formatSheetLink } from "../../lib/formatters.js";
 import {
@@ -143,6 +143,33 @@ export async function auditTournamentDelete(
       `**Rooms deleted:** \`${related.rooms}\``,
       `**Schedules deleted:** \`${related.schedules}\``,
       `**Attendance deleted:** \`${related.attendances}\``,
+    ],
+    actor: interaction.user,
+  });
+}
+
+export async function auditTournamentRole(
+  interaction: ChatInputCommandInteraction | ButtonInteraction,
+  guild: Guild,
+  settings: GuildSettings,
+  tournamentName: string,
+  roleId: string,
+  scope: string,
+  assigned: number,
+): Promise<void> {
+  await publishAudit({
+    guild,
+    channelId: settings.botLogsChannelId,
+    title: auditLogTitles.botLogs,
+    description:
+      assigned === 1
+        ? `A tournament role was assigned for **${tournamentName}**.`
+        : `Tournament roles were assigned for **${tournamentName}**.`,
+    details: [
+      `**Tournament:** **${tournamentName}**`,
+      `**Role:** ${formatRole(guild, roleId)}`,
+      `**Scope:** **${scope}**`,
+      `**Players granted:** \`${assigned}\``,
     ],
     actor: interaction.user,
   });

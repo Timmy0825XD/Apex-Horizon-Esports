@@ -65,7 +65,7 @@ export async function loadOfficialBannedGameIds(): Promise<Set<string>> {
 }
 
 function extractGameIds(value: string): string[] {
-  const tokens = value.toUpperCase().match(/[0-9A-F]{15,16}/g) ?? [];
+  const tokens: string[] = value.toUpperCase().match(/[0-9A-F]{15,16}/g) ?? [];
   const whole = normalizeGameId(value);
   if (isComparableGameId(value) && !tokens.includes(whole)) {
     tokens.push(whole);
@@ -75,6 +75,10 @@ function extractGameIds(value: string): string[] {
 
 function playerCandidates(player: SheetPlayer): string[] {
   return [player.gameId, player.currentTitle, player.gameName, player.discordTag, player.discordId];
+}
+
+export function playerHasOfficialBannedId(player: SheetPlayer, banned: Set<string>): boolean {
+  return playerCandidates(player).some((value) => extractGameIds(value).some((id) => banned.has(id)));
 }
 
 export async function findBannedPlayers(sheet: ParsedSheet): Promise<BannedPlayerHit[]> {

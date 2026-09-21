@@ -172,4 +172,22 @@ export const tournamentSlash = new SlashCommandBuilder()
   )
   .addSubcommand((subcommand) =>
     subcommand.setName("list").setDescription("List tournaments registered in this server"),
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("role")
+      .setDescription("Give a Discord role to tournament participants")
+      .addStringOption((option) =>
+        option.setName("tournament").setDescription("Tournament whose players to role").setRequired(true).setAutocomplete(true),
+      )
+      .addRoleOption((option) =>
+        option.setName("role").setDescription("Role to give").setRequired(true),
+      )
+      .addStringOption((option) =>
+        option
+          .setName("id_header")
+          .setDescription("Discord ID column to role. Leave empty to role every player")
+          .setRequired(false)
+          .setAutocomplete(true),
+      ),
   );

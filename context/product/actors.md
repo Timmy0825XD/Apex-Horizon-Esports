@@ -5,7 +5,7 @@ La autoridad no es “quien tiene un rol bonito”. Es **alcance**.
 | Actor | Alcance real |
 |---|---|
 | **Administrador del servidor** (permiso Discord o rol admin del bot) | Configura el servidor, crea/borra torneos, recluta/despide staff, ve nómina agregada |
-| **Organiser** (rol manager del servidor) | Opera el torneo a nivel de salas, tickets, lookup de equipos (`/team`), roles masivos, bans de usuario, muchas acciones de bracket |
+| **Organiser** (rol manager del servidor) | Opera el torneo a nivel de salas, tickets, lookup de equipos (`/team`), rol de participantes (`/tournament role`), roles masivos, bans de usuario, muchas acciones de bracket |
 | **Admin / Helper del torneo** | Roles *de ese torneo*: scores, schedules, ayuda operativa |
 | **Judge** | Entra al ticket cuando hay schedule; marca asistencia; confirma T-10 |
 | **Recorder** | Igual que Judge en el ticket; dueño de los links de YouTube de *su* asistencia |

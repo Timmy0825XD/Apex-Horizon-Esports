@@ -66,7 +66,7 @@ Se puede marcar asistencia sin haber subido el score, y se puede subir el score 
 /tournament find_player
         → busca en todas las copias del bot (activas, manuales, histórico, cualquier servidor)
 
-/assign_role + /team *
+/tournament role + /team *
         → el servidor reconoce a los jugadores
 
 /auto_room run  o  /room create
