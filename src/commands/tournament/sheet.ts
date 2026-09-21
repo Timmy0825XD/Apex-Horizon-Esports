@@ -1,11 +1,13 @@
 export {
   SheetError,
   detectCsvDelimiter,
+  discordIdHeaders,
   fetchSheetCsv,
   loadParsedSheet,
   parseCsv,
   parseSheetRows,
   parseSheetUrl,
+  type DiscordIdHeader,
   type ExtraField,
   type ParsedSheet,
   type SheetPlayer,

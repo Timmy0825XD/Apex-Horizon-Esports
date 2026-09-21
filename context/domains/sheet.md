@@ -11,7 +11,7 @@ Los campos adicionales **siempre van al final**. El bot detecta el formato cogie
 
 El torneo y la copia en BD guardan `format` y `additionalFieldCount`. Los extra se almacenan con el **nombre del header** de la fila 1; `/team` los muestra al final del V2. `/tournament find_player` **no** los usa.
 
-Operar un torneo vivo (`/sheet validate`, `/team info`, `/assign_role`) **sigue leyendo Google**. Además, el bot **almacena copias** de hojas en un archivo **global** (todos los servidores del bot). `find_player` no relee Google: mira esas copias, en cualquier gremio.
+Operar un torneo vivo (`/sheet validate`, `/team info`, `/tournament role`) **sigue leyendo Google**. Además, el bot **almacena copias** de hojas en un archivo **global** (todos los servidores del bot). `find_player` no relee Google: mira esas copias, en cualquier gremio.
 
 ## Archivo de sheets (BD)
 
@@ -47,7 +47,7 @@ La hoja tiene que ser **visible con el link**. El bot lee **una fila por equipo*
 
 - `/team info` busca en **la hoja viva de un torneo** por usuario Discord (`user`) o por **alias** (game ID, in-game name o Discord ID). Al final del V2 lista los **campos extra** de esa fila, usando los nombres de header de la hoja.
 - `/team list` publica en el canal un V2 por cada equipo o participante de la hoja viva.
-- `/assign_role` asigna un rol Discord a capitanes (por tag o por nombre in-game) y **cruza de nuevo** la lista de baneados: IDs inválidos, no están en el servidor, ya tenían el rol, o están baneados (usuario o ID de juego).
+- `/tournament role` asigna un rol Discord por columna de **Discord ID** (`id_header`), o a **todos** los jugadores si no se elige header (con confirmación V2). Cruza de nuevo la lista de baneados: IDs inválidos, no están en el servidor, ya tenían el rol, o están baneados (usuario o ID de juego).
 
 Un ban de Discord **no** es el cruce con la lista de IDs de juego baneados. Esa lista interviene al validar la hoja, al crear o cambiar la sheet de un torneo, y al asignar roles de torneo.
 
@@ -72,4 +72,4 @@ No audita (lectura). Comandos: [../commands/tournament.md](../commands/tournamen
 
 - Comandos de hoja viva: [../commands/sheet-teams.md](../commands/sheet-teams.md)
 - Moderación: [moderation.md](moderation.md)
-- Alta de torneo / add_sheet / get_sheet / find_player: [../commands/tournament.md](../commands/tournament.md)
+- Alta de torneo / add_sheet / get_sheet / find_player / role: [../commands/tournament.md](../commands/tournament.md)

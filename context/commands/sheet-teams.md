@@ -8,7 +8,7 @@ Reglas: [../domains/sheet.md](../domains/sheet.md).
 |---|---|---|
 | format | STRING (Choice) | Sí |
 
-Choices: `1vs1`, `2vs2`, `3vs3`, `4vs4`, `5vs5`, `all`. Público. Relación: contrato de columnas para validate, tournament add, team, assign_role.
+Choices: `1vs1`, `2vs2`, `3vs3`, `4vs4`, `5vs5`, `all`. Público. Relación: contrato de columnas para validate, tournament add, team, `/tournament role`.
 
 ## `/sheet validate`
 
@@ -47,14 +47,3 @@ Un V2 por equipo coincidente. El **título es el nombre del equipo** (sin thumbn
 | tournament | STRING (Autocomplete) | Sí |
 
 **Organiser**. Lectura de la hoja **viva**. Publica **en el canal** (no efímero) un V2 por cada equipo o participante, el mismo panel que `/team info` (sin *Matched by*), de forma sucesiva hasta completar todos. No audita. En Discord **no** menciona la hoja.
-
-## `/assign_role`
-
-| Campo | Tipo | Obligatorio |
-|---|---|---|
-| tournament | STRING (Autocomplete) | Sí |
-| header | STRING (Choice) | Sí |
-| role | ROLE | Sí |
-| banned_role | ROLE | No |
-
-Choices de header: Captain Discord Tag · Captain In-game name. Cruza lista de baneados. Audita.

@@ -1,7 +1,12 @@
-import { PermissionFlagsBits, type AutocompleteInteraction, type ChatInputCommandInteraction } from "discord.js";
+import {
+  PermissionFlagsBits,
+  type AutocompleteInteraction,
+  type ButtonInteraction,
+  type ChatInputCommandInteraction,
+} from "discord.js";
 import type { GuildSettings, StaffConfig } from "@prisma/client";
 
-type PermissionInteraction = ChatInputCommandInteraction | AutocompleteInteraction;
+type PermissionInteraction = ChatInputCommandInteraction | AutocompleteInteraction | ButtonInteraction;
 
 export function isDiscordAdministrator(interaction: PermissionInteraction): boolean {
   return interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) ?? false;

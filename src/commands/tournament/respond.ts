@@ -1,4 +1,4 @@
-import { MessageFlags, type ChatInputCommandInteraction, type InteractionReplyOptions } from "discord.js";
+import { MessageFlags, type ButtonInteraction, type ChatInputCommandInteraction, type InteractionReplyOptions } from "discord.js";
 import { v2Flags } from "../../lib/v2.js";
 
 export async function deferTournament(
@@ -11,7 +11,7 @@ export async function deferTournament(
 }
 
 export async function respondTournament(
-  interaction: ChatInputCommandInteraction,
+  interaction: ChatInputCommandInteraction | ButtonInteraction,
   payload: InteractionReplyOptions,
 ): Promise<void> {
   if (interaction.deferred || interaction.replied) {

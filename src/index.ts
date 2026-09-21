@@ -5,7 +5,7 @@ import { handleServerSlash } from "./commands/server/handle.js";
 import { handleSettingsSlash } from "./commands/settings/handle.js";
 import { handleStaffAuto, handleStaffSlash } from "./commands/staff/handle.js";
 import { handleTeamAuto, handleTeamSlash } from "./commands/team/handle.js";
-import { handleTournamentAuto, handleTournamentSlash } from "./commands/tournament/handle.js";
+import { handleTournamentAuto, handleTournamentButton, handleTournamentSlash } from "./commands/tournament/handle.js";
 import { handleUtilityButton, handleUtilityModal, handleUtilitySlash } from "./commands/utility/handle.js";
 import { isAllowedGuild } from "./lib/allowed-guilds.js";
 import { env } from "./lib/env.js";
@@ -84,6 +84,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.isAutocomplete() && interaction.commandName === "team") {
       await handleTeamAuto(interaction);
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith("tournament:")) {
+      await handleTournamentButton(interaction);
       return;
     }
 
