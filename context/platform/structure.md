@@ -50,6 +50,8 @@ src/
     staff/             # /staff config, recruit, fire, work
     tournament/        # /tournament add|edit|delete|add_sheet|get_sheet|find_player|info|list|role
     team/              # /team info|list
+    role/              # /role user|add all|remove all|list
+    user/              # /user ban|unban
     utility/           # /utility clear, utc, embed, v2, …
     schedule/          # /schedule y todo lo suyo (cuando exista)
     ...

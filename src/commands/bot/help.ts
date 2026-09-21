@@ -23,6 +23,12 @@ function helpCommandId(slash: string, ctx: BotViewContext): string | undefined {
   if (slash.startsWith("team ")) {
     return ctx.teamCommandId;
   }
+  if (slash.startsWith("role ")) {
+    return ctx.roleCommandId;
+  }
+  if (slash.startsWith("user ")) {
+    return ctx.userCommandId;
+  }
   if (slash.startsWith("utility ")) {
     return ctx.utilityCommandId;
   }

@@ -48,18 +48,22 @@ Organiser. Respuesta efímera. No audita. El bot necesita **Manage Server** o **
 
 ## `/user ban`
 
+**Para qué:** Banear por Discord ID (aunque la persona no esté en el servidor). Components V2. Guarda el ban en el almacén (`duration`, `expiresAt`) para que el worker de caducidad lo levante si no es permanente.
+
 | Campo | Tipo | Obligatorio |
 |---|---|---|
-| discord_id | STRING | Sí |
-| time | STRING (Choice) | Sí | 7 days · 1 month · 2 months · 6 months · Permanent |
-| reason | STRING | No |
+| discord_id | STRING | Sí | ID numérico (`17`–`20` dígitos), no un picker de usuario. |
+| time | STRING (Choice) | Sí | `7 days` · `1 month` · `2 months` · `6 months` · `Permanent` |
+| reason | STRING | No | Máx. 512. |
 
-Organiser. No se banea a uno mismo, al owner, al bot ni a otros bots. Temporales los levanta el worker. Audita.
+Organiser (`manager_role` o Administrator). No se banea a uno mismo, al owner, al bot ni a otros bots. Si el objetivo está en el servidor, la jerarquía Discord gana. El bot necesita **Ban Members**. Si ya está baneado, no reescribe la duración. Audita en **Bot Logs**.
 
 ## `/user unban`
 
+**Para qué:** Quitar el ban de Discord y borrar el registro rastreado (cancela la caducidad pendiente). Si Discord ya no lo tenía baneado pero el bot sí lo recordaba, solo cancela el vencimiento.
+
 | Campo | Tipo | Obligatorio |
 |---|---|---|
 | discord_id | STRING | Sí |
 
-Audita. Cancela la caducidad pendiente.
+Organiser. El bot necesita **Ban Members**. Audita.

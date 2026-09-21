@@ -1,11 +1,13 @@
 import "./lib/env.js";
 import { Client, Events, GatewayIntentBits, MessageFlags } from "discord.js";
 import { handleBotButton, handleBotSlash } from "./commands/bot/handle.js";
+import { handleRoleSlash } from "./commands/role/handle.js";
 import { handleServerSlash } from "./commands/server/handle.js";
 import { handleSettingsSlash } from "./commands/settings/handle.js";
 import { handleStaffAuto, handleStaffSlash } from "./commands/staff/handle.js";
 import { handleTeamAuto, handleTeamSlash } from "./commands/team/handle.js";
 import { handleTournamentAuto, handleTournamentButton, handleTournamentSlash } from "./commands/tournament/handle.js";
+import { handleUserSlash } from "./commands/user/handle.js";
 import { handleUtilityButton, handleUtilityModal, handleUtilitySlash } from "./commands/utility/handle.js";
 import { isAllowedGuild } from "./lib/allowed-guilds.js";
 import { env } from "./lib/env.js";
@@ -64,6 +66,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.isChatInputCommand() && interaction.commandName === "team") {
       await handleTeamSlash(interaction);
+      return;
+    }
+
+    if (interaction.isChatInputCommand() && interaction.commandName === "role") {
+      await handleRoleSlash(interaction);
+      return;
+    }
+
+    if (interaction.isChatInputCommand() && interaction.commandName === "user") {
+      await handleUserSlash(interaction);
       return;
     }
 

@@ -4,9 +4,9 @@ Independiente del bracket, el bot ayuda a gobernar el servidor.
 
 ## Bans
 
-- **Ban por ID** con duración (7 días, 1 mes, 2 meses, 6 meses, permanente). Las duraciones no permanentes se **recuerdan** y, al vencer, un proceso de fondo quita el ban.
-- **Unban por ID.**
-- **Banlist** (`.txt` o `.xlsx`: ID, fecha, razón).
+- **Ban por ID** con duración (7 días, 1 mes, 2 meses, 6 meses, permanente). Las duraciones no permanentes se **recuerdan** (`expiresAt`) y, al vencer, un proceso de fondo quita el ban. No se reescribe un ban que Discord ya tiene activo.
+- **Unban por ID.** Borra el registro rastreado (cancela la caducidad). Si Discord ya lo había levantado, solo cancela el vencimiento.
+- **Banlist** (`.txt` o `.xlsx`: ID, fecha, razón). La fecha sale del ban rastreado; si no, del audit log; si tampoco, `Unknown`.
 - **Árbol de canales** y **invites** (incluido vanity), como export de lectura.
 - No se banea a uno mismo, al owner, al bot ni a otros bots.
 

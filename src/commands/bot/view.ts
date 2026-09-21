@@ -23,6 +23,8 @@ export type BotViewContext = {
   staffCommandId?: string;
   tournamentCommandId?: string;
   teamCommandId?: string;
+  roleCommandId?: string;
+  userCommandId?: string;
   utilityCommandId?: string;
   helpPage?: number;
 };
