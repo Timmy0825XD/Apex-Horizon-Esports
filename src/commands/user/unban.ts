@@ -2,7 +2,7 @@ import { PermissionFlagsBits, type ChatInputCommandInteraction } from "discord.j
 import { formatUser } from "../../lib/formatters.js";
 import { auditUserUnban } from "./audit.js";
 import { deferUser, respondUser } from "./respond.js";
-import { deleteTrackedBan, findTrackedBan, isSnowflake } from "./store.js";
+import { deleteTrackedBan, fetchDiscordBan, findTrackedBan, forgetDiscordBan, isSnowflake } from "./store.js";
 import { userErrorMessage, userUnbanMessage } from "./view.js";
 
 export async function handleUserUnban(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -31,7 +31,7 @@ export async function handleUserUnban(interaction: ChatInputCommandInteraction):
     return;
   }
 
-  const discordBan = await guild.bans.fetch(rawId).catch(() => null);
+  const discordBan = await fetchDiscordBan(guild, rawId);
   const tracked = await findTrackedBan(guild.id, rawId);
 
   if (!discordBan && !tracked) {
@@ -44,7 +44,7 @@ export async function handleUserUnban(interaction: ChatInputCommandInteraction):
 
   if (discordBan) {
     try {
-      await guild.members.unban(rawId, `Unbanned by ${interaction.user.id}`);
+      await guild.bans.remove(rawId, `Unbanned by ${interaction.user.id}`);
     } catch {
       await respondUser(
         interaction,
@@ -56,6 +56,7 @@ export async function handleUserUnban(interaction: ChatInputCommandInteraction):
       );
       return;
     }
+    forgetDiscordBan(guild, rawId);
   }
 
   await deleteTrackedBan(guild.id, rawId);
