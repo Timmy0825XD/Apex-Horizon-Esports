@@ -1,6 +1,15 @@
 import type { Ban } from "@prisma/client";
+import type { Guild, GuildBan } from "discord.js";
 import { prisma } from "../../lib/prisma.js";
 import type { BanDuration } from "./durations.js";
+
+export async function fetchDiscordBan(guild: Guild, userId: string): Promise<GuildBan | null> {
+  return guild.bans.fetch({ user: userId, force: true }).catch(() => null);
+}
+
+export function forgetDiscordBan(guild: Guild, userId: string): void {
+  guild.bans.cache.delete(userId);
+}
 
 export function isSnowflake(value: string): boolean {
   return /^\d{17,20}$/.test(value.trim());

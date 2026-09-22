@@ -8,7 +8,7 @@ import {
 import { formatUser } from "../../lib/formatters.js";
 import { expiresAtFor, isBanDuration } from "./durations.js";
 import { deferUser, respondUser } from "./respond.js";
-import { flattenReason, isSnowflake, saveTrackedBan } from "./store.js";
+import { fetchDiscordBan, flattenReason, isSnowflake, saveTrackedBan } from "./store.js";
 import { userBanMessage, userErrorMessage } from "./view.js";
 import { auditUserBan } from "./audit.js";
 
@@ -96,7 +96,7 @@ export async function handleUserBan(interaction: ChatInputCommandInteraction): P
     return;
   }
 
-  const existing = await guild.bans.fetch(rawId).catch(() => null);
+  const existing = await fetchDiscordBan(guild, rawId);
   if (existing) {
     await respondUser(
       interaction,
