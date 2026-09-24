@@ -8,7 +8,7 @@ Las mismas reglas de permiso y de “un partido / un schedule” aplican. Ver [.
 | Confirmed (T-10) | Recordatorio en el ticket | Evita expulsión a T-0 |
 | About / Help / Ping | Paneles de `/bot` | Cambia de vista en el mismo mensaje |
 | Paginación de help | `/bot help` | Previous / Next por familia de comandos |
-| Paginación | Validate, attendance, rooms | Recorre listas largas |
+| Paginación de salas | `/room available` | Previous / Next, 20 partidos por página |
 | Confirmar borrar categoría | `/utility clear_category` | Sin confirmación no se borra nada |
 | Confirmar rol a todos | `/tournament role` sin `id_header` | Sin confirmación no se asigna el rol a todo el roster |
 | Builder de embed | `/utility embed` · `/utility edit_embed` | Sesión temporal de edición visual (embed clásico) |

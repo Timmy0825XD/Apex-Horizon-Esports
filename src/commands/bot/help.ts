@@ -32,6 +32,15 @@ function helpCommandId(slash: string, ctx: BotViewContext): string | undefined {
   if (slash.startsWith("utility ")) {
     return ctx.utilityCommandId;
   }
+  if (slash === "auto_room") {
+    return ctx.autoRoomCommandId;
+  }
+  if (slash.startsWith("room ")) {
+    return ctx.roomCommandId;
+  }
+  if (slash.startsWith("ticket ")) {
+    return ctx.ticketCommandId;
+  }
   return undefined;
 }
 

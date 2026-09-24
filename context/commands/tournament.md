@@ -22,17 +22,16 @@ Reglas de producto: [../product/overview.md](../product/overview.md). Bracket: [
 | closed_ticket_category | CHANNEL (categoría) | Sí | Tickets cerrados |
 | ticket_open_category_1 | CHANNEL (categoría) | Sí | Primera cola de tickets |
 | ticket_open_category_2 | CHANNEL (categoría) | Sí | Desborde |
-| auto_room_creation | BOOLEAN | Sí | Capacidad de automatizar (no abre salas solo) |
 | close_ticket_category_2 | CHANNEL (categoría) | No | Desborde de cerrados |
 | ticket_open_category_3 | CHANNEL (categoría) | No | Desborde |
 | ticket_open_category_4 | CHANNEL (categoría) | No | Desborde |
 | events_links | CHANNEL | No | Publicación de YouTube |
 
-Valida bracket + layout de la hoja. Cada jugador tiene **5** columnas (tag, Discord ID, in-game name, in-game ID, Current Title). Detecta formato (`1vs1`…`5vs5`) y cuántos campos extra hay al final. En `1vs1` el tag del capitán es el nombre de Challonge; en `2vs2`, `3vs3`, `4vs4` y `5vs5` la primera columna es el equipo. La hoja tiene que ser **visible con el link**. Cruza cada in-game ID (ignorando espacios y caracteres invisibles) con la [lista oficial de baneados](https://docs.google.com/spreadsheets/d/17Xv8rF_UmKslmd_MBGiBf610xb2YleQJHivoc-6JqYU/edit?usp=sharing): si hay **uno o más**, **no** registra el torneo y lista quiénes son. **Copia la sheet a la BD** (`format` + `additionalFieldCount`). Máximo 4 torneos activos. Audita.
+Valida bracket + layout de la hoja. Cada jugador tiene **5** columnas (tag, Discord ID, in-game name, in-game ID, Current Title). Detecta formato (`1vs1`…`5vs5`) y cuántos campos extra hay al final. En `1vs1` el tag del capitán es el nombre de Challonge; en `2vs2`, `3vs3`, `4vs4` y `5vs5` la primera columna es el equipo. La hoja tiene que ser **visible con el link**. Cruza cada in-game ID (ignorando espacios y caracteres invisibles) con la [lista oficial de baneados](https://docs.google.com/spreadsheets/d/17Xv8rF_UmKslmd_MBGiBf610xb2YleQJHivoc-6JqYU/edit?usp=sharing): si hay **uno o más**, **no** registra el torneo y lista quiénes son. **Copia la sheet a la BD** (`format` + `additionalFieldCount`). Máximo 4 torneos activos. Auto-room nace **apagado**; solo lo enciende `/auto_room`. Audita.
 
 ## `/tournament edit`
 
-**Para qué:** Parchear el mundo del torneo. Admin. Mismos campos que add (excepto `id` de alta): `id` (autocomplete, obligatorio) + el resto opcional. Cambiar `auto_room_creation` afecta al worker al instante. Si cambia `sheet_link`, la copia almacenada se **reemplaza** y se vuelve a cruzar la lista oficial de IDs baneados (si hay coincidencias, no se aplica el cambio). Audita.
+**Para qué:** Parchear el mundo del torneo. Admin. Mismos campos que add (excepto `id` de alta): `id` (autocomplete, obligatorio) + el resto opcional. No toca auto-room. Si cambia `sheet_link`, la copia almacenada se **reemplaza** y se vuelve a cruzar la lista oficial de IDs baneados (si hay coincidencias, no se aplica el cambio). Audita.
 
 ## `/tournament delete`
 

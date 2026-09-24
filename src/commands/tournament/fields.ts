@@ -67,6 +67,7 @@ export type TournamentWorld = {
 
 export type TournamentRecord = TournamentWorld & {
   id: string;
+  guildId: string;
   challongeKeyEnc: string;
   createdBy: string;
 };

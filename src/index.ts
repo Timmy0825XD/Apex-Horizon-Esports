@@ -1,6 +1,9 @@
 import "./lib/env.js";
 import { Client, Events, GatewayIntentBits, MessageFlags } from "discord.js";
+import { handleAutoRoomAuto, handleAutoRoomSlash } from "./commands/auto-room/handle.js";
 import { handleBotButton, handleBotSlash } from "./commands/bot/handle.js";
+import { handleRoomAuto, handleRoomButton, handleRoomSlash } from "./commands/room/handle.js";
+import { handleTicketSlash } from "./commands/ticket/handle.js";
 import { handleRoleSlash } from "./commands/role/handle.js";
 import { handleServerSlash } from "./commands/server/handle.js";
 import { handleSettingsSlash } from "./commands/settings/handle.js";
@@ -13,6 +16,7 @@ import { isAllowedGuild } from "./lib/allowed-guilds.js";
 import { env } from "./lib/env.js";
 import { prisma } from "./lib/prisma.js";
 import { registerSlashCommands } from "./lib/register-slash.js";
+import { startAutoRoomWorker, stopAutoRoomWorker } from "./workers/auto-room.js";
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages],
@@ -30,6 +34,7 @@ client.once(Events.ClientReady, async (readyClient) => {
   }
 
   await registerSlashCommands();
+  startAutoRoomWorker(readyClient);
   console.log(`Ready as ${readyClient.user.tag}`);
 });
 
@@ -84,6 +89,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    if (interaction.isChatInputCommand() && interaction.commandName === "auto_room") {
+      await handleAutoRoomSlash(interaction);
+      return;
+    }
+
+    if (interaction.isChatInputCommand() && interaction.commandName === "room") {
+      await handleRoomSlash(interaction);
+      return;
+    }
+
+    if (interaction.isChatInputCommand() && interaction.commandName === "ticket") {
+      await handleTicketSlash(interaction);
+      return;
+    }
+
     if (interaction.isAutocomplete() && interaction.commandName === "staff") {
       await handleStaffAuto(interaction);
       return;
@@ -99,6 +119,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    if (interaction.isAutocomplete() && interaction.commandName === "auto_room") {
+      await handleAutoRoomAuto(interaction);
+      return;
+    }
+
+    if (interaction.isAutocomplete() && interaction.commandName === "room") {
+      await handleRoomAuto(interaction);
+      return;
+    }
+
     if (interaction.isButton() && interaction.customId.startsWith("tournament:")) {
       await handleTournamentButton(interaction);
       return;
@@ -111,6 +141,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.isModalSubmit() && interaction.customId.startsWith("utility:")) {
       await handleUtilityModal(interaction);
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith("room:")) {
+      await handleRoomButton(interaction);
       return;
     }
 
@@ -139,6 +174,7 @@ async function main(): Promise<void> {
 }
 
 async function shutdown(): Promise<void> {
+  stopAutoRoomWorker();
   await prisma.$disconnect();
   client.destroy();
 }

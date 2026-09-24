@@ -30,7 +30,9 @@ Preferir helpers frente a `` `<@&${id}>` `` inline.
 
 **Excepciones:** CSV/Excel y nombres de archivo de audit pueden llevar identificadores en texto plano (no son UI de Discord). El ID *es* el dato en banlist/sheet.
 
-Menciones de slash commands: `</name:id>` vía `formatHelpEntry` (en `/bot help` para subcomandos de `bot`, `settings`, `server`, `staff`, `tournament`, `team`, `role`, `user` y `utility`; el resto del catálogo usa `` `/comando` `` hasta estar registrados).
+Menciones de slash commands: `</name:id>` vía `formatHelpEntry` (en `/bot help` para subcomandos de `bot`, `settings`, `server`, `staff`, `tournament`, `team`, `role`, `user`, `utility`, `room` y `ticket`, y para `/auto_room`; el resto del catálogo usa `` `/comando` `` hasta estar registrados).
+
+El battle ticket (el canal del partido) abre con un Components V2: título `lado VS lado` (emoji `vs`; tag del capitán en `1vs1`, nombre del equipo si el formato es de más de un jugador), debajo **Tournament:**, **Round:** y **Group:** solo si hay grupo, cada equipo con la línea del capitán al mismo nivel que los in-game ID y el avatar del capitán, reglas y deadline. El footer es el **Match ID** y la fecha y hora exactas en que terminan las **36 horas** (`día/mes/año` y hora), en la zona horaria de quien ve el mensaje. La descripción del canal es `Tournament ID: <id de Challonge> | Match ID: <id del match>`. Ese V2 queda fijado en el canal. El mensaje de texto que va después hace ping a los capitanes. `/ticket` responde con V2 efímero. `/auto_room` apagado, ya encendido, o el error antes de leer el bracket, también. `/room create` y el encendido de `/auto_room` se publican en el canal: V2 con creados, éxitos, errores, cupo de las categorías y, si aplica, **Issues** (`- @capitán (**tag** / **equipo**)` si no está en el servidor; tag y equipo si el Discord ID es inválido). No lista los canales creados. `/room available` se publica en el canal: V2 de barra verde, *Available Rooms for* el torneo, el rango `Showing 1 - 20 of N`, y cada partido en dos líneas (emoji `vs`, **Match N** - Round N - Group N solo si hay grupos, y `nombre vs nombre`). Los `_` de los tags se escapan para que no activen la cursiva. Pasa de 20 y aparecen Previous / Next.
 
 ## Énfasis (markdown de Discord)
 
@@ -38,7 +40,8 @@ Menciones de slash commands: `</name:id>` vía `formatHelpEntry` (en `/bot help`
 |---|---|---|
 | Bold | `**text**` | Nombres de equipo/torneo, labels, conteos |
 | Italic | `*text*` | Notas secundarias, stage, copy de ayuda |
-| Underline | `__text__` | Separadores (`__vs__`), divisores de sección |
+| Underline | `__text__` | Divisores de sección. Nunca `__vs__` |
+| Matchup | `name vs name` | Los dos lados de un partido, en texto plano. Escapa `_` y `*` del nombre (`escapeDiscord`) |
 | Monospace | `` `text` `` | Scores, Match IDs, slugs de canal, números crudos |
 
 ## Relacionado

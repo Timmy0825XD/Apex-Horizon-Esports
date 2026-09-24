@@ -5,7 +5,7 @@ import {
   type Client,
 } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
-import { botCommandIdFor, roleCommandIdFor, serverCommandIdFor, settingsCommandIdFor, staffCommandIdFor, teamCommandIdFor, tournamentCommandIdFor, userCommandIdFor, utilityCommandIdFor } from "../../lib/register-slash.js";
+import { autoRoomCommandIdFor, botCommandIdFor, roleCommandIdFor, roomCommandIdFor, serverCommandIdFor, settingsCommandIdFor, staffCommandIdFor, teamCommandIdFor, ticketCommandIdFor, tournamentCommandIdFor, userCommandIdFor, utilityCommandIdFor } from "../../lib/register-slash.js";
 import { buildAboutContainer } from "./about.js";
 import { buildHelpContainer, normalizeHelpPage } from "./help.js";
 import { buildPingContainer } from "./ping.js";
@@ -47,6 +47,9 @@ export async function handleBotSlash(interaction: ChatInputCommandInteraction, c
       roleCommandId: roleCommandIdFor(interaction.guildId),
       userCommandId: userCommandIdFor(interaction.guildId),
       utilityCommandId: utilityCommandIdFor(interaction.guildId),
+      autoRoomCommandId: autoRoomCommandIdFor(interaction.guildId),
+      roomCommandId: roomCommandIdFor(interaction.guildId),
+      ticketCommandId: ticketCommandIdFor(interaction.guildId),
       helpPage: 0,
     }),
   );
@@ -93,6 +96,9 @@ export async function handleBotButton(interaction: ButtonInteraction, client: Cl
       roleCommandId: roleCommandIdFor(interaction.guildId),
       userCommandId: userCommandIdFor(interaction.guildId),
       utilityCommandId: utilityCommandIdFor(interaction.guildId),
+      autoRoomCommandId: autoRoomCommandIdFor(interaction.guildId),
+      roomCommandId: roomCommandIdFor(interaction.guildId),
+      ticketCommandId: ticketCommandIdFor(interaction.guildId),
       helpPage,
     }),
   );
