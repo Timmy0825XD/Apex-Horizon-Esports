@@ -2,9 +2,18 @@
 
 Reglas: [../domains/schedules.md](../domains/schedules.md). Todos los de creación/cambio **excepto show / unassigned** se auditan.
 
+Toda la familia responde con **embeds clásicos**, publicados en el canal. Ningún mensaje de este flujo es efímero. El capitán no ejecuta ningún subcomando.
+
+| Subcomando | Quién |
+|---|---|
+| `create` · `update` · `delete` | Rol **admin** o **helper** de ese torneo |
+| `show` · `unassigned` · `refresh` | Rol **staff** del servidor (`/staff config`) |
+| `results` · `results_delete` | Rol **judge** del servidor |
+| `resign` | Solo quien está asignado a ese schedule, dentro del ticket |
+
 ## `/schedule create`
 
-**Solo ticket.** Requiere canal de schedules.
+**Solo ticket.** Admin o helper del torneo. Requiere canal de schedules.
 
 | Campo | Tipo | Obligatorio | Uso |
 |---|---|---|---|
@@ -17,11 +26,11 @@ Reglas: [../domains/schedules.md](../domains/schedules.md). Todos los de creaci�
 | recorder | USER | No | Preasignar |
 | remark | STRING | No | Máx. 130 |
 
-Mínimo +10 minutos. Marca `🔴`. Relación: attendance, results, worker T-10/T-0, thumbnails de settings.
+Mínimo +10 minutos. Marca `🔴`. Admin o helper del torneo. Relación: attendance, results, worker T-10/T-0, thumbnails de settings.
 
 ## `/schedule update`
 
-Mismos trozos de fecha/hora (opcionales) + `judge`, `recorder`, `note`, `remove_judge`, `remove_recorder`, `reason`, `regenerate_image`. Al menos un campo. Recalendarizar resetea recordatorios.
+**Solo ticket.** Admin o helper del torneo. Mismos trozos de fecha/hora (opcionales) + `judge`, `recorder`, `note`, `remove_judge`, `remove_recorder`, `reason`, `regenerate_image`. Al menos un campo. Recalendarizar resetea recordatorios. `regenerate_image` vuelve a aplicar el fondo ya asignado a ese schedule sobre el embed y el post del canal de thumbnails. No avanza la rotación.
 
 ## `/schedule show`
 
@@ -30,7 +39,7 @@ Mismos trozos de fecha/hora (opcionales) + `judge`, `recorder`, `note`, `remove_
 | tournament | STRING (Autocomplete) | Sí |
 | match | STRING (Autocomplete) | Sí |
 
-Vista efímera del embed. No audita.
+Embed publicado en el canal. Rol staff. No audita.
 
 ## `/schedule delete`
 
@@ -39,7 +48,7 @@ Vista efímera del embed. No audita.
 | confirm | BOOLEAN | Sí |
 | reason | STRING | No |
 
-`confirm=False` cancela. Quita `🔴`.
+`confirm=False` cancela. Quita `🔴`. Admin o helper del torneo.
 
 ## `/schedule unassigned`
 
@@ -47,11 +56,11 @@ Vista efímera del embed. No audita.
 |---|---|---|
 | filter | STRING (Choice) | Depende de implementación | `all` · `missing_judge` · `missing_recorder` · `any` |
 
-Consulta. Alimenta reclutamiento de staff de mesa.
+Consulta. Rol staff. Alimenta reclutamiento de staff de mesa.
 
 ## `/schedule refresh`
 
-Renueva botones y enlace del post. No cambia la hora.
+**Solo ticket.** Rol staff. Renueva botones y enlace del post. No cambia la hora.
 
 ## `/schedule resign`
 
@@ -61,11 +70,11 @@ Renueva botones y enlace del post. No cambia la hora.
 |---|---|---|
 | role | STRING (Choice) | No | Judge · Recorder · Both |
 | reason | STRING | No | `.` si es privado |
-| regenerate_image | BOOLEAN | No | |
+| regenerate_image | BOOLEAN | No | Reaplica el fondo ya asignado |
 
 ## `/schedule results`
 
-**Solo ticket.** Hora ya pasada. No empate. Una declaración por schedule.
+**Solo ticket.** Rol judge. Hora ya pasada. No empate. Una declaración por schedule. El capitán no declara.
 
 | Campo | Tipo | Obligatorio |
 |---|---|---|
@@ -83,4 +92,4 @@ Publica en `result_channel` del torneo. No sube el bracket. Relación: `/upload_
 | confirm | BOOLEAN | Sí |
 | reason | STRING | No |
 
-No borra el schedule.
+Rol judge. No borra el schedule.

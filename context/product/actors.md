@@ -6,10 +6,11 @@ La autoridad no es “quien tiene un rol bonito”. Es **alcance**.
 |---|---|
 | **Administrador del servidor** (permiso Discord o rol admin del bot) | Configura el servidor, crea/borra torneos, recluta/despide staff, ve nómina agregada |
 | **Organiser** (rol manager del servidor) | Opera el torneo a nivel de salas, tickets, lookup de equipos (`/team`), rol de participantes (`/tournament role`), roles masivos, bans de usuario, muchas acciones de bracket |
-| **Admin / Helper del torneo** | Roles *de ese torneo*: scores, schedules, ayuda operativa |
-| **Judge** | Entra al ticket cuando hay schedule; marca asistencia; confirma T-10 |
-| **Recorder** | Igual que Judge en el ticket; dueño de los links de YouTube de *su* asistencia |
-| **Capitán** | Solo su ticket; puede declarar resultado de schedule con pruebas (no sube el bracket) |
+| **Admin / Helper del torneo** | Roles *de ese torneo*: scores, crear / actualizar / borrar schedules, ayuda operativa |
+| **Staff** (rol de `/staff config`) | `show`, `unassigned` y `refresh` de schedule |
+| **Judge** | Entra al ticket cuando hay schedule; marca asistencia; confirma T-10; declara y borra `/schedule results` |
+| **Recorder** | Igual que Judge en el ticket; dueño de los links de YouTube de *su* asistencia. No declara results |
+| **Capitán** | Solo su ticket. No ejecuta ningún `/schedule` |
 | **Público** | Consultas que no mutan estado (info de servidor, headers de hoja, ping, about/help) |
 
 Jerarquía Discord siempre gana: el bot no puede asignar un rol por encima del suyo, ni un humano puede gestionar roles iguales o superiores al propio.
