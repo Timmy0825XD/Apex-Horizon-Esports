@@ -72,7 +72,7 @@ export const helpCatalog: HelpCategory[] = [
     description: "Battle tickets from the bracket, scores, and corrections.",
     entries: [
       { slash: "auto_room", summary: "Turn automatic battle tickets on or off. Turning on opens matches that are ready now.", access: "Organiser" },
-      { slash: "room create", summary: "Open every pending battle ticket for a tournament now.", access: "Organiser" },
+      { slash: "room create", summary: "Open pending battle tickets now. Optional group and round.", access: "Organiser" },
       { slash: "room available", summary: "Show matches that still need a battle ticket.", access: "Organiser" },
       { slash: "upload_score", summary: "Report the official score inside a ticket.", access: "Staff of the tournament" },
       { slash: "correct_bracket", summary: "Amend a posted score and rebuild lying rooms.", access: "Organiser" },

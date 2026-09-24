@@ -18,8 +18,10 @@ Un solo comando. Organiser.
 | Campo | Tipo | Obligatorio |
 |---|---|---|
 | tournament | STRING (Autocomplete) | Sí |
+| group | STRING (Autocomplete) | No |
+| round | STRING (Autocomplete) | No |
 
-Abre **toda** la cola pendiente de ese torneo ahora, con o sin auto-room encendido. Misma tubería que el encendido y que el worker. Audita en **Bot Logs**.
+Abre la cola pendiente de ese torneo ahora. Sin `group` ni `round`, abre toda. Con uno o ambos, solo los partidos de ese grupo y/o esa ronda. Las opciones salen del bracket de **ese** torneo. No exige que auto-room esté encendido y **no cambia** el flag: si estaba off, sigue off. Misma tubería que el encendido y que el worker. Audita en **Bot Logs**.
 
 La respuesta se publica en el canal (no efímera). V2 con **Created**, **Succeeded** y **Errors**, el cupo de las categorías abiertas (slots libres antes y después; si la cola no cabe, cuántos partidos siguen esperando) y, al final, **Issues**: capitán que no está en el servidor como `- @capitán (**tag** / **equipo**)`, o tag y equipo cuando el Discord ID es inválido o falta. No lista los canales creados.
 

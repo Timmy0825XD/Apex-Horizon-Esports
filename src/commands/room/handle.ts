@@ -4,8 +4,9 @@ import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { memberIsOrganiser } from "../../lib/organiser.js";
 import { TicketQueueError, loadTicketQueue } from "./bracket.js";
 import { auditRoomsCreated } from "./audit.js";
-import { respondTournamentChoices } from "./autocomplete.js";
-import { openPendingTickets } from "./open.js";
+import { respondRoomChoices } from "./autocomplete.js";
+import { openPendingTickets, type RoomScope } from "./open.js";
+import { roundTitle } from "./labels.js";
 import { prepareTournament } from "./prepare.js";
 import { deferRoom, respondRoom } from "./respond.js";
 import { findTournamentById } from "../tournament/store.js";
@@ -39,12 +40,31 @@ export async function handleRoomAuto(interaction: AutocompleteInteraction): Prom
     return;
   }
   try {
-    await respondTournamentChoices(interaction);
+    await respondRoomChoices(interaction);
   } catch {
     if (!interaction.responded) {
       await interaction.respond([]).catch(() => undefined);
     }
   }
+}
+
+function readScope(interaction: ChatInputCommandInteraction): RoomScope | string {
+  const group = interaction.options.getString("group");
+  const roundRaw = interaction.options.getString("round");
+  if (roundRaw != null && !/^-?\d+$/.test(roundRaw)) {
+    return "Choose a round from the list for this tournament.";
+  }
+  return {
+    group,
+    round: roundRaw == null ? null : Number(roundRaw),
+  };
+}
+
+function scopeText(scope: RoomScope): string {
+  const parts = [scope.group ? `**Group ${scope.group}**` : "", scope.round != null ? `**${roundTitle(scope.round)}**` : ""].filter(
+    Boolean,
+  );
+  return parts.join(" · ");
 }
 
 async function handleCreate(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -53,20 +73,32 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
     return;
   }
 
+  const scope = readScope(interaction);
+  if (typeof scope === "string") {
+    await respondRoom(interaction, roomPanel("error", "Unknown round", [scope]));
+    return;
+  }
+
   await deferRoom(interaction, false);
   try {
-    const result = await openPendingTickets(ready.guild, ready.tournament);
+    const result = await openPendingTickets(ready.guild, ready.tournament, scope);
+    const where = scopeText(scope);
     if (result.created.length === 0 && result.failed.length === 0) {
       await respondRoom(
         interaction,
         roomPanel("info", "No tickets waiting", [
-          `Every open match in **${ready.tournament.name}** already has a battle ticket.`,
+          where
+            ? `Every open match in **${ready.tournament.name}** for ${where} already has a battle ticket.`
+            : `Every open match in **${ready.tournament.name}** already has a battle ticket.`,
         ]),
       );
       return;
     }
 
-    await respondRoom(interaction, creationReport(ready.guild, ready.tournament.name, result));
+    await respondRoom(
+      interaction,
+      creationReport(ready.guild, ready.tournament.name, result, where ? { intro: [`Opening ${where}.`] } : undefined),
+    );
     await auditRoomsCreated(
       ready.guild,
       ready.settings,

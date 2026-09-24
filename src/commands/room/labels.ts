@@ -5,6 +5,10 @@ export function roundLabel(round: number): string {
   return String(round);
 }
 
+export function roundTitle(round: number): string {
+  return round < 0 ? `Losers Round ${Math.abs(round)}` : `Round ${round}`;
+}
+
 export function escapeDiscord(value: string): string {
   return value.replace(/[\\*_~`|]/g, (char) => `\\${char}`);
 }
