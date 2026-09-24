@@ -12,7 +12,7 @@ Todo lo demás (tickets, horarios, staff, asistencia, transcripts, sueldos, audi
 
 El bot es el **operador de torneo** de un servidor Discord. Un servidor puede tener varios torneos a la vez (máximo **cuatro activos**). Cada torneo es un mundo cerrado: su bracket, su hoja, sus categorías de tickets, su canal de asistencia, su canal de resultados.
 
-**Core:** convertir un partido del bracket en un **ticket** (canal privado), coordinar **quién lo juega, quién lo juzga, quién lo graba y a qué hora**, registrar **qué pasó**, reportar el **marcador al bracket**, archivar la conversación y **abrir el siguiente partido** cuando el bracket lo declare abierto.
+**Core:** convertir un partido del bracket en un **ticket** (canal privado), coordinar **quién lo juega, quién lo juzga, quién lo graba y a qué hora**, registrar **qué pasó**, reportar el **marcador al bracket**, archivar la conversación y **abrir el siguiente partido** cuando toque el reloj de auto-room (00:00 o 12:00 UTC) o alguien fuerce la cola.
 
 ## Lo que el bot no es
 
@@ -33,7 +33,7 @@ Regla dura: **un partido, una sala**. Si ya existe ticket para ese match, no se 
 | Capa | Qué define | Quién la configura |
 |---|---|---|
 | **Servidor** | Admin del bot, verificado, bracket admin, schedules, thumbnails, bans y canales de logs; jerarquía de staff | `/settings` + `/staff config` |
-| **Torneo** | Bracket, hoja, roles de organizer/helper de *ese* torneo, categorías de tickets, canales de asistencia / transcripts / reglas / deadlines / resultados / links de grabación, si auto-room está habilitado | `/tournament add` / `edit` |
+| **Torneo** | Bracket, hoja, roles de organizer/helper de *ese* torneo, categorías de tickets, canales de asistencia / transcripts / reglas / deadlines / resultados / links de grabación. Auto-room nace apagado | `/tournament add` / `edit` · `/auto_room` |
 
 Sin la capa servidor, no hay auditoría ni schedules publicados. Sin la capa torneo, no hay partidos que operar.
 

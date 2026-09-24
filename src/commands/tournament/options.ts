@@ -44,7 +44,7 @@ export function readCreateWorld(
     closedTicketCategoryId: requiredChannelId(interaction, "closed_ticket_category"),
     closeTicketCategory2Id: optionalChannelId(interaction, "close_ticket_category_2") ?? null,
     ticketOpenCategoryIds: open,
-    autoRoomCapable: interaction.options.getBoolean("auto_room_creation", true),
+    autoRoomCapable: true,
   };
 }
 
@@ -122,11 +122,6 @@ export function readWorldPatch(interaction: ChatInputCommandInteraction): WorldP
     }
   }
 
-  const autoRoom = interaction.options.getBoolean("auto_room_creation");
-  if (autoRoom != null) {
-    patch.autoRoomCapable = autoRoom;
-  }
-
   return patch;
 }
 
@@ -145,8 +140,6 @@ export function mergeWorld(current: TournamentWorld, patch: WorldPatch): Tournam
     open[3] = patch.ticketOpenCategory4Id;
   }
 
-  const autoRoomCapable = patch.autoRoomCapable ?? current.autoRoomCapable;
-
   return {
     ...current,
     name: patch.name ?? current.name,
@@ -164,8 +157,8 @@ export function mergeWorld(current: TournamentWorld, patch: WorldPatch): Tournam
     closeTicketCategory2Id:
       patch.closeTicketCategory2Id !== undefined ? patch.closeTicketCategory2Id : current.closeTicketCategory2Id,
     ticketOpenCategoryIds: open.filter((id): id is string => Boolean(id)),
-    autoRoomCapable,
-    autoRoomRunning: autoRoomCapable ? current.autoRoomRunning : false,
+    autoRoomCapable: current.autoRoomCapable,
+    autoRoomRunning: current.autoRoomRunning,
   };
 }
 

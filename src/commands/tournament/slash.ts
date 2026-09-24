@@ -46,12 +46,6 @@ function addSharedWorldOptions(subcommand: SlashCommandSubcommandBuilder, requir
   addCategory(subcommand, "closed_ticket_category", "Category for closed tickets", required);
   addCategory(subcommand, "ticket_open_category_1", "First open-ticket category", required);
   addCategory(subcommand, "ticket_open_category_2", "Overflow open-ticket category", required);
-  subcommand.addBooleanOption((option) =>
-    option
-      .setName("auto_room_creation")
-      .setDescription("Allow auto-room for this tournament (does not open rooms by itself)")
-      .setRequired(required),
-  );
   addCategory(subcommand, "close_ticket_category_2", "Overflow category for closed tickets", false);
   addCategory(subcommand, "ticket_open_category_3", "Third open-ticket category", false);
   addCategory(subcommand, "ticket_open_category_4", "Fourth open-ticket category", false);

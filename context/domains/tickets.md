@@ -1,6 +1,6 @@
 # Cierre de ticket, transcript y resultados
 
-Cerrar un ticket **no** es lo mismo que reportar el score.
+Cerrar un ticket **no** es lo mismo que reportar el score. El canal nace en [bracket-rooms.md](bracket-rooms.md): su descripción es `Tournament ID: <id de Challonge> | Match ID: <id del match>`.
 
 | Comando | Efecto |
 |---|---|

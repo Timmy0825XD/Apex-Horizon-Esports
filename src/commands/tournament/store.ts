@@ -91,6 +91,7 @@ function toRecord(row: TournamentRow): TournamentRecord {
   const format = isTeamFormat(row.format) ? row.format : "1vs1";
   return {
     id: row.id,
+    guildId: row.guildId,
     name: row.name,
     challongeId: row.challongeId,
     challongeKeyEnc: row.challongeKeyEnc,
@@ -145,6 +146,19 @@ export async function findTournamentByChallongeId(
 export async function findTournamentByName(guildId: string, name: string): Promise<TournamentRecord | null> {
   const row = await prisma.tournament.findFirst({ where: { guildId, name } });
   return row ? toRecord(row) : null;
+}
+
+export async function setAutoRoomRunning(id: string, running: boolean): Promise<TournamentRecord> {
+  const row = await prisma.tournament.update({
+    where: { id },
+    data: { autoRoomRunning: running },
+  });
+  return toRecord(row);
+}
+
+export async function listRunningAutoRooms(): Promise<TournamentRecord[]> {
+  const rows = await prisma.tournament.findMany({ where: { autoRoomRunning: true } });
+  return rows.map(toRecord);
 }
 
 export async function createTournament(
@@ -206,7 +220,7 @@ export async function updateTournament(
       closeTicketCategory2Id: world.closeTicketCategory2Id,
       ticketOpenCategoryIds: world.ticketOpenCategoryIds,
       autoRoomCapable: world.autoRoomCapable,
-      autoRoomRunning: world.autoRoomCapable ? world.autoRoomRunning : false,
+      autoRoomRunning: world.autoRoomRunning,
     },
   });
   return toRecord(row);
@@ -349,6 +363,14 @@ export async function findTournamentSheetHeaders(guildId: string, tournamentId: 
     select: { headers: true },
   });
   return row?.headers ?? null;
+}
+
+export async function findTournamentRoster(guildId: string, tournamentId: string): Promise<SheetTeam[] | null> {
+  const row = await prisma.storedSheet.findFirst({
+    where: { guildId, tournamentId, origin: SHEET_ORIGIN.tournament },
+    select: { teams: true },
+  });
+  return row ? asTeams(row.teams) : null;
 }
 
 export async function findStoredSheetByLink(sheetLink: string): Promise<StoredSheetRecord | null> {

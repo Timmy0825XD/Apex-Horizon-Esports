@@ -49,6 +49,9 @@ src/
     server/            # /server info|banlist|tree|invites
     staff/             # /staff config, recruit, fire, work
     tournament/        # /tournament add|edit|delete|add_sheet|get_sheet|find_player|info|list|role
+    auto-room/         # /auto_room
+    room/              # /room create|available y la tubería de battle tickets
+    ticket/            # /ticket close|reopen|delete
     team/              # /team info|list
     role/              # /role user|add all|remove all|list
     user/              # /user ban|unban

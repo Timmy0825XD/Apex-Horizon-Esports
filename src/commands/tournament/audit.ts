@@ -29,9 +29,6 @@ function worldDetails(guild: Guild, tournament: TournamentRecord, changed?: stri
   if (include("sheetLink")) {
     lines.push(`**Sheet:** ${formatSheetLink(tournament.sheetLink)}`);
   }
-  if (include("autoRoomCapable")) {
-    lines.push(`**Auto-room:** ${tournament.autoRoomCapable ? "Capable" : "Off"}`);
-  }
   if (include("key")) {
     lines.push("**API key:** *Updated (encrypted)*");
   }

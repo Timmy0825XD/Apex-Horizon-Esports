@@ -30,7 +30,7 @@ RESULTADO DE SCHEDULE (capturas al canal de resultados del torneo)
 UPLOAD SCORE (el bracket avanza de verdad)
   · ticket se cierra / renombra / mueve a categoría cerrada
   · transcript HTML al canal de transcripts
-  · si auto-room está on → se intentan las siguientes salas OPEN
+  · si auto-room está on, las siguientes salas OPEN esperan a 00:00 o 12:00 UTC
 ```
 
 ## Tres registros de “resultado”
@@ -69,8 +69,11 @@ Se puede marcar asistencia sin haber subido el score, y se puede subir el score 
 /tournament role + /team *
         → el servidor reconoce a los jugadores
 
-/auto_room run  o  /room create
+/auto_room status:true  o  /room create
         → el partido se vuelve ticket
+
+00:00 y 12:00 UTC, si auto-room sigue on
+        → la cola de partidos que se abrieron después entra de golpe
 
 /schedule *
         → el ticket tiene hora y staff
@@ -85,7 +88,7 @@ botones + worker T-10/T-0
         → el canal de resultados tiene pruebas
 
 /upload_score
-        → el bracket avanza y (si aplica) nace el siguiente ticket
+        → el bracket avanza. El siguiente ticket no nace al momento: espera 00:00 o 12:00 UTC si auto-room está on, o `/room create`
 
 /correct_bracket
         → el cuadro se enmienda y las salas mentirosas se reconstruyen

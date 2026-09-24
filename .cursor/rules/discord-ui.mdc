@@ -15,7 +15,11 @@ Menciones de slash: `</name:id>` vía `formatHelpEntry` (cuando exista `bot-info
 
 ## Énfasis
 
-`**negrita**` nombres/conteos, `*cursiva*` notas, `__vs__` separadores, `` `scores / IDs` ``.
+`**negrita**` nombres/conteos, `*cursiva*` notas, `` `scores / IDs` ``.
+
+Enfrentamientos: `name vs name`. Nunca `__vs__`.
+
+Si un nombre o tag lleva `_`, `*` o `` ` ``, escápalo (`escapeDiscord`). Un `_` suelto abre cursiva hasta el siguiente `_` del mensaje.
 
 ## Emojis y componentes
 

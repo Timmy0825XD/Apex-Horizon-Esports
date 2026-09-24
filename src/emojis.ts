@@ -46,6 +46,8 @@ export const emojis = {
   banned: "<:banned:1550638818082824352>",
   hero: "<:hero:1550643418894442526>",
   legend: "<:legend:1550643420178030643>",
+  vs : "<a:VS:1552063706668736654>",
+  rules : "<:rules:1552068183555575838>",
 } as const;
 
 export const numberEmojis = [

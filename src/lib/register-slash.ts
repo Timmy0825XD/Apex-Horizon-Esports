@@ -1,5 +1,8 @@
 import { REST, Routes, type RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
+import { autoRoomSlash } from "../commands/auto-room/slash.js";
 import { botSlash } from "../commands/bot/slash.js";
+import { roomSlash } from "../commands/room/slash.js";
+import { ticketSlash } from "../commands/ticket/slash.js";
 import { roleSlash } from "../commands/role/slash.js";
 import { serverSlash } from "../commands/server/slash.js";
 import { settingsSlash } from "../commands/settings/slash.js";
@@ -20,6 +23,9 @@ const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
   roleSlash.toJSON(),
   userSlash.toJSON(),
   utilitySlash.toJSON(),
+  autoRoomSlash.toJSON(),
+  roomSlash.toJSON(),
+  ticketSlash.toJSON(),
 ];
 
 export const botCommandIds = new Map<string, string>();
@@ -31,6 +37,9 @@ export const teamCommandIds = new Map<string, string>();
 export const roleCommandIds = new Map<string, string>();
 export const userCommandIds = new Map<string, string>();
 export const utilityCommandIds = new Map<string, string>();
+export const autoRoomCommandIds = new Map<string, string>();
+export const roomCommandIds = new Map<string, string>();
+export const ticketCommandIds = new Map<string, string>();
 
 export function botCommandIdFor(guildId: string | null | undefined): string | undefined {
   if (!guildId) {
@@ -95,6 +104,27 @@ export function utilityCommandIdFor(guildId: string | null | undefined): string 
   return utilityCommandIds.get(guildId);
 }
 
+export function autoRoomCommandIdFor(guildId: string | null | undefined): string | undefined {
+  if (!guildId) {
+    return undefined;
+  }
+  return autoRoomCommandIds.get(guildId);
+}
+
+export function roomCommandIdFor(guildId: string | null | undefined): string | undefined {
+  if (!guildId) {
+    return undefined;
+  }
+  return roomCommandIds.get(guildId);
+}
+
+export function ticketCommandIdFor(guildId: string | null | undefined): string | undefined {
+  if (!guildId) {
+    return undefined;
+  }
+  return ticketCommandIds.get(guildId);
+}
+
 export async function registerSlashCommands(): Promise<void> {
   const rest = new REST({ version: "10" }).setToken(env.discordToken);
 
@@ -146,6 +176,21 @@ export async function registerSlashCommands(): Promise<void> {
     const utility = registered.find((command) => command.name === "utility");
     if (utility) {
       utilityCommandIds.set(guildId, utility.id);
+    }
+
+    const autoRoom = registered.find((command) => command.name === "auto_room");
+    if (autoRoom) {
+      autoRoomCommandIds.set(guildId, autoRoom.id);
+    }
+
+    const room = registered.find((command) => command.name === "room");
+    if (room) {
+      roomCommandIds.set(guildId, room.id);
+    }
+
+    const ticket = registered.find((command) => command.name === "ticket");
+    if (ticket) {
+      ticketCommandIds.set(guildId, ticket.id);
     }
   }
 }

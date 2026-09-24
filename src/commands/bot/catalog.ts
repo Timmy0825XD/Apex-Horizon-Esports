@@ -69,13 +69,11 @@ export const helpCatalog: HelpCategory[] = [
   },
   {
     title: "Room",
-    description: "Tickets from the bracket, scores, and corrections.",
+    description: "Battle tickets from the bracket, scores, and corrections.",
     entries: [
-      { slash: "auto_room run", summary: "Turn automation on and open up to 25 eligible rooms.", access: "Organiser" },
-      { slash: "auto_room stop", summary: "Stop scanning for new rooms. Open tickets stay.", access: "Organiser" },
-      { slash: "auto_room toggle", summary: "Flip auto-room on or off.", access: "Organiser" },
-      { slash: "room create", summary: "Open eligible rooms into a category, up to the limit.", access: "Organiser" },
-      { slash: "room available", summary: "Show the queue of matches that could get a room now.", access: "Organiser" },
+      { slash: "auto_room", summary: "Turn automatic battle tickets on or off. Turning on opens matches that are ready now.", access: "Organiser" },
+      { slash: "room create", summary: "Open every pending battle ticket for a tournament now.", access: "Organiser" },
+      { slash: "room available", summary: "Show matches that still need a battle ticket.", access: "Organiser" },
       { slash: "upload_score", summary: "Report the official score inside a ticket.", access: "Staff of the tournament" },
       { slash: "correct_bracket", summary: "Amend a posted score and rebuild lying rooms.", access: "Organiser" },
     ],

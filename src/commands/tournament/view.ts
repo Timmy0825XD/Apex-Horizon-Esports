@@ -48,11 +48,7 @@ function channelLine(guild: Guild, id: string, label: string, category = false):
 }
 
 function worldSections(guild: Guild, tournament: TournamentRecord): string[] {
-  const auto = tournament.autoRoomCapable
-    ? tournament.autoRoomRunning
-      ? "Capable · *currently running*"
-      : "Capable · *idle until auto-room run*"
-    : "Off";
+  const auto = tournament.autoRoomRunning ? "On" : "Off";
 
   const identity = [
     `## ${emojis.id} Identity`,
@@ -103,7 +99,7 @@ function panelCopy(kind: Exclude<TournamentPanelKind, "info">): { title: string;
   }
   return {
     title: `${emojis.success} Tournament updated`,
-    note: "Only the values you changed were rewritten. Auto-room capability applies immediately.",
+    note: "Only the values you changed were rewritten.",
     color: embedColors.success,
   };
 }
@@ -224,7 +220,7 @@ export function tournamentListMessage(tournaments: TournamentRecord[]): Interact
   }
 
   const lines = tournaments.map((row, index) => {
-    const auto = row.autoRoomCapable ? "auto-room capable" : "auto-room off";
+    const auto = row.autoRoomRunning ? "auto-room on" : "auto-room off";
     return `${index + 1}. **${row.name}** · \`${row.challongeId}\` · \`${row.format}\` · *${auto}*`;
   });
 
