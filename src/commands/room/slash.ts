@@ -7,12 +7,26 @@ export const roomSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("create")
-      .setDescription("Create every pending battle ticket for a tournament now")
+      .setDescription("Create pending battle tickets for a tournament now")
       .addStringOption((option) =>
         option
           .setName("tournament")
           .setDescription("Tournament whose waiting tickets to open")
           .setRequired(true)
+          .setAutocomplete(true),
+      )
+      .addStringOption((option) =>
+        option
+          .setName("group")
+          .setDescription("Only matches in this group")
+          .setRequired(false)
+          .setAutocomplete(true),
+      )
+      .addStringOption((option) =>
+        option
+          .setName("round")
+          .setDescription("Only matches in this round")
+          .setRequired(false)
           .setAutocomplete(true),
       ),
   )

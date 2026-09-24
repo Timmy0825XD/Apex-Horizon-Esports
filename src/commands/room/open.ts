@@ -6,12 +6,13 @@ import type { TournamentRecord } from "../tournament/fields.js";
 import {
   captainOf,
   loadTicketQueue,
+  TicketQueueError,
   type CaptainIssue,
   type ReadyMatch,
   type TicketQueue,
 } from "./bracket.js";
 import { categoryLoads, freeSlots, nextOpenCategory } from "./categories.js";
-import { escapeDiscord, matchLabel, ticketTopic } from "./labels.js";
+import { escapeDiscord, matchLabel, roundTitle, ticketTopic } from "./labels.js";
 import { channelOverwrites, publishBattleTicket, ticketChannelName } from "./view.js";
 
 export type CreatedTicket = {
@@ -206,9 +207,47 @@ async function openOne(
   return { channelId: channel.id, welcomeOk };
 }
 
-export async function openPendingTickets(guild: Guild, tournament: TournamentRecord): Promise<OpenTicketsResult> {
+export type RoomScope = {
+  group: string | null;
+  round: number | null;
+};
+
+function inScope(match: { group: string | null; round: number }, scope?: RoomScope): boolean {
+  if (!scope) {
+    return true;
+  }
+  if (scope.group && match.group !== scope.group) {
+    return false;
+  }
+  if (scope.round != null && match.round !== scope.round) {
+    return false;
+  }
+  return true;
+}
+
+export async function openPendingTickets(
+  guild: Guild,
+  tournament: TournamentRecord,
+  scope?: RoomScope,
+): Promise<OpenTicketsResult> {
   const queue = await loadTicketQueue(tournament);
-  const failed: TicketFailure[] = queue.blocked.map((match) => ({
+  if (scope && (scope.group || scope.round != null)) {
+    const known = await prisma.match.findMany({
+      where: { tournamentId: tournament.id },
+      select: { group: true, round: true },
+    });
+    if (!known.some((match) => inScope(match, scope))) {
+      const parts = [
+        scope.group ? `Group ${escapeDiscord(scope.group)}` : "",
+        scope.round != null ? roundTitle(scope.round) : "",
+      ].filter(Boolean);
+      throw new TicketQueueError(`**${parts.join(" · ")}** is not on this tournament.`);
+    }
+  }
+  const scoped: TicketQueue = scope
+    ? { ready: queue.ready.filter((match) => inScope(match, scope)), blocked: queue.blocked.filter((match) => inScope(match, scope)) }
+    : queue;
+  const failed: TicketFailure[] = scoped.blocked.map((match) => ({
     matchId: match.id,
     label: matchLabel(match),
     reason: match.reason,
@@ -223,7 +262,7 @@ export async function openPendingTickets(guild: Guild, tournament: TournamentRec
   let welcomeFailed = 0;
   let categoriesFull = false;
 
-  for (const match of queue.ready) {
+  for (const match of scoped.ready) {
     const label = matchLabel(match);
     const categoryId = categoriesFull ? null : nextOpenCategory(loads);
     if (!categoryId) {
@@ -275,7 +314,7 @@ export async function openPendingTickets(guild: Guild, tournament: TournamentRec
   }
 
   return {
-    queue,
+    queue: scoped,
     created,
     failed,
     capacity: {
