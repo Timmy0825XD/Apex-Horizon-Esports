@@ -29,7 +29,11 @@ El capitán no ejecuta ningún subcomando.
 
 Los archivos viven en `assets/backgrounds/`, numerados `1.png` … `10.png`. No existe `0.png`. Cada schedule nuevo del servidor toma el siguiente número. Después de `10` vuelve a `1`. Dos schedules seguidos no comparten fondo; a partir del undécimo el ciclo se repite.
 
-El schedule guarda su número. `regenerate_image` reaplica **ese** archivo al embed del schedule y al mensaje del canal de thumbnails. No consume el siguiente número.
+El bot compone sobre ese fondo una tarjeta 16:9 de estilo esports con la identidad negra, dorada y roja de Apex Horizon. De arriba abajo: icono del servidor donde se ejecuta (si tiene), nombre del torneo, etapa, `team_1 vs team_2`, fecha y hora UTC, y el nombre del servidor. El nombre del torneo usa **Ubuntu Medium** (peso 500; [Google Fonts](https://fonts.google.com/specimen/Ubuntu)). Los textos se normalizan en mayúsculas; los nombres largos primero reducen la fuente y, si aún no caben, terminan en elipsis. Ningún texto puede salir del lienzo ni invadir el `VS`.
+
+Etapa impresa: con grupo, `GROUP A · ROUND n`; ronda negativa, `LOSERS ROUND n`; la última ronda del cuadro de ganadores es `FINAL` (`GRAND FINAL` si hay cuadro de perdedores); la anterior a la final en eliminación simple es `SEMIFINAL`; el partido cuyos dos lados llegan como perdedores de otro partido es `3RD PLACE`. El resto: `ROUND n`. El indicador de 3er puesto lo trae Challonge (`player1_is_prereq_match_loser` y `player2_is_prereq_match_loser`) y se guarda en el partido al sincronizar el bracket.
+
+El schedule guarda su número. `regenerate_image` reconstruye la tarjeta con **ese** fondo y los datos actuales, la aplica al embed, al mensaje del canal de thumbnails y a la portada del evento. No consume el siguiente número. Cambiar la fecha u hora también reconstruye la imagen automáticamente.
 
 ## Al actualizar fecha/hora
 

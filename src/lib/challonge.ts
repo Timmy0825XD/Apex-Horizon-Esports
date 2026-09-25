@@ -18,6 +18,8 @@ export type ChallongeMatch = {
   groupId: number | null;
   player1Id: number | null;
   player2Id: number | null;
+  /** Both sides arrive as losers of a winners-bracket match: the third place match. */
+  thirdPlace: boolean;
 };
 
 export type ChallongeBracket = {
@@ -124,6 +126,8 @@ type RawMatch = {
   player1_id?: number | null;
   player2_id?: number | null;
   group_id?: number | null;
+  player1_is_prereq_match_loser?: boolean;
+  player2_is_prereq_match_loser?: boolean;
 };
 
 function unwrap<T extends object>(row: unknown, key: string): T | null {
@@ -175,14 +179,16 @@ export async function fetchChallongeBracket(id: string, apiKey: string): Promise
     if (!match || matchId == null) {
       return [];
     }
+    const round = typeof match.round === "number" ? match.round : 0;
     return [
       {
         id: matchId,
         state: match.state ?? "pending",
-        round: typeof match.round === "number" ? match.round : 0,
+        round,
         groupId: asId(match.group_id),
         player1Id: asId(match.player1_id),
         player2Id: asId(match.player2_id),
+        thirdPlace: round > 0 && match.player1_is_prereq_match_loser === true && match.player2_is_prereq_match_loser === true,
       },
     ];
   });
