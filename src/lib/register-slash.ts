@@ -3,6 +3,7 @@ import { autoRoomSlash } from "../commands/auto-room/slash.js";
 import { botSlash } from "../commands/bot/slash.js";
 import { roomSlash } from "../commands/room/slash.js";
 import { ticketSlash } from "../commands/ticket/slash.js";
+import { scheduleSlash } from "../commands/schedule/slash.js";
 import { roleSlash } from "../commands/role/slash.js";
 import { serverSlash } from "../commands/server/slash.js";
 import { settingsSlash } from "../commands/settings/slash.js";
@@ -26,7 +27,29 @@ const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
   autoRoomSlash.toJSON(),
   roomSlash.toJSON(),
   ticketSlash.toJSON(),
-];
+  scheduleSlash.toJSON(),
+].map(omitOptionalRequired);
+
+function omitOptionalRequired(value: RESTPostAPIChatInputApplicationCommandsJSONBody): RESTPostAPIChatInputApplicationCommandsJSONBody {
+  return stripFalseRequired(value) as RESTPostAPIChatInputApplicationCommandsJSONBody;
+}
+
+function stripFalseRequired(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(stripFalseRequired);
+  }
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(value)) {
+      if (key === "required" && child === false) {
+        continue;
+      }
+      out[key] = stripFalseRequired(child);
+    }
+    return out;
+  }
+  return value;
+}
 
 export const botCommandIds = new Map<string, string>();
 export const settingsCommandIds = new Map<string, string>();
@@ -40,6 +63,7 @@ export const utilityCommandIds = new Map<string, string>();
 export const autoRoomCommandIds = new Map<string, string>();
 export const roomCommandIds = new Map<string, string>();
 export const ticketCommandIds = new Map<string, string>();
+export const scheduleCommandIds = new Map<string, string>();
 
 export function botCommandIdFor(guildId: string | null | undefined): string | undefined {
   if (!guildId) {
@@ -125,6 +149,13 @@ export function ticketCommandIdFor(guildId: string | null | undefined): string |
   return ticketCommandIds.get(guildId);
 }
 
+export function scheduleCommandIdFor(guildId: string | null | undefined): string | undefined {
+  if (!guildId) {
+    return undefined;
+  }
+  return scheduleCommandIds.get(guildId);
+}
+
 export async function registerSlashCommands(): Promise<void> {
   const rest = new REST({ version: "10" }).setToken(env.discordToken);
 
@@ -191,6 +222,11 @@ export async function registerSlashCommands(): Promise<void> {
     const ticket = registered.find((command) => command.name === "ticket");
     if (ticket) {
       ticketCommandIds.set(guildId, ticket.id);
+    }
+
+    const schedule = registered.find((command) => command.name === "schedule");
+    if (schedule) {
+      scheduleCommandIds.set(guildId, schedule.id);
     }
   }
 }

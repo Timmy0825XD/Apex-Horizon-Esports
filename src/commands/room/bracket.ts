@@ -79,7 +79,7 @@ function groupLetters(matches: ChallongeMatch[]): Map<number, string> {
   return new Map(ids.map((id, index) => [id, index < 26 ? String.fromCharCode(65 + index) : `G${index + 1}`]));
 }
 
-function findTeam(tournament: TournamentRecord, teams: SheetTeam[], challongeName: string): SheetTeam | null {
+export function findTeam(tournament: TournamentRecord, teams: SheetTeam[], challongeName: string): SheetTeam | null {
   const needle = normName(challongeName);
   if (!needle) {
     return null;

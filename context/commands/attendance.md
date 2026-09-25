@@ -15,7 +15,7 @@ Reglas: [../domains/attendance-payroll.md](../domains/attendance-payroll.md).
 | remark | STRING (Autocomplete) | No | `DW` |
 | link | STRING | No | YouTube |
 
-Requiere schedule y hora alcanzada. Un activo por partido. Audita.
+Requiere schedule y hora alcanzada. Un activo por partido. Audita. Cuando se implemente, si ese partido ya tiene `/schedule results`, debe llamar `attachResultsLinks` con los links de la asistencia para refrescar **Links** en el ticket y en el canal de resultados.
 
 ## `/attendance delete`
 
@@ -53,7 +53,7 @@ Excel efímero. Organiser.
 | match | STRING (Autocomplete) | Sí |
 | link | STRING | Sí |
 
-Solo el recorder de esa asistencia. Máx. 7 YouTube. Puede postear en `events_links`. Audita.
+Solo el recorder de esa asistencia. Máx. 7 YouTube. Puede postear en `events_links`. Audita. Cuando se implemente, debe llamar `attachResultsLinks` con la lista completa. `/link delete` llama lo mismo con la lista vacía.
 
 ## `/link delete`
 

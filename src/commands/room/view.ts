@@ -61,14 +61,13 @@ export function battleTicketContainer(
   guild: Guild,
   tournamentName: string,
   format: TeamFormat,
-  helperRoleId: string,
   rulesChannelId: string,
   deadlineChannelId: string,
   match: ReadyMatch,
   avatars: { left?: string; right?: string },
 ): ContainerBuilder {
   const meta = [
-    `**Tournament:** **${escapeDiscord(tournamentName)}**`,
+    `${emojis.torneo} **Tournament:** **${escapeDiscord(tournamentName)}**`,
     match.group
       ? `**Round:** \`${roundLabel(match.round)}\` - **Group:** ${match.group}`
       : `**Round:** \`${roundLabel(match.round)}\``,
@@ -78,7 +77,6 @@ export function battleTicketContainer(
   const details = [
     `${emojis.rules} **Rules:** ${formatChannel(guild, rulesChannelId)}`,
     `${emojis.calendar} **Deadline:** ${formatChannel(guild, deadlineChannelId)}`,
-    `Please decide on a schedule and ping ${formatRole(guild, helperRoleId)}.`,
   ].join("\n");
 
   const title = `# ${titleSide(match.left, format, match.leftName)} ${emojis.vs} ${titleSide(match.right, format, match.rightName)}`;
@@ -134,7 +132,6 @@ export async function publishBattleTicket(
     guild,
     tournamentName,
     format,
-    helperRoleId,
     rulesChannelId,
     deadlineChannelId,
     match,

@@ -8,12 +8,13 @@ datasource db {
 }
 
 model Guild {
-  id        String         @id @default(auto()) @map("_id") @db.ObjectId
-  guildId   String         @unique
-  settings  GuildSettings?
-  staff     StaffConfig?
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  id                       String         @id @default(auto()) @map("_id") @db.ObjectId
+  guildId                  String         @unique
+  settings                 GuildSettings?
+  staff                    StaffConfig?
+  scheduleBackgroundCursor Int            @default(0)
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
 
   @@map("guilds")
 }
@@ -137,11 +138,16 @@ model Schedule {
   challongeMatchId Int
   channelId        String
   scheduledAt      DateTime
+  backgroundIndex  Int
   judgeId          String?
   recorderId       String?
   remark           String?
+  createdBy        String?
+  eventId          String?
   messages         ScheduleMessages
   confirmations    ScheduleConfirmations
+  alert            ScheduleAlert?
+  claimsOpenUntil  DateTime?
   reminderPhase    String
   results          ScheduleResults?
   createdAt        DateTime               @default(now())
@@ -165,13 +171,25 @@ type ScheduleConfirmations {
   recorder Boolean
 }
 
+type ScheduleAlert {
+  raisedAt         DateTime
+  judgeFailedId    String?
+  judgeVacant      Boolean
+  recorderFailedId String?
+  recorderVacant   Boolean
+}
+
 type ScheduleResults {
-  team1Score Int
-  team2Score Int
-  notes      String?
-  imageUrls  String[]
-  messageId  String
-  declaredAt DateTime
+  team1Score      Int
+  team2Score      Int
+  notes           String?
+  imageUrls       String[]
+  links           String[]
+  messageId       String
+  ticketMessageId String?
+  transcriptUrl   String?
+  uploadedBy      String?
+  declaredAt      DateTime
 }
 
 model Attendance {

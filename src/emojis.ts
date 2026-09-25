@@ -1,5 +1,5 @@
 export const emojis = {
-  success: "<:success:1548829647947698307>",
+  success: "<a:done:1552489133056991314>",
   error: "<:error:1548831163827888179>",
   info: "<:info:1548831481366061157>",
   ping: "<:ping:1548831753303752715>",
@@ -14,7 +14,7 @@ export const emojis = {
   uptime: "<a:uptime:1548834763362668574>",
   settings: "<a:settings:1548835217496739920>",
   runtime: "<:runtime:1548835862706655262>",
-  owner: "<:owner:1549928734729969714>",
+  owner: "<:owner:1552489616160981152>",
   id: "<:id:1549929018193739896>",
   humans: "<:humans:1549930495939190904>",
   bots: "<:bots:1549929527486971904>",
@@ -40,14 +40,20 @@ export const emojis = {
   numero8: "<:numero8:1550338511138201731>",
   numero9: "<:numero9:1550338512291762197>",
   numero10: "<:numero10:1550338513717825807>",
-  captains: "<:Captains:1550631381141553172>",
-  torneo: "<:torneo:1550632720936210432>",
+  captains: "<:Captains:1552514760111562854>",
+  torneo: "<a:trophy:1552494158445289492>",
   matchBy: "<:match_by:1550636636126060594>",
   banned: "<:banned:1550638818082824352>",
   hero: "<:hero:1550643418894442526>",
   legend: "<:legend:1550643420178030643>",
   vs : "<a:VS:1552063706668736654>",
   rules : "<:rules:1552068183555575838>",
+  judge : "<:judge:1552498341076795482>",
+  recorder : "<:recorder:1552498340015378492>",
+  challonge : "<:challonge:1519117366888235078>",
+  arrive : "<a:kirby_arrive:1552516996250210395>",
+  resign : "<a:resign:1552517299381207070>",
+  alert : "<a:alert:1552522913586872411>"
 } as const;
 
 export const numberEmojis = [

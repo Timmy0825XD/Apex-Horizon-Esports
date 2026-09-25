@@ -29,6 +29,7 @@ export type BotViewContext = {
   autoRoomCommandId?: string;
   roomCommandId?: string;
   ticketCommandId?: string;
+  scheduleCommandId?: string;
   helpPage?: number;
 };
 

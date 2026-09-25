@@ -41,6 +41,9 @@ function helpCommandId(slash: string, ctx: BotViewContext): string | undefined {
   if (slash.startsWith("ticket ")) {
     return ctx.ticketCommandId;
   }
+  if (slash.startsWith("schedule ")) {
+    return ctx.scheduleCommandId;
+  }
   return undefined;
 }
 

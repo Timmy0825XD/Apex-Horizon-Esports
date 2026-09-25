@@ -5,7 +5,7 @@ Hay tres bucles que no esperan a un comando:
 | Bucle | Cada | Qué decide |
 |---|---|---|
 | **Auto-room** | 00:00 UTC y 12:00 UTC | Si el torneo tiene auto-room encendido, sincroniza el bracket y abre **toda** la cola de salas `open` que aún no existen. |
-| **Recordatorio de schedule** | ~60 s | T-10: recordar y pedir confirmación. T-0: expulsar no confirmados y pedir reemplazo urgente. |
+| **Recordatorio de schedule** | ~60 s | T-10: recordatorio en el ticket. T-2: alerta roja si falta un puesto o no confirmaron. T-0: expulsar no confirmados. |
 | **Caducidad de bans** | periódico | Si un ban temporal venció, se levanta. |
 
 El reloj de auto-room se revisa cada minuto, pero solo dispara en esas dos horas (una vez por franja; si el proceso arranca dentro de esa hora, alcanza la franja). No abre una sala en el momento en que una llave anterior se completa.
