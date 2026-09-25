@@ -3,6 +3,9 @@ import { Client, Events, GatewayIntentBits, MessageFlags } from "discord.js";
 import { handleAutoRoomAuto, handleAutoRoomSlash } from "./commands/auto-room/handle.js";
 import { handleBotButton, handleBotSlash } from "./commands/bot/handle.js";
 import { handleRoomAuto, handleRoomButton, handleRoomSlash } from "./commands/room/handle.js";
+import { handleScheduleButton } from "./commands/schedule/buttons.js";
+import { handleScheduleSlash } from "./commands/schedule/handle.js";
+import { handleScheduleAuto } from "./commands/schedule/autocomplete.js";
 import { handleTicketSlash } from "./commands/ticket/handle.js";
 import { handleRoleSlash } from "./commands/role/handle.js";
 import { handleServerSlash } from "./commands/server/handle.js";
@@ -17,6 +20,7 @@ import { env } from "./lib/env.js";
 import { prisma } from "./lib/prisma.js";
 import { registerSlashCommands } from "./lib/register-slash.js";
 import { startAutoRoomWorker, stopAutoRoomWorker } from "./workers/auto-room.js";
+import { startScheduleWorker, stopScheduleWorker } from "./workers/schedule.js";
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages],
@@ -35,6 +39,7 @@ client.once(Events.ClientReady, async (readyClient) => {
 
   await registerSlashCommands();
   startAutoRoomWorker(readyClient);
+  startScheduleWorker(readyClient);
   console.log(`Ready as ${readyClient.user.tag}`);
 });
 
@@ -104,6 +109,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    if (interaction.isChatInputCommand() && interaction.commandName === "schedule") {
+      await handleScheduleSlash(interaction);
+      return;
+    }
+
     if (interaction.isAutocomplete() && interaction.commandName === "staff") {
       await handleStaffAuto(interaction);
       return;
@@ -129,6 +139,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    if (interaction.isAutocomplete() && interaction.commandName === "schedule") {
+      await handleScheduleAuto(interaction);
+      return;
+    }
+
     if (interaction.isButton() && interaction.customId.startsWith("tournament:")) {
       await handleTournamentButton(interaction);
       return;
@@ -151,6 +166,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.isButton() && interaction.customId.startsWith("bot:")) {
       await handleBotButton(interaction, client);
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith("schedule:")) {
+      await handleScheduleButton(interaction);
     }
   } catch (error) {
     console.error("Interaction failed", error);
@@ -175,6 +195,7 @@ async function main(): Promise<void> {
 
 async function shutdown(): Promise<void> {
   stopAutoRoomWorker();
+  stopScheduleWorker();
   await prisma.$disconnect();
   client.destroy();
 }

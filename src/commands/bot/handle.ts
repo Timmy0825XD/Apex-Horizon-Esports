@@ -5,7 +5,7 @@ import {
   type Client,
 } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
-import { autoRoomCommandIdFor, botCommandIdFor, roleCommandIdFor, roomCommandIdFor, serverCommandIdFor, settingsCommandIdFor, staffCommandIdFor, teamCommandIdFor, ticketCommandIdFor, tournamentCommandIdFor, userCommandIdFor, utilityCommandIdFor } from "../../lib/register-slash.js";
+import { autoRoomCommandIdFor, botCommandIdFor, roleCommandIdFor, roomCommandIdFor, scheduleCommandIdFor, serverCommandIdFor, settingsCommandIdFor, staffCommandIdFor, teamCommandIdFor, ticketCommandIdFor, tournamentCommandIdFor, userCommandIdFor, utilityCommandIdFor } from "../../lib/register-slash.js";
 import { buildAboutContainer } from "./about.js";
 import { buildHelpContainer, normalizeHelpPage } from "./help.js";
 import { buildPingContainer } from "./ping.js";
@@ -50,6 +50,7 @@ export async function handleBotSlash(interaction: ChatInputCommandInteraction, c
       autoRoomCommandId: autoRoomCommandIdFor(interaction.guildId),
       roomCommandId: roomCommandIdFor(interaction.guildId),
       ticketCommandId: ticketCommandIdFor(interaction.guildId),
+      scheduleCommandId: scheduleCommandIdFor(interaction.guildId),
       helpPage: 0,
     }),
   );
@@ -99,6 +100,7 @@ export async function handleBotButton(interaction: ButtonInteraction, client: Cl
       autoRoomCommandId: autoRoomCommandIdFor(interaction.guildId),
       roomCommandId: roomCommandIdFor(interaction.guildId),
       ticketCommandId: ticketCommandIdFor(interaction.guildId),
+      scheduleCommandId: scheduleCommandIdFor(interaction.guildId),
       helpPage,
     }),
   );

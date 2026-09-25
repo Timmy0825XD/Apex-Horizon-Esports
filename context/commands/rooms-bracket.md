@@ -43,7 +43,7 @@ Solo lectura. Se publica en el canal (no efímero). V2 con barra verde: título 
 | score2 | INTEGER | Sí |
 | note | STRING | No |
 
-Reporta al bracket, completa el match, cierra/archiva, transcript. El siguiente ticket espera al reloj si auto-room está on. Log: **Score Upload**. Empate prohibido.
+Reporta al bracket, completa el match, cierra/archiva, transcript. Al publicar el transcript debe llamar `attachResultsTranscript` con la URL de ese mensaje para enlazar el título de los embeds de `/schedule results`. El siguiente ticket espera al reloj si auto-room está on. Log: **Score Upload**. Empate prohibido.
 
 ## `/correct_bracket`
 

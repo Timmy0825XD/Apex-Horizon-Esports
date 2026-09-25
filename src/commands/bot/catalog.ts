@@ -89,7 +89,7 @@ export const helpCatalog: HelpCategory[] = [
       { slash: "schedule unassigned", summary: "List matches missing judge or recorder.", access: "Staff" },
       { slash: "schedule refresh", summary: "Renew buttons and the post link.", access: "Staff" },
       { slash: "schedule resign", summary: "Leave judge, recorder, or both.", access: "Assigned staff" },
-      { slash: "schedule results", summary: "Public result with proof. Does not advance the bracket.", access: "Judge" },
+      { slash: "schedule results", summary: "Public result in the ticket and the result channel. Does not advance the bracket.", access: "Judge" },
       { slash: "schedule results_delete", summary: "Remove that public result. Does not undo upload_score.", access: "Judge" },
     ],
   },
