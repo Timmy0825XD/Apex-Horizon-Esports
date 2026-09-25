@@ -141,7 +141,7 @@ export async function runUpdate(interaction: ChatInputCommandInteraction, bundle
       messages: resetReminders ? { ...schedule.messages, t10MessageId: null, t0MessageId: null } : schedule.messages,
     },
   });
-  await paintSchedule(guild, bundle.channel, bundle.settings, bundle.tournament, bundle.match, next, regenerate);
+  await paintSchedule(guild, bundle.channel, bundle.settings, bundle.tournament, bundle.match, next, regenerate || resetReminders);
   if (previousJudge && previousJudge !== judgeId) {
     await postSeatLine(bundle.channel, seatResignedLine("judge", previousJudge), previousJudge);
   }

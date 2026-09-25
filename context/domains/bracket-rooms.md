@@ -2,7 +2,7 @@
 
 El organizador crea y siembra el bracket **fuera**. El bot guarda la identidad del torneo en el bracket y una clave cifrada. Con eso:
 
-- **Sincroniza** partidos (ronda, grupo/fase, nombres, estado).
+- **Sincroniza** partidos (ronda, grupo/fase, nombres, estado y si es el partido de 3er puesto).
 - **Reporta** un marcador (`/upload_score`).
 - **Corrige** un marcador ya subido (`/correct_bracket`) y deja rastro de “antes / después”.
 

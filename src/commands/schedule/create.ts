@@ -15,6 +15,7 @@ import { replySchedule, scheduleNotice } from "./respond.js";
 import { createScheduleEvent, deleteScheduleEvent, syncScheduleEvent } from "./event.js";
 import { postSeatLine, seatAssignedLine } from "./seat.js";
 import { presentFace } from "./store.js";
+import { loadThumbnailFace, renderScheduleThumbnail } from "./thumbnail.js";
 import type { TicketBundle } from "./ticket.js";
 
 export async function runCreate(interaction: ChatInputCommandInteraction, bundle: TicketBundle): Promise<void> {
@@ -61,7 +62,9 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
     return;
   }
   const backgroundIndex = await takeNextBackground(guild.id);
-  const thumbnail = await publishThumbnail(guild, bundle.settings.thumbnailChannelId, backgroundIndex);
+  const thumbnailFace = await loadThumbnailFace(guild, bundle.tournament, bundle.match, when);
+  const image = await renderScheduleThumbnail(thumbnailFace, backgroundIndex);
+  const thumbnail = await publishThumbnail(guild, bundle.settings.thumbnailChannelId, backgroundIndex, image);
   const imageUrl = attachmentUrl(thumbnail);
   const created = await prisma.schedule.create({
     data: {
@@ -116,7 +119,7 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
     await within(8_000, markTicket(bundle.channel), "Channel mark");
     marked = true;
     eventId = await within(10_000, createScheduleEvent(guild, face), "Server event");
-    await within(20_000, syncScheduleEvent(guild, eventId, face, backgroundIndex), "Event image");
+    await within(20_000, syncScheduleEvent(guild, eventId, face, image), "Event image");
     await prisma.schedule.update({ where: { id: seated.id }, data: { eventId } });
     if (judge) {
       announced.push(await within(8_000, postSeatLine(bundle.channel, seatAssignedLine("judge", judge.id), judge.id), "Judge notice"));
