@@ -1,5 +1,4 @@
 import type { ChatInputCommandInteraction } from "discord.js";
-import { emojis } from "../../emojis.js";
 import { formatRole } from "../../lib/formatters.js";
 import { prisma } from "../../lib/prisma.js";
 import { isTournamentAdminOrHelper, memberHasRole } from "./access.js";
@@ -127,9 +126,7 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
     if (recorder) {
       announced.push(await within(8_000, postSeatLine(bundle.channel, seatAssignedLine("recorder", recorder.id), recorder.id), "Recorder notice"));
     }
-    await replySchedule(interaction, {
-      content: `${emojis.success} Match scheduled successfully. Thumbnail generated.`,
-    });
+    await replySchedule(interaction, scheduleNotice("success", "Schedule created", "Match scheduled successfully. Thumbnail generated."));
     await pingStaffChat(guild, bundle.settings.schedulesChannelId, messages.scheduleChannelMessageId, when, Boolean(judge), Boolean(recorder)).catch((error) => {
       console.error("Schedule staff ping failed", error);
     });

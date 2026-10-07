@@ -2,7 +2,7 @@
 
 Reglas: [../domains/schedules.md](../domains/schedules.md). Todos los de creación/cambio **excepto show / unassigned** se auditan.
 
-Toda la familia responde con **texto plano**, publicado en el canal, para que el transcript lo conserve. Los embeds clásicos son el post del schedule (ticket y canal de schedules) y la declaración de results (ticket y canal de resultados). Ningún mensaje de este flujo es efímero. El capitán no ejecuta ningún subcomando.
+Las respuestas del comando (éxito, error e info) son **Components V2** en el canal. Siguen en **texto plano** el aviso de asignar juez o recorder, el de renuncia o reemplazo, y la confirmación de asistencia. Los embeds clásicos son el post del schedule (ticket y canal de schedules) y la declaración de results (ticket y canal de resultados). Ningún mensaje de este flujo es efímero. El capitán no ejecuta ningún subcomando.
 
 | Subcomando | Quién |
 |---|---|
@@ -27,7 +27,7 @@ Toda la familia responde con **texto plano**, publicado en el canal, para que el
 | recorder | USER | No | Preasignar. Tiene que tener el rol **recorder** |
 | remark | STRING | No | Máx. 130 |
 
-Mínimo +10 minutos. Marca `🔴`. Admin o helper del torneo. Posts, punto rojo y evento son una sola operación: si uno falla, se borran el resto y el comando responde el error. Si el create trae juez o recorder, el ticket publica el mismo texto plano que el botón Assign. La respuesta al crear es el texto `Match scheduled successfully. Thumbnail generated.` con el emoji de éxito, no un Components V2. El thumbnail se compone sobre el fondo rotativo con icono del servidor, torneo, etapa (`ROUND n`, `SEMIFINAL`, `FINAL`, `3RD PLACE`…), equipos, fecha y hora UTC y nombre del servidor; los nombres demasiado anchos reducen fuente y luego terminan en elipsis. Relación: attendance, results, worker T-10/T-0, thumbnails de settings.
+Mínimo +10 minutos. Marca `🔴`. Admin o helper del torneo. Posts, punto rojo y evento son una sola operación: si uno falla, se borran el resto y el comando responde el error. Si el create trae juez o recorder, el ticket publica el mismo texto plano que el botón Assign. La respuesta al crear es un Components V2: **Schedule created** y `Match scheduled successfully. Thumbnail generated.` El thumbnail se compone sobre el fondo rotativo con icono del servidor, torneo, etapa (`ROUND n`, `SEMIFINAL`, `FINAL`, `3RD PLACE`…), equipos, fecha y hora UTC y nombre del servidor; los nombres demasiado anchos reducen fuente y luego terminan en elipsis. Relación: attendance, results, worker T-10/T-0, thumbnails de settings.
 
 ## `/schedule update`
 

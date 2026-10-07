@@ -8,16 +8,19 @@ import { auditSchedule, peopleLine, ticketLine } from "./audit.js";
 import { grantTicket, ticketChannel } from "./channel.js";
 import { paintSchedule } from "./live.js";
 import { formatUser } from "../../lib/formatters.js";
-import { scheduleNotice } from "./respond.js";
+import { schedulePlain } from "./respond.js";
 import { postSeatLine, seatAssignedLine } from "./seat.js";
 import { claimsAreOpen, confirmRow, parseScheduleButton } from "./view.js";
 
 function privateReply(interaction: ButtonInteraction, kind: "error" | "success" | "info", title: string, body: string) {
-  const notice = scheduleNotice(kind, title, body);
+  const payload = {
+    content: schedulePlain(kind, title, body),
+    allowedMentions: { parse: [] as const },
+  };
   if (interaction.deferred || interaction.replied) {
-    return interaction.editReply({ content: notice.content ?? null, allowedMentions: notice.allowedMentions });
+    return interaction.editReply(payload);
   }
-  return interaction.reply({ ...notice, flags: MessageFlags.Ephemeral });
+  return interaction.reply({ ...payload, flags: MessageFlags.Ephemeral });
 }
 
 export async function handleScheduleButton(interaction: ButtonInteraction): Promise<void> {
