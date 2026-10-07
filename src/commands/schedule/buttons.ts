@@ -14,11 +14,10 @@ import { claimsAreOpen, confirmRow, parseScheduleButton } from "./view.js";
 
 function privateReply(interaction: ButtonInteraction, kind: "error" | "success" | "info", title: string, body: string) {
   const notice = scheduleNotice(kind, title, body);
-  const flags = [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2] as const;
   if (interaction.deferred || interaction.replied) {
-    return interaction.editReply({ components: notice.components, flags: [MessageFlags.IsComponentsV2] });
+    return interaction.editReply({ content: notice.content ?? null, allowedMentions: notice.allowedMentions });
   }
-  return interaction.reply({ ...notice, flags });
+  return interaction.reply({ ...notice, flags: MessageFlags.Ephemeral });
 }
 
 export async function handleScheduleButton(interaction: ButtonInteraction): Promise<void> {
@@ -58,7 +57,7 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
     return;
   }
   if (!claimsAreOpen(schedule.claimsOpenUntil)) {
-    await privateReply(interaction, "error", "Buttons locked", "Claim buttons are locked. Staff can run refresh to open them for 10 minutes.");
+    await privateReply(interaction, "error", "Buttons locked", "Claim buttons are locked. A judge or recorder can run refresh to open them for 10 minutes.");
     return;
   }
   if ((seat === "judge" && schedule.judgeId) || (seat === "recorder" && schedule.recorderId)) {

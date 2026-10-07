@@ -222,6 +222,9 @@ export function resultsEmbed(input: {
   if (links) {
     lines.push("", "**Links:**", links);
   }
+  if (input.transcriptUrl) {
+    lines.push("", `${emojis.transcript} **Transcript:** ${emojis.link} [Click here](${input.transcriptUrl})`);
+  }
   const embed = card
     .setColor(embedColors.success)
     .setDescription(lines.join("\n"))
@@ -236,9 +239,9 @@ export function resultsEmbed(input: {
 function resultLine(face: ScheduleFace, team1Score: number, team2Score: number): string {
   const left = `**${escapeDiscord(face.leftName.toUpperCase())}**`;
   const right = `**${escapeDiscord(face.rightName.toUpperCase())}**`;
-  const leftName = team1Score > team2Score ? `${emojis.torneo} ${left}` : left;
-  const rightName = team2Score > team1Score ? `${emojis.torneo} ${right}` : right;
-  return `${leftName} \`${team1Score}\` ${emojis.vs} \`${team2Score}\` ${rightName}`;
+  const leftName = team1Score > team2Score ? `${emojis.winner} ${left}` : left;
+  const rightName = team2Score > team1Score ? `${emojis.winner} ${right}` : right;
+  return `${emojis.scoreboard} ${leftName} \`${team1Score}\` ${emojis.vs} \`${team2Score}\` ${rightName}`;
 }
 
 function linkLine(links: string[]): string | null {
@@ -246,5 +249,5 @@ function linkLine(links: string[]): string | null {
   if (usable.length === 0) {
     return null;
   }
-  return usable.map((link, index) => `[Link ${index + 1}](${link})`).join(" ");
+  return usable.map((link, index) => `${emojis.link} [Link ${index + 1}](${link})`).join("\n");
 }

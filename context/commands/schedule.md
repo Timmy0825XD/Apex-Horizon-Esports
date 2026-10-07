@@ -2,12 +2,13 @@
 
 Reglas: [../domains/schedules.md](../domains/schedules.md). Todos los de creación/cambio **excepto show / unassigned** se auditan.
 
-Toda la familia responde con **Components V2**, publicado en el canal. Los embeds clásicos son el post del schedule (ticket y canal de schedules) y la declaración de results (ticket y canal de resultados). Ningún mensaje de este flujo es efímero. El capitán no ejecuta ningún subcomando.
+Toda la familia responde con **texto plano**, publicado en el canal, para que el transcript lo conserve. Los embeds clásicos son el post del schedule (ticket y canal de schedules) y la declaración de results (ticket y canal de resultados). Ningún mensaje de este flujo es efímero. El capitán no ejecuta ningún subcomando.
 
 | Subcomando | Quién |
 |---|---|
 | `create` · `update` · `delete` | Rol **admin** o **helper** de ese torneo |
-| `show` · `unassigned` · `refresh` | Rol **staff** del servidor (`/staff config`) |
+| `show` · `unassigned` | Rol **staff** del servidor (`/staff config`) |
+| `refresh` | Rol **judge** o **recorder** del servidor |
 | `results` · `results_delete` | Rol **judge** del servidor |
 | `resign` | Solo quien está asignado a ese schedule, dentro del ticket |
 
@@ -60,7 +61,11 @@ Consulta. Rol staff. Alimenta reclutamiento de staff de mesa.
 
 ## `/schedule refresh`
 
-**Solo ticket.** Rol staff. Abre otra vez los botones de reclamar durante 10 minutos. Un puesto ya ocupado sigue apagado. No cambia la hora.
+**Cualquier canal.** Rol judge o recorder. Abre otra vez los botones de reclamar durante 10 minutos. Un puesto ya ocupado sigue apagado. No cambia la hora. La respuesta incluye el **Link** al post del schedule en el canal de schedules.
+
+| Campo | Tipo | Obligatorio |
+|---|---|---|
+| match | STRING (Autocomplete) | Sí | Schedules del servidor (`lado vs lado | torneo | fecha UTC`) |
 
 ## `/schedule resign`
 
@@ -83,7 +88,7 @@ Consulta. Rol staff. Alimenta reclutamiento de staff de mesa.
 | notes | STRING | No | Máx. 500. Sale como **Remarks** |
 | image1 … image10 | ATTACHMENT | No | Pruebas. Todas opcionales |
 
-Publica el mismo embed en el ticket y en `result_channel`. Solo el ticket lleva encima el texto **Match Complete** con los capitanes. Es la tarjeta del schedule, en verde, con la hora de la declaración (**Result UTC Time** / **Result Local Time**), más **Results** (marcador; el ganador lleva el trofeo) y **Links**. Links nace vacío: lo llenan `/attendance mark` y `/link add` cuando existan, llamando `attachResultsLinks` con la lista completa. El título no lleva enlace hasta que `/upload_score` transcriba el ticket y llame `attachResultsTranscript` con la URL de ese mensaje. No sube el bracket. Relación: `/upload_score`, `/schedule results_delete`.
+Publica el mismo embed en el ticket y en `result_channel`. Solo el ticket lleva encima el texto **Match Complete** con los capitanes. Es la tarjeta del schedule, en verde, con la hora de la declaración (**Result UTC Time** / **Result Local Time**), más **Results** (marcador; el ganador lleva el trofeo) y **Links**. Links nace vacío: lo llenan `/attendance mark` y `/link add` cuando existan, llamando `attachResultsLinks` con la lista completa. El título no lleva enlace hasta que `/bracket upload` transcriba el ticket y llame `attachResultsTranscript` con la URL de ese mensaje. No sube el bracket. Relación: `/bracket upload`, `/schedule results_delete`.
 
 ## `/schedule results_delete`
 

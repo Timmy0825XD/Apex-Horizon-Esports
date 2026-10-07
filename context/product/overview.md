@@ -20,7 +20,7 @@ El bot es el **operador de torneo** de un servidor Discord. Un servidor puede te
 - No es el formulario de inscripción. Los capitanes escriben en la hoja; el bot **lee y valida**. Guarda **copias globales** de esas hojas para `/tournament find_player`; la Google Sheet sigue siendo la verdad al operar el torneo.
 - No es el reglamento. Publica y apunta al canal de reglas; no redacta el ruleset.
 - No es un archivo histórico de chats. El transcript es un HTML que se **envía a un canal** y no se guarda como registro interno.
-- No es un juez automático. El resultado humano (asistencia, capturas, schedule results) y el resultado del bracket (`/upload_score`) son **dos actos distintos**.
+- No es un juez automático. El resultado humano (asistencia, capturas, schedule results) y el resultado del bracket (`/bracket upload`) son **dos actos distintos**.
 
 ## Unidad operativa: el ticket
 

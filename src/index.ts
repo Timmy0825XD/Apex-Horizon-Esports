@@ -1,6 +1,11 @@
 import "./lib/env.js";
 import { Client, Events, GatewayIntentBits, MessageFlags } from "discord.js";
 import { handleAutoRoomAuto, handleAutoRoomSlash } from "./commands/auto-room/handle.js";
+import {
+  handleBracketAutocomplete,
+  handleBracketButtonInteraction,
+  handleBracketSlash,
+} from "./commands/bracket/handle.js";
 import { handleBotButton, handleBotSlash } from "./commands/bot/handle.js";
 import { handleRoomAuto, handleRoomButton, handleRoomSlash } from "./commands/room/handle.js";
 import { handleScheduleButton } from "./commands/schedule/buttons.js";
@@ -23,7 +28,12 @@ import { startAutoRoomWorker, stopAutoRoomWorker } from "./workers/auto-room.js"
 import { startScheduleWorker, stopScheduleWorker } from "./workers/schedule.js";
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
 async function leaveIfUnauthorized(guildId: string, leave: () => Promise<unknown>): Promise<void> {
@@ -109,6 +119,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    if (interaction.isChatInputCommand() && interaction.commandName === "bracket") {
+      await handleBracketSlash(interaction);
+      return;
+    }
+
     if (interaction.isChatInputCommand() && interaction.commandName === "schedule") {
       await handleScheduleSlash(interaction);
       return;
@@ -144,8 +159,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    if (interaction.isAutocomplete() && interaction.commandName === "bracket") {
+      await handleBracketAutocomplete(interaction);
+      return;
+    }
+
     if (interaction.isButton() && interaction.customId.startsWith("tournament:")) {
       await handleTournamentButton(interaction);
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith("bracket:")) {
+      await handleBracketButtonInteraction(interaction);
       return;
     }
 

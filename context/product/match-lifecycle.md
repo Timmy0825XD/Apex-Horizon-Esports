@@ -25,7 +25,7 @@ Se juega el partido
         ↓
 ASISTENCIA (quién trabajó + marcador humano + link opcional)
         ↓
-RESULTADO DE SCHEDULE (embed en el ticket y en el canal de resultados; el título se enlaza al transcript después de /upload_score)
+RESULTADO DE SCHEDULE (embed en el ticket y en el canal de resultados; el título se enlaza al transcript después de /bracket upload)
         ↓
 UPLOAD SCORE (el bracket avanza de verdad)
   · ticket se cierra / renombra / mueve a categoría cerrada
@@ -41,7 +41,7 @@ La gente los confunde. El bot **no** los fusiona en un solo comando.
 |---|---|---|
 | `/attendance mark` | Staff presente, marcador de trabajo, evidencia de grabación | No |
 | `/schedule results` | Declaración pública en el ticket y en el canal de resultados. Las capturas son opcionales | No |
-| `/upload_score` | Informe oficial al cuadro | **Sí** |
+| `/bracket upload` | Informe oficial al cuadro | **Sí** |
 
 Se puede marcar asistencia sin haber subido el score, y se puede subir el score sin haber declarado resultados de schedule. Operativamente se espera el orden de arriba.
 
@@ -87,11 +87,11 @@ botones + worker T-10/T-0
 /schedule results
         → el ticket y el canal de resultados tienen la declaración. Links se rellenan después con attachResultsLinks
 
-/upload_score
+/bracket upload
         → el bracket avanza y, al publicar el transcript, attachResultsTranscript enlaza el título de los dos embeds. El siguiente ticket no nace al momento: espera 00:00 o 12:00 UTC si auto-room está on, o `/room create`
 
-/correct_bracket
-        → el cuadro se enmienda y las salas mentirosas se reconstruyen
+/bracket correct
+        → el cuadro se enmienda y las salas mentirosas se reconstruyen (con confirmación si hay que borrar tickets)
 
 /get sheet  /  /staff work  /  /work_done
         → se paga y se evalúa a partir de la asistencia, no del bracket

@@ -11,7 +11,7 @@ Solo se auditan mutaciones. Extraer o visualizar información **no** genera log.
 | Acción | ¿Audita? | Ejemplos |
 |---|---|---|
 | **Crear / registrar** | Sí | `/settings set`, `/tournament add`, `/tournament add_sheet`, `/schedule create`, `/attendance mark` |
-| **Modificar** | Sí | `/settings edit`, `/upload_score`, `/schedule update`, `/staff recruit` |
+| **Modificar** | Sí | `/settings edit`, `/bracket upload`, `/schedule update`, `/staff recruit` |
 | **Borrar** | Sí | `/tournament delete`, `/ticket delete`, `/attendance delete`, `/user unban` |
 | **Leer / listar / extraer** | No | `/bot ping`, `/settings show`, `/tournament list`, `/tournament find_player`, `/tournament get_sheet`, `/team info`, `/team list`, `/staff work`, `/server banlist` |
 
@@ -27,7 +27,7 @@ El bot no habla “como el bot” en esos canales si puede evitarlo. Crea o reut
 | Bot logs | **Bot Logs** | Config, staff, roles, salas, schedules, asistencia, bans, utilidades de mutación |
 | Bot logs | **Ticket System** | Cerrar / reabrir / borrar ticket |
 | Challonge logs | **Challonge Logs** | Vincular o cambiar credenciales/identidad de bracket |
-| Challonge logs | **Score Upload** | `/upload_score` y `/correct_bracket` |
+| Challonge logs | **Score Upload** | `/bracket upload` y `/bracket correct` |
 | Transcript logs | **Transcripts** | Archivo HTML (no es auditoría de “quién pulsó qué”) |
 
 Si el webhook no se puede crear o falló el envío, se **reintenta** y, si sigue fallando, el mensaje lo manda el propio bot. Nadie es mencionado desde un log (`allowed mentions` vacío).

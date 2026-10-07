@@ -42,6 +42,10 @@ async function dispatchSchedule(interaction: ChatInputCommandInteraction): Promi
     await runUnassigned(interaction);
     return;
   }
+  if (sub === "refresh") {
+    await runRefresh(interaction);
+    return;
+  }
   if (!interaction.deferred && !interaction.replied) {
     await interaction.deferReply();
   }
@@ -60,14 +64,6 @@ async function dispatchSchedule(interaction: ChatInputCommandInteraction): Promi
   }
   if (sub === "delete") {
     await runDelete(interaction, loaded);
-    return;
-  }
-  if (sub === "refresh") {
-    if (!loaded.staff) {
-      await replySchedule(interaction, scheduleNotice("error", "Staff not configured", "Staff roles are not configured yet."));
-      return;
-    }
-    await runRefresh(interaction, loaded, loaded.staff);
     return;
   }
   if (sub === "resign") {

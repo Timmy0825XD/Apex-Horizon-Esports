@@ -24,8 +24,8 @@ const CHAT = {
 } as const;
 
 async function editAccess(channel: TextChannel, guildId: string, access: typeof SILENCE | typeof CHAT): Promise<void> {
-  const overwrites = channel.permissionOverwrites.cache.filter((overwrite) => overwrite.id !== guildId);
-  await Promise.all(overwrites.map((overwrite) => channel.permissionOverwrites.edit(overwrite.id, access)));
+  const overwrites = [...channel.permissionOverwrites.cache.values()].filter((overwrite) => overwrite.id !== guildId);
+  await Promise.all(overwrites.map((overwrite) => overwrite.edit(access, "Battle ticket access")));
 }
 
 async function move(channel: TextChannel, categoryId: string): Promise<void> {

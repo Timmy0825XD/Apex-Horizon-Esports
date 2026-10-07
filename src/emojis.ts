@@ -53,7 +53,13 @@ export const emojis = {
   challonge : "<:challonge:1519117366888235078>",
   arrive : "<a:kirby_arrive:1552516996250210395>",
   resign : "<a:resign:1552517299381207070>",
-  alert : "<a:alert:1552522913586872411>"
+  alert : "<a:alert:1552522913586872411>",
+  transcript : "<a:transcript:1553960216549138574>",
+  winner : "<a:winner:1553965508720730182>",
+  link : "<:link:1553966732161581057>",
+  transcript_thumnail : "<a:transcript_thumnail:1553972341464236092>",
+  scoreboard : "<:scoreboard:1553968006613303337>",
+  open_close : "<a:open_close:1553970562064191519>",
 } as const;
 
 export const numberEmojis = [

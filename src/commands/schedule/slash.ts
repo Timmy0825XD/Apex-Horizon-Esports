@@ -59,7 +59,14 @@ export const scheduleSlash = new SlashCommandBuilder()
           ),
       ),
   )
-  .addSubcommand((subcommand) => subcommand.setName("refresh").setDescription("Refresh"))
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("refresh")
+      .setDescription("Refresh claim buttons")
+      .addStringOption((option) =>
+        option.setName("match").setDescription("Select the match to refresh").setRequired(true).setAutocomplete(true),
+      ),
+  )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("resign")
