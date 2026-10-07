@@ -18,6 +18,10 @@ export type ChallongeMatch = {
   groupId: number | null;
   player1Id: number | null;
   player2Id: number | null;
+  winnerId: number | null;
+  scoresCsv: string | null;
+  player1PrereqMatchId: number | null;
+  player2PrereqMatchId: number | null;
 };
 
 export type ChallongeBracket = {
@@ -58,7 +62,13 @@ export function normalizeChallongeId(raw: string): string {
   }
 }
 
-async function challongeGet(path: string, apiKey: string, timeoutMs: number): Promise<unknown> {
+async function challongeRequest(
+  method: "GET" | "PUT" | "POST",
+  path: string,
+  apiKey: string,
+  timeoutMs: number,
+  body?: Record<string, unknown>,
+): Promise<unknown> {
   const joiner = path.includes("?") ? "&" : "?";
   const url = `https://api.challonge.com/v1/${path}${joiner}api_key=${encodeURIComponent(apiKey)}`;
   const controller = new AbortController();
@@ -66,32 +76,58 @@ async function challongeGet(path: string, apiKey: string, timeoutMs: number): Pr
 
   try {
     const response = await fetch(url, {
+      method,
       signal: controller.signal,
-      headers: { "User-Agent": "ApexHorizonEsportsBot/0.1", Accept: "application/json" },
+      headers: {
+        "User-Agent": "ApexHorizonEsportsBot/0.1",
+        Accept: "application/json",
+        ...(body ? { "Content-Type": "application/json" } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
     });
 
     if (response.status === 401 || response.status === 422) {
-      throw new ChallongeError("bad-key", "Challonge rejected that API key.");
+      const detail = await response.text().catch(() => "");
+      throw new ChallongeError(
+        "bad-key",
+        detail.includes("score") || detail.includes("winner")
+          ? "Challonge rejected that score update. Check the scores and that the match can still be edited."
+          : "Challonge rejected that API key.",
+      );
     }
     if (response.status === 404) {
       throw new ChallongeError(
         "not-found",
-        "Challonge could not find that tournament. Check the URL or ID and that the key can access it.",
+        "Challonge could not find that tournament or match. Check the URL or ID and that the key can access it.",
       );
     }
     if (!response.ok) {
       throw new ChallongeError("bad-response", `Challonge returned HTTP \`${response.status}\`. Try again in a moment.`);
     }
 
-    return await response.json();
+    if (response.status === 204) {
+      return null;
+    }
+    const text = await response.text();
+    if (!text) {
+      return null;
+    }
+    return JSON.parse(text) as unknown;
   } catch (error) {
     if (error instanceof ChallongeError) {
       throw error;
+    }
+    if (error instanceof SyntaxError) {
+      throw new ChallongeError("bad-response", "Challonge returned an unexpected payload.");
     }
     throw new ChallongeError("timeout", "Timed out talking to Challonge. Try again in a moment.");
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function challongeGet(path: string, apiKey: string, timeoutMs: number): Promise<unknown> {
+  return challongeRequest("GET", path, apiKey, timeoutMs);
 }
 
 export async function fetchChallongeTournament(id: string, apiKey: string): Promise<ChallongeTournament> {
@@ -124,6 +160,10 @@ type RawMatch = {
   player1_id?: number | null;
   player2_id?: number | null;
   group_id?: number | null;
+  winner_id?: number | null;
+  scores_csv?: string | null;
+  player1_prereq_match_id?: number | null;
+  player2_prereq_match_id?: number | null;
 };
 
 function unwrap<T extends object>(row: unknown, key: string): T | null {
@@ -140,6 +180,21 @@ function unwrap<T extends object>(row: unknown, key: string): T | null {
 
 function asId(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function mapMatch(match: RawMatch, matchId: number): ChallongeMatch {
+  return {
+    id: matchId,
+    state: match.state ?? "pending",
+    round: typeof match.round === "number" ? match.round : 0,
+    groupId: asId(match.group_id),
+    player1Id: asId(match.player1_id),
+    player2Id: asId(match.player2_id),
+    winnerId: asId(match.winner_id),
+    scoresCsv: match.scores_csv?.trim() || null,
+    player1PrereqMatchId: asId(match.player1_prereq_match_id),
+    player2PrereqMatchId: asId(match.player2_prereq_match_id),
+  };
 }
 
 export async function fetchChallongeBracket(id: string, apiKey: string): Promise<ChallongeBracket> {
@@ -175,16 +230,7 @@ export async function fetchChallongeBracket(id: string, apiKey: string): Promise
     if (!match || matchId == null) {
       return [];
     }
-    return [
-      {
-        id: matchId,
-        state: match.state ?? "pending",
-        round: typeof match.round === "number" ? match.round : 0,
-        groupId: asId(match.group_id),
-        player1Id: asId(match.player1_id),
-        player2Id: asId(match.player2_id),
-      },
-    ];
+    return [mapMatch(match, matchId)];
   });
 
   return {
@@ -192,4 +238,91 @@ export async function fetchChallongeBracket(id: string, apiKey: string): Promise
     participants,
     matches,
   };
+}
+
+export async function updateChallongeMatch(
+  tournamentId: string,
+  matchId: number,
+  apiKey: string,
+  scoresCsv: string,
+  winnerId: number,
+): Promise<ChallongeMatch> {
+  const body = (await challongeRequest(
+    "PUT",
+    `tournaments/${encodeURIComponent(tournamentId)}/matches/${matchId}.json`,
+    apiKey,
+    20_000,
+    { match: { scores_csv: scoresCsv, winner_id: winnerId } },
+  )) as { match?: RawMatch };
+
+  const match = unwrap<RawMatch>(body?.match ?? body, "match");
+  const id = asId(match?.id) ?? matchId;
+  if (!match) {
+    throw new ChallongeError("bad-response", "Challonge returned an unexpected match payload.");
+  }
+  return mapMatch(match, id);
+}
+
+export async function reopenChallongeMatch(tournamentId: string, matchId: number, apiKey: string): Promise<void> {
+  await challongeRequest(
+    "POST",
+    `tournaments/${encodeURIComponent(tournamentId)}/matches/${matchId}/reopen.json`,
+    apiKey,
+    20_000,
+  );
+}
+
+export function descendantMatchIds(rootId: number, matches: ChallongeMatch[]): number[] {
+  const byPrereq = new Map<number, number[]>();
+  for (const match of matches) {
+    for (const prereq of [match.player1PrereqMatchId, match.player2PrereqMatchId]) {
+      if (prereq == null) {
+        continue;
+      }
+      const list = byPrereq.get(prereq) ?? [];
+      list.push(match.id);
+      byPrereq.set(prereq, list);
+    }
+  }
+
+  const found: number[] = [];
+  const seen = new Set<number>();
+  const queue = [...(byPrereq.get(rootId) ?? [])];
+  while (queue.length > 0) {
+    const id = queue.shift();
+    if (id == null || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    found.push(id);
+    queue.push(...(byPrereq.get(id) ?? []));
+  }
+  return found;
+}
+
+export function winnerIdFromScores(
+  player1Id: number,
+  player2Id: number,
+  score1: number,
+  score2: number,
+): number {
+  if (score1 === score2) {
+    throw new ChallongeError("bad-response", "Ties are not allowed on the bracket.");
+  }
+  return score1 > score2 ? player1Id : player2Id;
+}
+
+export function scoresCsv(score1: number, score2: number): string {
+  return `${score1}-${score2}`;
+}
+
+export function parseScoresCsv(raw: string | null | undefined): { score1: number; score2: number } | null {
+  if (!raw) {
+    return null;
+  }
+  const match = raw.trim().match(/^(\d+)\s*-\s*(\d+)/);
+  if (!match) {
+    return null;
+  }
+  return { score1: Number(match[1]), score2: Number(match[2]) };
 }

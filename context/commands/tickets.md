@@ -16,4 +16,4 @@ Sin campos. Restaura el chat y devuelve el canal a la categoría abierta en la q
 
 Sin campos. Destruye el canal y olvida el vínculo partido↔canal. Ese partido puede recibir otro ticket después. **Ticket System**.
 
-Relación: distinto de `/upload_score` (ese cierra *y* reporta).
+Relación: distinto de `/bracket upload` (ese cierra *y* reporta).

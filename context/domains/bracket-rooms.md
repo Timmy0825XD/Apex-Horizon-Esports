@@ -3,8 +3,8 @@
 El organizador crea y siembra el bracket **fuera**. El bot guarda la identidad del torneo en el bracket y una clave cifrada. Con eso:
 
 - **Sincroniza** partidos (ronda, grupo/fase, nombres, estado).
-- **Reporta** un marcador (`/upload_score`).
-- **Corrige** un marcador ya subido (`/correct_bracket`) y deja rastro de “antes / después”.
+- **Reporta** un marcador (`/bracket upload`).
+- **Corrige** un marcador ya subido (`/bracket correct`) y deja rastro de “antes / después”.
 
 Empates en el bracket **no se aceptan**. El ganador se deduce del marcador.
 
@@ -62,11 +62,11 @@ Discord limita 50 canales por categoría. El bot llena categoría 1 → 2 → 3 
 
 ## Corrección aguas abajo
 
-Si `/correct_bracket` cambia quién avanza y ya había un ticket abierto con los equipos viejos, ese ticket se **borra y se recrea** con los equipos correctos.
+Si `/bracket correct` cambia quién avanza y ya había ticket(s) en partidos descendientes con los equipos viejos, esos tickets se **borran**, sus puntajes en el bracket se **reinician**, y solo se **recrean** los que queden `open` con capitanes correctos. Antes de borrar/recrear hace falta confirmación (Aceptar / Cancelar): un Components V2 con el logo de Challonge, la lista de esos tickets y las consecuencias.
 
 `/room available` no crea nada: enseña la cola (quién podría tener sala ahora, y quién está bloqueado por la hoja).
 
-`/upload_score` solo se usa **dentro del ticket**. Reporta al bracket, completa el match, cierra/archiva, genera transcript. El siguiente ticket, si auto-room está on, espera a 00:00 o 12:00 UTC. Empate prohibido.
+`/bracket upload` solo se usa **dentro del ticket**. Reporta al bracket, completa el match, renombra (sin `🔴`, solo `✅`), cierra/archiva, genera transcript completo (nombre = título del canal) en un Components V2 del canal de transcripts, con el emoji `transcript_thumnail` de thumbnail, y enlaza esa URL a los embeds de `/schedule results` si existen. Las tres confirmaciones en el ticket son Components V2 con título grande: avatar de quien ejecutó, emoji `open_close` y emoji `transcript_thumnail`. La advertencia y el éxito de `/bracket correct` son Components V2; el éxito lleva el emoji de Challonge como thumbnail. El siguiente ticket, si auto-room está on, espera a 00:00 o 12:00 UTC. Empate prohibido.
 
 ## Relacionado
 

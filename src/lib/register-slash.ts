@@ -1,6 +1,7 @@
 import { REST, Routes, type RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
 import { autoRoomSlash } from "../commands/auto-room/slash.js";
 import { botSlash } from "../commands/bot/slash.js";
+import { bracketSlash } from "../commands/bracket/slash.js";
 import { roomSlash } from "../commands/room/slash.js";
 import { ticketSlash } from "../commands/ticket/slash.js";
 import { scheduleSlash } from "../commands/schedule/slash.js";
@@ -27,6 +28,7 @@ const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
   autoRoomSlash.toJSON(),
   roomSlash.toJSON(),
   ticketSlash.toJSON(),
+  bracketSlash.toJSON(),
   scheduleSlash.toJSON(),
 ].map(omitOptionalRequired);
 
@@ -63,6 +65,7 @@ export const utilityCommandIds = new Map<string, string>();
 export const autoRoomCommandIds = new Map<string, string>();
 export const roomCommandIds = new Map<string, string>();
 export const ticketCommandIds = new Map<string, string>();
+export const bracketCommandIds = new Map<string, string>();
 export const scheduleCommandIds = new Map<string, string>();
 
 export function botCommandIdFor(guildId: string | null | undefined): string | undefined {
@@ -149,6 +152,13 @@ export function ticketCommandIdFor(guildId: string | null | undefined): string |
   return ticketCommandIds.get(guildId);
 }
 
+export function bracketCommandIdFor(guildId: string | null | undefined): string | undefined {
+  if (!guildId) {
+    return undefined;
+  }
+  return bracketCommandIds.get(guildId);
+}
+
 export function scheduleCommandIdFor(guildId: string | null | undefined): string | undefined {
   if (!guildId) {
     return undefined;
@@ -222,6 +232,11 @@ export async function registerSlashCommands(): Promise<void> {
     const ticket = registered.find((command) => command.name === "ticket");
     if (ticket) {
       ticketCommandIds.set(guildId, ticket.id);
+    }
+
+    const bracket = registered.find((command) => command.name === "bracket");
+    if (bracket) {
+      bracketCommandIds.set(guildId, bracket.id);
     }
 
     const schedule = registered.find((command) => command.name === "schedule");

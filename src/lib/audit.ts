@@ -12,6 +12,7 @@ import { formatUserFromUser } from "./formatters.js";
 export const auditLogTitles = {
   botLogs: "Bot Logs",
   challongeLogs: "Challonge Logs",
+  scoreUpload: "Score Upload",
   ticketSystem: "Ticket System",
 } as const;
 

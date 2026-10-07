@@ -1,9 +1,12 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 import { prisma } from "../../lib/prisma.js";
-import { isStaff, isTournamentAdminOrHelper, memberHasRole } from "./access.js";
+import { loadGuildSettings } from "../settings/store.js";
+import { loadGuildStaffState } from "../staff/store.js";
+import { findTournamentById } from "../tournament/store.js";
+import { isJudge, isRecorder, isTournamentAdminOrHelper, memberHasRole } from "./access.js";
 import { auditSchedule, peopleLine, ticketLine } from "./audit.js";
 import { isAtLeastTenMinutesAhead, utcFromParts, type ClockParts } from "./clock.js";
-import { grantTicket, revokeTicket } from "./channel.js";
+import { grantTicket, revokeTicket, ticketChannel } from "./channel.js";
 import { deleteTracked } from "./messages.js";
 import { paintSchedule } from "./live.js";
 import { replySchedule, scheduleNotice } from "./respond.js";
@@ -168,28 +171,70 @@ export async function runUpdate(interaction: ChatInputCommandInteraction, bundle
   });
 }
 
-export async function runRefresh(interaction: ChatInputCommandInteraction, bundle: TicketBundle, staff: NonNullable<TicketBundle["staff"]>): Promise<void> {
+export async function runRefresh(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = interaction.guild;
-  const schedule = bundle.schedule;
-  if (!guild || !schedule) {
-    await replySchedule(interaction, scheduleNotice("error", "No schedule", "Create a schedule in this ticket first."));
+  if (!guild || !interaction.guildId) {
     return;
   }
-  if (!isStaff(interaction, staff)) {
-    await replySchedule(interaction, scheduleNotice("error", "Staff required", "Only members with the **staff** role can refresh a schedule."));
+  if (!interaction.deferred && !interaction.replied) {
+    await interaction.deferReply();
+  }
+  const { staff } = await loadGuildStaffState(guild.id);
+  if (!staff) {
+    await replySchedule(interaction, scheduleNotice("error", "Staff not configured", "Staff roles are not configured yet."));
+    return;
+  }
+  if (!isJudge(interaction, staff) && !isRecorder(interaction, staff)) {
+    await replySchedule(
+      interaction,
+      scheduleNotice("error", "Judge or recorder required", "Only members with the **judge** or **recorder** role can refresh a schedule."),
+    );
+    return;
+  }
+  const settings = await loadGuildSettings(guild.id);
+  if (!settings) {
+    await replySchedule(interaction, scheduleNotice("error", "Settings missing", "Server settings are not configured yet."));
+    return;
+  }
+  const scheduleId = interaction.options.getString("match", true);
+  const schedule = await prisma.schedule.findUnique({ where: { id: scheduleId } });
+  if (!schedule || schedule.guildId !== guild.id) {
+    await replySchedule(interaction, scheduleNotice("error", "Schedule not found", "Pick a match from the list."));
+    return;
+  }
+  const tournament = await findTournamentById(guild.id, schedule.tournamentId);
+  const match = await prisma.match.findUnique({
+    where: {
+      tournamentId_challongeMatchId: {
+        tournamentId: schedule.tournamentId,
+        challongeMatchId: schedule.challongeMatchId,
+      },
+    },
+  });
+  const ticket = await ticketChannel(guild, schedule.channelId);
+  if (!tournament || !match || !ticket) {
+    await replySchedule(interaction, scheduleNotice("error", "Schedule not found", "That match does not have a usable schedule in this server."));
     return;
   }
   const opened = await prisma.schedule.update({
     where: { id: schedule.id },
     data: { claimsOpenUntil: new Date(Date.now() + 10 * 60 * 1000) },
   });
-  await paintSchedule(guild, bundle.channel, bundle.settings, bundle.tournament, bundle.match, opened, false);
-  await replySchedule(interaction, scheduleNotice("info", "Schedule refreshed", "The posts and claim buttons were renewed. The time did not change."));
+  const painted = await paintSchedule(guild, ticket, settings, tournament, match, opened, false);
+  const boardUrl = `https://discord.com/channels/${guild.id}/${settings.schedulesChannelId}/${painted.messages.scheduleChannelMessageId}`;
+  await replySchedule(
+    interaction,
+    scheduleNotice(
+      "info",
+      "Schedule refreshed",
+      `The posts and claim buttons were renewed. The time did not change.\n**Link:** ${boardUrl}`,
+    ),
+  );
   await auditSchedule({
     guild,
-    settings: bundle.settings,
+    settings,
     actor: interaction.user,
-    description: `A schedule post was refreshed for **${bundle.tournament.name}**.`,
-    details: [ticketLine(guild, bundle.channel.id)],
+    description: `A schedule post was refreshed for **${tournament.name}**.`,
+    details: [ticketLine(guild, ticket.id), `**Link:** ${boardUrl}`],
   });
 }

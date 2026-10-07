@@ -210,11 +210,15 @@ async function openOne(
 export type RoomScope = {
   group: string | null;
   round: number | null;
+  matchIds?: number[];
 };
 
-function inScope(match: { group: string | null; round: number }, scope?: RoomScope): boolean {
+function inScope(match: { id?: number; group: string | null; round: number }, scope?: RoomScope): boolean {
   if (!scope) {
     return true;
+  }
+  if (scope.matchIds && scope.matchIds.length > 0 && (match.id == null || !scope.matchIds.includes(match.id))) {
+    return false;
   }
   if (scope.group && match.group !== scope.group) {
     return false;
@@ -231,7 +235,7 @@ export async function openPendingTickets(
   scope?: RoomScope,
 ): Promise<OpenTicketsResult> {
   const queue = await loadTicketQueue(tournament);
-  if (scope && (scope.group || scope.round != null)) {
+  if (scope && (scope.group || scope.round != null) && !scope.matchIds?.length) {
     const known = await prisma.match.findMany({
       where: { tournamentId: tournament.id },
       select: { group: true, round: true },
@@ -245,7 +249,10 @@ export async function openPendingTickets(
     }
   }
   const scoped: TicketQueue = scope
-    ? { ready: queue.ready.filter((match) => inScope(match, scope)), blocked: queue.blocked.filter((match) => inScope(match, scope)) }
+    ? {
+        ready: queue.ready.filter((match) => inScope(match, scope)),
+        blocked: queue.blocked.filter((match) => inScope(match, scope)),
+      }
     : queue;
   const failed: TicketFailure[] = scoped.blocked.map((match) => ({
     matchId: match.id,

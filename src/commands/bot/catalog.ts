@@ -74,8 +74,8 @@ export const helpCatalog: HelpCategory[] = [
       { slash: "auto_room", summary: "Turn automatic battle tickets on or off. Turning on opens matches that are ready now.", access: "Organiser" },
       { slash: "room create", summary: "Open pending battle tickets now. Optional group and round.", access: "Organiser" },
       { slash: "room available", summary: "Show matches that still need a battle ticket.", access: "Organiser" },
-      { slash: "upload_score", summary: "Report the official score inside a ticket.", access: "Staff of the tournament" },
-      { slash: "correct_bracket", summary: "Amend a posted score and rebuild lying rooms.", access: "Organiser" },
+      { slash: "bracket upload", summary: "Report the official score inside a ticket.", access: "Staff of the tournament" },
+      { slash: "bracket correct", summary: "Amend a posted score and rebuild lying rooms.", access: "Organiser" },
     ],
   },
   {
@@ -87,10 +87,10 @@ export const helpCatalog: HelpCategory[] = [
       { slash: "schedule show", summary: "View a schedule embed in the channel.", access: "Staff" },
       { slash: "schedule delete", summary: "Remove the active schedule. Not recoverable.", access: "Tournament admin or helper" },
       { slash: "schedule unassigned", summary: "List matches missing judge or recorder.", access: "Staff" },
-      { slash: "schedule refresh", summary: "Renew buttons and the post link.", access: "Staff" },
+      { slash: "schedule refresh", summary: "Renew claim buttons on a schedule from any channel.", access: "Judge / Recorder" },
       { slash: "schedule resign", summary: "Leave judge, recorder, or both.", access: "Assigned staff" },
       { slash: "schedule results", summary: "Public result in the ticket and the result channel. Does not advance the bracket.", access: "Judge" },
-      { slash: "schedule results_delete", summary: "Remove that public result. Does not undo upload_score.", access: "Judge" },
+      { slash: "schedule results_delete", summary: "Remove that public result. Does not undo bracket upload.", access: "Judge" },
     ],
   },
   {

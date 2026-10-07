@@ -4,12 +4,13 @@ Un partido tiene **como máximo un schedule activo**. Se crea **dentro del ticke
 
 Sin `schedules_channel` de `/settings` no hay `/schedule create`.
 
-Las respuestas del comando son Components V2, publicadas en el canal. El post del schedule creado (ticket y canal de schedules) es el embed clásico. Nada de este flujo es efímero.
+Las respuestas del comando son **texto plano**, publicadas en el canal, para que el transcript del ticket las conserve. El post del schedule creado (ticket y canal de schedules) y la declaración de results siguen siendo el embed clásico. Nada de este flujo es efímero.
 
 | Acción | Rol |
 |---|---|
 | Crear, actualizar, borrar | Admin o helper **de ese torneo** |
-| Ver (`show`), listar sin asignar, refresh | **Staff** del servidor |
+| Ver (`show`), listar sin asignar | **Staff** del servidor |
+| Refresh (botones de reclamar) | **Judge** o **Recorder** del servidor |
 | Declarar o borrar results | **Judge** del servidor |
 | Resign | Solo el asignado, en el ticket |
 
@@ -50,9 +51,9 @@ Dos minutos antes, si falta un puesto o alguien asignado no confirmó, el canal 
 
 ## Results (declaración pública, no bracket)
 
-`/schedule results` lo ejecuta quien tiene el rol **judge**. Exige: schedule existente, hora ya pasada, un solo resultado por schedule. El único empate permitido es **0 - 0**. Las imágenes son opcionales. Publica el embed en el ticket y en el canal de resultados: la misma tarjeta del schedule, con **Results** y **Links**. **Links** queda vacío hasta que `/attendance mark` o `/link add` (aún no implementados) llamen `attachResultsLinks`. El título se enlaza al mensaje del transcript cuando `/upload_score` lo publique y llame `attachResultsTranscript`. El capitán no interviene.
+`/schedule results` lo ejecuta quien tiene el rol **judge**. Exige: schedule existente, hora ya pasada, un solo resultado por schedule. El único empate permitido es **0 - 0**. Las imágenes son opcionales. Publica el embed en el ticket y en el canal de resultados: la misma tarjeta del schedule, con **Results** y **Links**. **Links** queda vacío hasta que `/attendance mark` o `/link add` (aún no implementados) llamen `attachResultsLinks`. El título se enlaza al mensaje del transcript cuando `/bracket upload` lo publique y llame `attachResultsTranscript`. El capitán no interviene.
 
-`/schedule results_delete` también lo ejecuta el rol **judge**. Quita la declaración del ticket y del canal de resultados; **no** borra el schedule. **No** deshace `/upload_score`.
+`/schedule results_delete` también lo ejecuta el rol **judge**. Quita la declaración del ticket y del canal de resultados; **no** borra el schedule. **No** deshace `/bracket upload`.
 
 ## Relacionado
 

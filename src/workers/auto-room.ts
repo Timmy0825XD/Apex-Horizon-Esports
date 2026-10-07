@@ -1,9 +1,7 @@
 import type { Client } from "discord.js";
 import { isAllowedGuild } from "../lib/allowed-guilds.js";
 import { auditLogTitles, publishAudit } from "../lib/audit.js";
-import { ChallongeError } from "../lib/challonge.js";
 import { formatChannel } from "../lib/formatters.js";
-import { TicketQueueError } from "../commands/room/bracket.js";
 import { openPendingTickets } from "../commands/room/open.js";
 import { loadGuildSettings } from "../commands/settings/store.js";
 import { listRunningAutoRooms } from "../commands/tournament/store.js";
@@ -91,8 +89,8 @@ async function flushSlot(client: Client): Promise<void> {
           actor,
         });
       } catch (error) {
-        const message = error instanceof TicketQueueError || error instanceof ChallongeError ? error.message : "unknown";
-        console.error(`Auto-room flush failed for ${tournament.name}: ${message}`);
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`Auto-room flush failed for ${tournament.name}: ${message}`, error);
       }
     }
   } finally {
