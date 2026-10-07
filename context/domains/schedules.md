@@ -4,7 +4,7 @@ Un partido tiene **como máximo un schedule activo**. Se crea **dentro del ticke
 
 Sin `schedules_channel` de `/settings` no hay `/schedule create`.
 
-Las respuestas del comando son **texto plano**, publicadas en el canal, para que el transcript del ticket las conserve. El post del schedule creado (ticket y canal de schedules) y la declaración de results siguen siendo el embed clásico. Nada de este flujo es efímero.
+Las respuestas del comando son **Components V2**, publicadas en el canal. El aviso de asignar, el de renuncia o reemplazo y la confirmación de asistencia siguen en texto plano. El post del schedule creado (ticket y canal de schedules) y la declaración de results siguen siendo el embed clásico. Nada de este flujo es efímero.
 
 | Acción | Rol |
 |---|---|
