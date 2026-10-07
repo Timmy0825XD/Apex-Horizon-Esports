@@ -106,6 +106,7 @@ model Match {
   state            String
   round            Int
   group            String?
+  thirdPlace       Boolean?
   player1Name      String
   player2Name      String
   updatedAt        DateTime @updatedAt

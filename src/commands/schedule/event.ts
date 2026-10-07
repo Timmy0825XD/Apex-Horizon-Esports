@@ -1,9 +1,7 @@
-import { readFile } from "node:fs/promises";
 import { GuildScheduledEventEntityType, GuildScheduledEventPrivacyLevel, type Guild } from "discord.js";
 import { emojis } from "../../emojis.js";
 import { formatChannel, formatUser } from "../../lib/formatters.js";
 import { roundLabel } from "../room/labels.js";
-import { backgroundPath } from "./backgrounds.js";
 import type { ScheduleFace } from "./view.js";
 
 const MATCH_MINUTES = 30;
@@ -38,7 +36,7 @@ function eventTimes(when: Date): { scheduledStartTime: Date; scheduledEndTime: D
   };
 }
 
-export async function createScheduleEvent(guild: Guild, face: ScheduleFace, backgroundIndex?: number): Promise<string> {
+export async function createScheduleEvent(guild: Guild, face: ScheduleFace, image?: Buffer): Promise<string> {
   const event = await guild.scheduledEvents.create({
     name: eventName(face),
     ...eventTimes(face.when),
@@ -46,12 +44,12 @@ export async function createScheduleEvent(guild: Guild, face: ScheduleFace, back
     entityType: GuildScheduledEventEntityType.External,
     entityMetadata: { location: guild.name.slice(0, 100) },
     description: eventDescription(face),
-    ...(backgroundIndex == null ? {} : { image: await readFile(backgroundPath(backgroundIndex)) }),
+    ...(image ? { image } : {}),
   });
   return event.id;
 }
 
-export async function syncScheduleEvent(guild: Guild, eventId: string, face: ScheduleFace, backgroundIndex?: number): Promise<void> {
+export async function syncScheduleEvent(guild: Guild, eventId: string, face: ScheduleFace, image?: Buffer): Promise<void> {
   const event = await guild.scheduledEvents.fetch(eventId).catch(() => null);
   if (!event) {
     return;
@@ -61,7 +59,7 @@ export async function syncScheduleEvent(guild: Guild, eventId: string, face: Sch
     ...eventTimes(face.when),
     entityMetadata: { location: guild.name.slice(0, 100) },
     description: eventDescription(face),
-    ...(backgroundIndex == null ? {} : { image: await readFile(backgroundPath(backgroundIndex)) }),
+    ...(image ? { image } : {}),
   });
 }
 

@@ -3,7 +3,6 @@ import type { Schedule, ScheduleMessages } from "@prisma/client";
 import { emojis } from "../../emojis.js";
 import { formatRole } from "../../lib/formatters.js";
 import { loadGuildStaffState } from "../staff/store.js";
-import { backgroundPath } from "./backgrounds.js";
 import { textChannel } from "./channel.js";
 import { claimRow, claimsAreOpen, scheduleEmbed, urgentScheduleEmbed, type ScheduleFace } from "./view.js";
 
@@ -43,13 +42,18 @@ async function upsertTicket(channel: PostChannel, messageId: string | null, face
   return sent.id;
 }
 
-export async function publishThumbnail(guild: Guild, thumbnailChannelId: string, backgroundIndex: number): Promise<Message> {
+export async function publishThumbnail(
+  guild: Guild,
+  thumbnailChannelId: string,
+  backgroundIndex: number,
+  image: Buffer,
+): Promise<Message> {
   const channel = await textChannel(guild, thumbnailChannelId);
   if (!channel) {
     throw new Error("The thumbnail channel is missing or is not a text channel.");
   }
   return channel.send({
-    files: [new AttachmentBuilder(backgroundPath(backgroundIndex), { name: `schedule-${backgroundIndex}.png` })],
+    files: [new AttachmentBuilder(image, { name: `schedule-${backgroundIndex}.png` })],
     allowedMentions: { parse: [] },
   });
 }
@@ -133,6 +137,7 @@ export async function replaceThumbnail(
   thumbnailChannelId: string,
   previousMessageId: string | null | undefined,
   backgroundIndex: number,
+  image: Buffer,
 ): Promise<Message> {
   const channel = await textChannel(guild, thumbnailChannelId);
   if (!channel) {
@@ -142,7 +147,7 @@ export async function replaceThumbnail(
     const previous = await channel.messages.fetch(previousMessageId).catch(() => null);
     await previous?.delete().catch(() => undefined);
   }
-  return publishThumbnail(guild, thumbnailChannelId, backgroundIndex);
+  return publishThumbnail(guild, thumbnailChannelId, backgroundIndex, image);
 }
 
 export async function deleteTracked(guild: Guild, channelId: string | null, messageId: string | null | undefined): Promise<void> {
