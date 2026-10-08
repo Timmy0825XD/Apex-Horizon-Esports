@@ -20,7 +20,7 @@ Al nacer, renombrarse o eliminarse un comando: actualizar **este índice** y el 
 | Sheet y equipos | [sheet-teams.md](sheet-teams.md) | `/sheet headers` · `validate` · `/team info` · `list` · `/utility discord_tag` |
 | Salas y bracket | [rooms-bracket.md](rooms-bracket.md) | `/auto_room` · `/room create` · `available` · `/bracket upload` · `/bracket correct` |
 | Schedule | [schedule.md](schedule.md) | `/schedule create` · `update` · `show` · `delete` · `unassigned` · `refresh` · `resign` · `results` · `results_delete` |
-| Attendance | [attendance.md](attendance.md) | `/attendance mark` · `delete` · `/get attendance` · `/get sheet` · `/link add` · `delete` · `missing` · `/work_done` |
+| Attendance | [attendance.md](attendance.md) | `/attendance mark` · `delete` · `list` · `/get attendance` · `/get sheet` · `/link add` · `delete` · `missing` |
 | Tickets | [tickets.md](tickets.md) | `/ticket close` · `reopen` · `delete` |
 | Roles | [roles.md](roles.md) | `/role user` · `add all` · `remove all` · `list` |
 | Server y usuario | [server-user.md](server-user.md) | `/server info` · `banlist` · `tree` · `invites` · `/user ban` · `unban` |

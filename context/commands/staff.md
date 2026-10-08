@@ -4,7 +4,7 @@ Actores: [../product/actors.md](../product/actors.md). Nómina: [../domains/atte
 
 Slash: comando `staff`. Grupo `config` (`set` · `edit` · `view`) más subcomandos `recruit` · `fire` · `work`.
 
-`config set` / `edit` / `view` son paneles **Components V2**. `recruit` y `fire` responden en V2; el welcome de recruit en staff chat también es V2 (mención + panel). `work` es efímero: tres embeds clásicos + `.txt` de degradaciones si aplica.
+`config set` / `edit` / `view` son paneles **Components V2**. `recruit` y `fire` responden en V2; el welcome de recruit en staff chat también es V2 (mención + panel). `work` se publica en el canal: un Components V2.
 
 Requiere `/settings set` previo (admin role y bot logs). T1/T2 son opcionales; en `config set` Discord obliga a ponerlos **al final** de las opciones.
 
@@ -86,7 +86,7 @@ Un choice suelto quita **ese** rol de puesto, no el paquete de recruit (p. ej. f
 
 ## `/staff work`
 
-**Para qué:** Nómina visual del torneo. Efímero. No audita (consulta). Admin.
+**Para qué:** Nómina visual del torneo. Se publica en el canal. No audita (consulta). Admin.
 
 | Campo | Tipo | Obligatorio | Uso |
 |---|---|---|---|
@@ -95,4 +95,4 @@ Un choice suelto quita **ese** rol de puesto, no el paquete de recruit (p. ej. f
 
 **Relación:** Lee asistencias no borradas de `/attendance mark`. Cubetas: [../domains/attendance-payroll.md](../domains/attendance-payroll.md).
 
-Tres embeds: **Judges** / **Recorders** / **Dual**. Por persona: mención, rounds, matches (`team1_score + team2_score`), gold. Gold usa el **formato guardado del torneo**: 1v1–3v3 por evento (450 / 450 / 575) o 4v4–5v5 por partida (325 / 325 / 425). El `.txt` de degradaciones (misma persona sin link, contada como Judge) solo se adjunta aquí si hay filas.
+Un Components V2. Encabezado: torneo, si incluye DW y quién lo pidió. Luego **Judges**, **Recorders** y **Judge & Recorder**, cada uno en lista numerada: mención, tag y matches (`team1_score + team2_score`) con rounds. No muestra oro. La misma persona entra en Judge & Recorder aunque no haya link. Los DW no entran salvo `include_default_wins`.

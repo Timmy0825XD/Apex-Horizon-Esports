@@ -55,7 +55,7 @@ Dos minutos antes, si falta un puesto o alguien asignado no confirmó, el canal 
 
 ## Results (declaración pública, no bracket)
 
-`/schedule results` lo ejecuta quien tiene el rol **judge**. Exige: schedule existente, hora ya pasada, un solo resultado por schedule. El único empate permitido es **0 - 0**. Las imágenes son opcionales. Publica el embed en el ticket y en el canal de resultados: la misma tarjeta del schedule, con **Results** y **Links**. **Links** queda vacío hasta que `/attendance mark` o `/link add` (aún no implementados) llamen `attachResultsLinks`. El título se enlaza al mensaje del transcript cuando `/bracket upload` lo publique y llame `attachResultsTranscript`. El capitán no interviene.
+`/schedule results` lo ejecuta quien tiene el rol **judge**. Exige: schedule existente, hora ya pasada, un solo resultado por schedule. El único empate permitido es **0 - 0**. Las imágenes son opcionales. Publica el embed en el ticket y en el canal de resultados: la misma tarjeta del schedule, con **Results** y **Links**. **Links** lo llenan `/attendance mark` y `/link add` con `attachResultsLinks`. `/link delete` y `/attendance delete` lo vacían. El título se enlaza al mensaje del transcript cuando `/bracket upload` lo publique y llame `attachResultsTranscript`. El capitán no interviene.
 
 `/schedule results_delete` también lo ejecuta el rol **judge**. Quita la declaración del ticket y del canal de resultados; **no** borra el schedule. **No** deshace `/bracket upload`.
 

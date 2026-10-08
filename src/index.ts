@@ -1,6 +1,9 @@
 import "./lib/env.js";
 import { Client, Events, GatewayIntentBits, MessageFlags } from "discord.js";
 import { handleAutoRoomAuto, handleAutoRoomSlash } from "./commands/auto-room/handle.js";
+import { handleAttendanceAuto, handleAttendanceSlash } from "./commands/attendance/handle.js";
+import { handleGetAuto, handleGetSlash } from "./commands/get/handle.js";
+import { handleLinkAuto, handleLinkSlash } from "./commands/link/handle.js";
 import {
   handleBracketAutocomplete,
   handleBracketButtonInteraction,
@@ -41,6 +44,12 @@ async function leaveIfUnauthorized(guildId: string, leave: () => Promise<unknown
     await leave();
   }
 }
+
+client.on(Events.ClientReady, () => {
+  if (!networkStopped) {
+    networkAttempts = 0;
+  }
+});
 
 client.once(Events.ClientReady, async (readyClient) => {
   for (const guild of readyClient.guilds.cache.values()) {
@@ -129,6 +138,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    if (interaction.isChatInputCommand() && interaction.commandName === "attendance") {
+      await handleAttendanceSlash(interaction);
+      return;
+    }
+
+    if (interaction.isChatInputCommand() && interaction.commandName === "link") {
+      await handleLinkSlash(interaction);
+      return;
+    }
+
+    if (interaction.isChatInputCommand() && interaction.commandName === "get") {
+      await handleGetSlash(interaction);
+      return;
+    }
+
     if (interaction.isAutocomplete() && interaction.commandName === "staff") {
       await handleStaffAuto(interaction);
       return;
@@ -161,6 +185,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.isAutocomplete() && interaction.commandName === "bracket") {
       await handleBracketAutocomplete(interaction);
+      return;
+    }
+
+    if (interaction.isAutocomplete() && interaction.commandName === "attendance") {
+      await handleAttendanceAuto(interaction);
+      return;
+    }
+
+    if (interaction.isAutocomplete() && interaction.commandName === "link") {
+      await handleLinkAuto(interaction);
+      return;
+    }
+
+    if (interaction.isAutocomplete() && interaction.commandName === "get") {
+      await handleGetAuto(interaction);
       return;
     }
 
@@ -207,6 +246,49 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
+const maxNetworkAttempts = 4;
+let networkAttempts = 0;
+let networkStopped = false;
+
+function isTransientNetworkError(error: unknown): boolean {
+  const code = (error as NodeJS.ErrnoException)?.code;
+  return code === "EAI_FAIL" || code === "EAI_AGAIN" || code === "ENOTFOUND" || code === "ETIMEDOUT" || code === "ECONNRESET" || code === "UND_ERR_CONNECT_TIMEOUT";
+}
+
+function networkWhere(error: unknown): string {
+  const code = (error as NodeJS.ErrnoException).code ?? "network";
+  const hostname = (error as { hostname?: string }).hostname;
+  return hostname ? `${code} ${hostname}` : code;
+}
+
+function stopForNetwork(): void {
+  if (networkStopped) {
+    return;
+  }
+  networkStopped = true;
+  console.error("Discord network failed 4 times. Stopping.");
+  void shutdown().finally(() => process.exit(1));
+}
+
+function noteNetworkError(error: unknown): boolean {
+  if (!isTransientNetworkError(error)) {
+    return false;
+  }
+  if (networkStopped) {
+    return true;
+  }
+  networkAttempts += 1;
+  console.error(`Discord network error (${networkAttempts}/${maxNetworkAttempts}): ${networkWhere(error)}`);
+  if (networkAttempts >= maxNetworkAttempts) {
+    stopForNetwork();
+  }
+  return true;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function main(): Promise<void> {
   try {
     await prisma.$connect();
@@ -215,7 +297,28 @@ async function main(): Promise<void> {
     console.error("MongoDB connection failed at startup; /bot ping will report database errors.", error);
   }
 
-  await client.login(env.discordToken);
+  for (let attempt = 1; attempt <= maxNetworkAttempts; attempt += 1) {
+    if (networkStopped) {
+      return;
+    }
+    try {
+      await client.login(env.discordToken);
+      return;
+    } catch (error) {
+      if (networkStopped) {
+        return;
+      }
+      if (noteNetworkError(error)) {
+        if (networkStopped || attempt === maxNetworkAttempts) {
+          stopForNetwork();
+          return;
+        }
+        await sleep(2000 * attempt);
+        continue;
+      }
+      throw error;
+    }
+  }
 }
 
 async function shutdown(): Promise<void> {
@@ -225,11 +328,34 @@ async function shutdown(): Promise<void> {
   client.destroy();
 }
 
+client.on(Events.Error, (error) => {
+  if (noteNetworkError(error)) {
+    return;
+  }
+  console.error("Discord client error:", error);
+});
+
+client.on(Events.ShardError, (error) => {
+  if (noteNetworkError(error)) {
+    return;
+  }
+  console.error("Discord shard error:", error);
+});
+
 process.on("SIGINT", () => {
   void shutdown().finally(() => process.exit(0));
 });
 process.on("SIGTERM", () => {
   void shutdown().finally(() => process.exit(0));
 });
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection (no crash):", reason);
+});
 
-void main();
+void main().catch((error) => {
+  if (networkStopped) {
+    return;
+  }
+  console.error("Fatal startup error, saliendo:", error);
+  void shutdown().finally(() => process.exit(1));
+});

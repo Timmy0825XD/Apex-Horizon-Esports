@@ -1,6 +1,9 @@
 import { REST, Routes, type RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
 import { autoRoomSlash } from "../commands/auto-room/slash.js";
+import { attendanceSlash } from "../commands/attendance/slash.js";
 import { botSlash } from "../commands/bot/slash.js";
+import { getSlash } from "../commands/get/slash.js";
+import { linkSlash } from "../commands/link/slash.js";
 import { bracketSlash } from "../commands/bracket/slash.js";
 import { roomSlash } from "../commands/room/slash.js";
 import { ticketSlash } from "../commands/ticket/slash.js";
@@ -30,6 +33,9 @@ const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
   ticketSlash.toJSON(),
   bracketSlash.toJSON(),
   scheduleSlash.toJSON(),
+  attendanceSlash.toJSON(),
+  linkSlash.toJSON(),
+  getSlash.toJSON(),
 ].map(omitOptionalRequired);
 
 function omitOptionalRequired(value: RESTPostAPIChatInputApplicationCommandsJSONBody): RESTPostAPIChatInputApplicationCommandsJSONBody {

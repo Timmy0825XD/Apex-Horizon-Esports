@@ -36,3 +36,17 @@ El capitán no ejecuta ninguno. Detalle: [schedule.md](schedule.md).
 | `correct` | Organiser |
 
 Detalle: [rooms-bracket.md](rooms-bracket.md).
+
+## `/attendance`, `/link`, `/get`
+
+| Comando | Rol |
+|---|---|
+| `/attendance mark` | Judge, Recorder, Admin u Organiser. Solo en el ticket |
+| `/attendance delete` | Quien marcó esa asistencia, Admin u Organiser. Solo en el ticket |
+| `/attendance list` | La propia ficha: staff, judge, recorder, Admin u Organiser. La de otro: Admin u Organiser |
+| `/get attendance` · `/link missing` | Staff, judge, recorder, Admin u Organiser |
+| `/get sheet` | Organiser |
+| `/link add` | Recorder de esa asistencia |
+| `/link delete` | Recorder de esa asistencia, Admin u Organiser |
+
+Detalle: [attendance.md](attendance.md).

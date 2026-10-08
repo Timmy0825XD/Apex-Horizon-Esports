@@ -60,6 +60,10 @@ export const emojis = {
   transcript_thumnail : "<a:transcript_thumnail:1553972341464236092>",
   scoreboard : "<:scoreboard:1553968006613303337>",
   open_close : "<a:open_close:1553970562064191519>",
+  AC : "<:AC:1519110546790551582>",
+  gold : "<:gold:1519109971764314194>",
+  stats : "<:stats:1557586404244983928>",
+  judge_recorder : "<:judgerecorder:1557586288507355178>",
 } as const;
 
 export const numberEmojis = [
