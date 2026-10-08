@@ -88,7 +88,7 @@ Consulta. Rol staff. Alimenta reclutamiento de staff de mesa.
 | notes | STRING | No | Máx. 500. Sale como **Remarks** |
 | image1 … image10 | ATTACHMENT | No | Pruebas. Todas opcionales |
 
-Publica el mismo embed en el ticket y en `result_channel`. Solo el ticket lleva encima el texto **Match Complete** con los capitanes. Es la tarjeta del schedule, en verde, con la hora de la declaración (**Result UTC Time** / **Result Local Time**), más **Results** (marcador; el ganador lleva el trofeo) y **Links**. Links nace vacío: lo llenan `/attendance mark` y `/link add` cuando existan, llamando `attachResultsLinks` con la lista completa. El título no lleva enlace hasta que `/bracket upload` transcriba el ticket y llame `attachResultsTranscript` con la URL de ese mensaje. No sube el bracket. Relación: `/bracket upload`, `/schedule results_delete`.
+Publica el mismo embed en el ticket y en `result_channel`. Solo el ticket lleva encima el texto **Match Complete** con los capitanes. Es la tarjeta del schedule, en verde, con la hora de la declaración (**Result UTC Time** / **Result Local Time**), más **Results** (marcador; el ganador lleva el trofeo) y **Links**. Links nace vacío: lo llenan `/attendance mark` y `/link add` llamando `attachResultsLinks` con la lista completa. `/link delete` y `/attendance delete` lo vacían. El título no lleva enlace hasta que `/bracket upload` transcriba el ticket y llame `attachResultsTranscript` con la URL de ese mensaje. No sube el bracket. Relación: `/bracket upload`, `/schedule results_delete`.
 
 ## `/schedule results_delete`
 

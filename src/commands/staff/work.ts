@@ -1,146 +1,71 @@
-import { AttachmentBuilder, EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
+import { ContainerBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { emojis } from "../../emojis.js";
 import { embedColors } from "../../lib/embeds.js";
 import { formatUser } from "../../lib/formatters.js";
 import { isGuildAdmin } from "../../lib/permissions.js";
 import { prisma } from "../../lib/prisma.js";
+import { divider, textBlock, v2Flags } from "../../lib/v2.js";
+import { escapeDiscord } from "../room/labels.js";
+import { whereActive } from "../attendance/store.js";
 import { deferStaff, respondStaff } from "./respond.js";
 import { loadGuildStaffState } from "./store.js";
 import { staffErrorMessage } from "./view.js";
-
-const SMALL_EVENT_RATES = {
-  judge: 450,
-  recorder: 450,
-  dual: 575,
-} as const;
-
-const LARGE_MATCH_RATES = {
-  judge: 325,
-  recorder: 325,
-  dual: 425,
-} as const;
-
-function ratesFor(format: string | null | undefined) {
-  if (format === "4vs4" || format === "5vs5") {
-    return LARGE_MATCH_RATES;
-  }
-  return SMALL_EVENT_RATES;
-}
-
-type Bucket = "judge" | "recorder" | "dual";
 
 type PersonStats = {
   userId: string;
   rounds: number;
   matches: number;
-  gold: number;
-};
-
-type Degradation = {
-  userId: string;
-  matchId: number;
 };
 
 function isDefaultWin(remark: string | null): boolean {
   return remark?.trim().toLowerCase() === "dw";
 }
 
-function hasRecordingLink(links: string[]): boolean {
-  return links.some((link) => link.trim().length > 0);
-}
-
 function objectIdLike(value: string): boolean {
   return /^[a-fA-F0-9]{24}$/.test(value);
 }
 
-function addStat(
-  map: Map<string, PersonStats>,
-  userId: string,
-  bucket: Bucket,
-  matches: number,
-  rates: { judge: number; recorder: number; dual: number },
-): void {
-  const current = map.get(userId) ?? { userId, rounds: 0, matches: 0, gold: 0 };
+function addStat(map: Map<string, PersonStats>, userId: string, matches: number): void {
+  const current = map.get(userId) ?? { userId, rounds: 0, matches: 0 };
   current.rounds += 1;
   current.matches += matches;
-  current.gold += rates[bucket];
   map.set(userId, current);
 }
 
 function ranked(map: Map<string, PersonStats>): PersonStats[] {
   return [...map.values()].sort((a, b) => {
-    if (b.rounds !== a.rounds) {
-      return b.rounds - a.rounds;
-    }
     if (b.matches !== a.matches) {
       return b.matches - a.matches;
+    }
+    if (b.rounds !== a.rounds) {
+      return b.rounds - a.rounds;
     }
     return a.userId.localeCompare(b.userId);
   });
 }
 
-function clip(lines: string[], limit = 3900): string {
-  const out: string[] = [];
-  let size = 0;
+function roster(title: string, emoji: string, rows: PersonStats[], tags: Map<string, string>): string {
+  const heading = `## ${emoji} ${title}`;
+  if (rows.length === 0) {
+    return `${heading}\n*None.*`;
+  }
+  const lines = rows.map((row, index) => {
+    const rounds = row.rounds === 1 ? "1 round" : `${row.rounds} rounds`;
+    const tag = tags.get(row.userId);
+    const who = tag ? `${formatUser(row.userId)} ${escapeDiscord(tag)}` : formatUser(row.userId);
+    return `${index + 1}. ${who} — **${row.matches}** matches (**${rounds}**)`;
+  });
+  const shown: string[] = [];
+  let size = heading.length + 1;
   for (const line of lines) {
-    if (size + line.length + 1 > limit) {
-      out.push(`*…and more staff not shown.*`);
+    if (size + line.length + 1 > 3500) {
+      shown.push("*And more staff not shown.*");
       break;
     }
-    out.push(line);
+    shown.push(line);
     size += line.length + 1;
   }
-  return out.join("\n");
-}
-
-function personLine(row: PersonStats): string {
-  return `${formatUser(row.userId)} — **${row.rounds}** rounds · \`${row.matches}\` matches · \`${row.gold}\` gold`;
-}
-
-function bucketEmbed(
-  title: string,
-  emptyCopy: string,
-  filledLead: string,
-  footer: string,
-  rows: PersonStats[],
-): EmbedBuilder {
-  const body =
-    rows.length === 0
-      ? emptyCopy
-      : clip([filledLead, ...rows.map(personLine)]);
-
-  return new EmbedBuilder()
-    .setColor(embedColors.info)
-    .setTitle(title)
-    .setDescription(body)
-    .setFooter({ text: footer });
-}
-
-function degradationsFile(tournamentName: string, rows: Degradation[]): AttachmentBuilder | null {
-  if (rows.length === 0) {
-    return null;
-  }
-
-  const slug = tournamentName
-    .replace(/[^\w]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 40) || "tournament";
-
-  const lines = [
-    `Staff work degradations — ${tournamentName}`,
-    `Generated ${new Date().toISOString().slice(0, 19).replace("T", " ")} UTC`,
-    "",
-    "user_id\tmatch_id\treason",
-    ...rows.map(
-      (row) =>
-        `${row.userId}\t${row.matchId}\tSame person judged and recorded with no recording link; counted as Judge only.`,
-    ),
-  ];
-
-  return new AttachmentBuilder(Buffer.from(`${lines.join("\n")}\n`, "utf8"), {
-    name: `staff-degradations-${slug}.txt`,
-  });
+  return [heading, ...shown].join("\n");
 }
 
 export async function handleStaffWork(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -150,7 +75,7 @@ export async function handleStaffWork(interaction: ChatInputCommandInteraction):
     return;
   }
 
-  await deferStaff(interaction, true);
+  await deferStaff(interaction);
 
   const { settings } = await loadGuildStaffState(guild.id);
   if (!isGuildAdmin(interaction, settings)) {
@@ -177,7 +102,7 @@ export async function handleStaffWork(interaction: ChatInputCommandInteraction):
   const tournament = await prisma.tournament
     .findFirst({
       where: { id: tournamentId, guildId: guild.id },
-      select: { id: true, name: true, format: true },
+      select: { id: true, name: true },
     })
     .catch(() => null);
 
@@ -189,33 +114,24 @@ export async function handleStaffWork(interaction: ChatInputCommandInteraction):
     return;
   }
 
-  const rates = ratesFor(tournament.format);
-  const rateNote =
-    tournament.format === "4vs4" || tournament.format === "5vs5"
-      ? `${tournament.format} rates: 325 / 325 / 425 gold per match.`
-      : `${tournament.format || "1v1–3v3"} rates: 450 / 450 / 575 gold per event.`;
   const includeDw = interaction.options.getBoolean("include_default_wins") ?? false;
   const records = await prisma.attendance.findMany({
-    where: {
+    where: whereActive({
       guildId: guild.id,
       tournamentId: tournament.id,
-      deletedAt: null,
-    },
+    }),
     select: {
       judgeId: true,
       recorderId: true,
       team1Score: true,
       team2Score: true,
       remark: true,
-      links: true,
-      challongeMatchId: true,
     },
   });
 
   const judges = new Map<string, PersonStats>();
   const recorders = new Map<string, PersonStats>();
   const duals = new Map<string, PersonStats>();
-  const degradations: Degradation[] = [];
 
   for (const row of records) {
     if (!includeDw && isDefaultWin(row.remark)) {
@@ -224,51 +140,46 @@ export async function handleStaffWork(interaction: ChatInputCommandInteraction):
 
     const matches = row.team1Score + row.team2Score;
     if (row.judgeId !== row.recorderId) {
-      addStat(judges, row.judgeId, "judge", matches, rates);
-      addStat(recorders, row.recorderId, "recorder", matches, rates);
+      addStat(judges, row.judgeId, matches);
+      addStat(recorders, row.recorderId, matches);
       continue;
     }
 
-    if (hasRecordingLink(row.links)) {
-      addStat(duals, row.judgeId, "dual", matches, rates);
-      continue;
-    }
-
-    addStat(judges, row.judgeId, "judge", matches, rates);
-    degradations.push({ userId: row.judgeId, matchId: row.challongeMatchId });
+    addStat(duals, row.judgeId, matches);
   }
-
-  const file = degradationsFile(tournament.name, degradations);
-  const dw = includeDw ? "Default wins included." : "Default wins excluded.";
-  const judgeRows = ranked(judges);
-  const recorderRows = ranked(recorders);
-  const dualRows = ranked(duals);
-  const embeds = [
-    bucketEmbed(
-      `${emojis.members} Judges`,
-      `No judge-only attendance for **${tournament.name}**.`,
-      `**${judgeRows.length}** judges in **${tournament.name}**. ${dw}`,
-      `Judge-only credit. ${rateNote}`,
-      judgeRows,
-    ),
-    bucketEmbed(
-      `${emojis.members} Recorders`,
-      `No recorder-only attendance for **${tournament.name}**.`,
-      `**${recorderRows.length}** recorders in **${tournament.name}**.`,
-      `Recorder-only credit. ${rateNote}`,
-      recorderRows,
-    ),
-    bucketEmbed(
-      `${emojis.gem} Dual (Judge & Recorder)`,
-      `No dual attendance (same person with a recording link) for **${tournament.name}**.`,
-      `**${dualRows.length}** dual staff in **${tournament.name}**.`,
-      `Same person with a recording link. ${rateNote}`,
-      dualRows,
-    ),
-  ];
+  const tags = new Map<string, string>();
+  const ids = [...new Set([...judges.keys(), ...recorders.keys(), ...duals.keys()])];
+  if (ids.length > 0) {
+    const members = await guild.members.fetch({ user: ids }).catch(() => null);
+    for (const id of ids) {
+      const username = members?.get(id)?.user.username;
+      if (username) {
+        tags.set(id, username);
+      }
+    }
+  }
+  const dw = includeDw ? "Including" : "Excluding";
+  const header = [
+    `# ${emojis.stats} Staff Work Count`,
+    `${emojis.torneo} **Tournament:** **${escapeDiscord(tournament.name)}**`,
+    `**Default wins:** ${dw}`,
+    `${emojis.owner} **Requested by:** ${formatUser(interaction.user.id)}`,
+  ].join("\n");
+  const container = new ContainerBuilder()
+    .setAccentColor(embedColors.success)
+    .addTextDisplayComponents(textBlock(header))
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(roster("Judges", emojis.judge, ranked(judges), tags)))
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(roster("Recorders", emojis.recorder, ranked(recorders), tags)))
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(roster("Judge & Recorder", emojis.judge_recorder, ranked(duals), tags)));
 
   await interaction.editReply({
-    embeds,
-    files: file ? [file] : [],
+    content: null,
+    embeds: [],
+    components: [container],
+    flags: v2Flags,
+    allowedMentions: { parse: [] },
   });
 }
