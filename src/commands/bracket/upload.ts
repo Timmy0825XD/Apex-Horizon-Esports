@@ -16,6 +16,7 @@ import { loadStaffConfig } from "../../lib/organiser.js";
 import { closeTicket } from "../ticket/lifecycle.js";
 import { findTournamentById } from "../tournament/store.js";
 import { canUploadScore } from "./access.js";
+import { settlePendingForfeits } from "./forfeit.js";
 import { auditScoreUpload } from "./audit.js";
 import { deferBracket, respondBracket } from "./respond.js";
 import { publishTicketTranscript, transcriptFilename } from "./transcript.js";
@@ -193,6 +194,9 @@ export async function runBracketUpload(interaction: ChatInputCommandInteraction)
       match.round,
       existing?.group ?? null,
     );
+    await settlePendingForfeits({ guild, tournament, actor: interaction.user }).catch((error) => {
+      console.error("Pending forfeit settle failed after score upload", error);
+    });
 
     const actorTag = interaction.user.username;
     await respondBracket(

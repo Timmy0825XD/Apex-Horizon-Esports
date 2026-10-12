@@ -9,6 +9,7 @@ import {
   type InteractionReplyOptions,
   type InteractionUpdateOptions,
   type TextChannel,
+  type User,
 } from "discord.js";
 import {
   ChallongeError,
@@ -33,6 +34,7 @@ import { findTournamentById } from "../tournament/store.js";
 import type { TournamentRecord } from "../tournament/fields.js";
 import { canCorrectBracket } from "./access.js";
 import { auditScoreUpload } from "./audit.js";
+import { clearPendingForfeits, settlePendingForfeits } from "./forfeit.js";
 import { deferBracket, respondBracket } from "./respond.js";
 import {
   bracketNotice,
@@ -270,6 +272,7 @@ async function applyCorrection(
   score1: number,
   score2: number,
   rebuild: boolean,
+  actor?: User,
 ): Promise<{
   leftName: string;
   rightName: string;
@@ -311,6 +314,9 @@ async function applyCorrection(
   }
 
   await updateChallongeMatch(tournament.challongeId, match.id, apiKey, scoresCsv(score1, score2), newWinner);
+  if (old && (old.score1 < 0 || old.score2 < 0)) {
+    await clearPendingForfeits(tournament.id, [match.player1Id, match.player2Id]);
+  }
 
   const stored = await prisma.match.findUnique({
     where: { tournamentId_challongeMatchId: { tournamentId: tournament.id, challongeMatchId: match.id } },
@@ -321,8 +327,12 @@ async function applyCorrection(
 
   if (rebuild && winnerChanged && rebuilt > 0) {
     const downstream = descendantMatchIds(match.id, bracket.matches);
-    await openPendingTickets(guild, tournament, { group: null, round: null, matchIds: downstream });
+    await openPendingTickets(guild, tournament, { group: null, round: null, matchIds: downstream }, actor);
   }
+
+  await settlePendingForfeits({ guild, tournament, actor }).catch((error) => {
+    console.error("Pending forfeit settle failed after bracket correct", error);
+  });
 
   return {
     leftName: sides.leftName,
@@ -457,7 +467,7 @@ export async function runBracketCorrect(interaction: ChatInputCommandInteraction
       return;
     }
 
-    const result = await applyCorrection(guild, tournament, apiKey, matchId, score1, score2, false);
+    const result = await applyCorrection(guild, tournament, apiKey, matchId, score1, score2, false, interaction.user);
     await respondBracket(
       interaction,
       scoreCorrectedMessage({
@@ -565,6 +575,7 @@ export async function handleBracketButton(interaction: ButtonInteraction): Promi
       parsed.score1,
       parsed.score2,
       true,
+      interaction.user,
     );
     await interaction.editReply(
       asSurface(

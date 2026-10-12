@@ -51,7 +51,7 @@ El capitán no ejecuta ninguno. Detalle: [schedule.md](schedule.md).
 
 | Subcomando | Rol |
 |---|---|
-| `upload` | Staff de torneo (o Organiser) |
+| `upload` · `dq_both` | Staff de torneo (o Organiser) |
 | `correct` | Organiser |
 
 Detalle: [rooms-bracket.md](rooms-bracket.md).

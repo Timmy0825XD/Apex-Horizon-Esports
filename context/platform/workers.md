@@ -8,7 +8,7 @@ Hay tres bucles que no esperan a un comando:
 | **Recordatorio de schedule** | ~60 s | T-10: recordatorio en el ticket. T-2: alerta roja si falta un puesto o no confirmaron. T-0: expulsar no confirmados. |
 | **Caducidad de bans** | periódico | Si un ban temporal venció, se levanta. |
 
-El reloj de auto-room se revisa cada minuto, pero solo dispara en esas dos horas (una vez por franja; si el proceso arranca dentro de esa hora, alcanza la franja). No abre una sala en el momento en que una llave anterior se completa.
+El reloj de auto-room se revisa cada minuto, pero solo dispara en esas dos horas (una vez por franja; si el proceso arranca dentro de esa hora, alcanza la franja). No abre una sala en el momento en que una llave anterior se completa. Antes de abrir, reporta las llaves `open` que traen un lado marcado por `/bracket dq_both` y no les crea ticket.
 
 Son la misma lógica que los comandos equivalentes, solo que **sin operador delante**. El actor del log de esa franja es el bot.
 

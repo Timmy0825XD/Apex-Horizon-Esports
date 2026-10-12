@@ -108,6 +108,52 @@ export function matchUpdatedMessage(input: {
   );
 }
 
+export function bothDisqualifiedMessage(input: {
+  tournamentName: string;
+  leftName: string;
+  rightName: string;
+  winnerName: string;
+  channelId: string;
+  actorTag: string;
+  avatarUrl: string;
+  forfeited: { leftName: string; rightName: string; score1: number; score2: number; winnerName: string }[];
+  stillMarked: boolean;
+  forfeitFailed: boolean;
+}): InteractionReplyOptions {
+  const lines = [
+    `${emojis.banned} **Side 1** advances on \`0\`. **Side 2** is eliminated on \`-1\`.`,
+    `${emojis.torneo} **Tournament:** ${escapeDiscord(input.tournamentName)}`,
+    `${emojis.vs} **Match:** ${escapeDiscord(input.leftName)} vs ${escapeDiscord(input.rightName)}`,
+    `${emojis.scoreboard} **Score:** \`0 - -1\``,
+    `${emojis.winner} **Advances:** ${escapeDiscord(input.winnerName)}`,
+    `${emojis.banned} **Eliminated:** ${escapeDiscord(input.rightName)}`,
+    `${emojis.textChannel} **Channel:** ${formatChannel(null, input.channelId)}`,
+  ];
+  if (input.forfeited.length > 0) {
+    lines.push(`${emojis.alert} **Forfeited before a ticket**`);
+    for (const match of input.forfeited) {
+      lines.push(
+        `- ${escapeDiscord(match.leftName)} vs ${escapeDiscord(match.rightName)} — \`${match.score1} - ${match.score2}\` — **${escapeDiscord(match.winnerName)}** advances`,
+      );
+    }
+  }
+  if (input.stillMarked) {
+    lines.push(
+      `${emojis.info} The advancing side stays marked. Their next match is forfeited once both sides are set, and that ticket is not opened.`,
+    );
+  }
+  if (input.forfeitFailed) {
+    lines.push(`${emojis.error} The next match could not be forfeited yet. Opening rooms will try again.`);
+  }
+  return uploadCard(
+    embedColors.error,
+    `${emojis.banned} Both Sides Disqualified`,
+    lines.join("\n"),
+    `Disqualified by ${input.actorTag}`,
+    input.avatarUrl,
+  );
+}
+
 export function channelClosedMessage(actorId: string, actorTag: string): InteractionReplyOptions {
   return uploadCard(
     embedColors.info,

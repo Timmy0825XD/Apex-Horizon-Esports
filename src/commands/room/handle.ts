@@ -81,7 +81,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
 
   await deferRoom(interaction, false);
   try {
-    const result = await openPendingTickets(ready.guild, ready.tournament, scope);
+    const result = await openPendingTickets(ready.guild, ready.tournament, scope, interaction.user);
     const where = scopeText(scope);
     if (result.created.length === 0 && result.failed.length === 0) {
       await respondRoom(

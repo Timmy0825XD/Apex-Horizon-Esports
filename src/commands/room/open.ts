@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { ChannelType, type Guild, type GuildMember, type TextChannel } from "discord.js";
+import { ChannelType, type Guild, type GuildMember, type TextChannel, type User } from "discord.js";
+import { settlePendingForfeits } from "../bracket/forfeit.js";
 import { prisma } from "../../lib/prisma.js";
 import type { SheetPlayer, SheetTeam } from "../../lib/sheet.js";
 import type { TournamentRecord } from "../tournament/fields.js";
@@ -233,7 +234,11 @@ export async function openPendingTickets(
   guild: Guild,
   tournament: TournamentRecord,
   scope?: RoomScope,
+  actor?: User,
 ): Promise<OpenTicketsResult> {
+  await settlePendingForfeits({ guild, tournament, actor }).catch((error) => {
+    console.error("Pending forfeit settle failed before opening tickets", error);
+  });
   const queue = await loadTicketQueue(tournament);
   if (scope && (scope.group || scope.round != null) && !scope.matchIds?.length) {
     const known = await prisma.match.findMany({

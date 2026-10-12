@@ -76,6 +76,7 @@ export const helpCatalog: HelpCategory[] = [
       { slash: "room create", summary: "Open pending battle tickets now. Optional group and round.", access: "Organiser" },
       { slash: "room available", summary: "Show matches that still need a battle ticket.", access: "Organiser" },
       { slash: "bracket upload", summary: "Report the official score inside a ticket.", access: "Staff of the tournament" },
+      { slash: "bracket dq_both", summary: "Disqualify both sides. Side 1 advances and forfeits the next match.", access: "Staff of the tournament" },
       { slash: "bracket correct", summary: "Amend a posted score and rebuild lying rooms.", access: "Organiser" },
     ],
   },

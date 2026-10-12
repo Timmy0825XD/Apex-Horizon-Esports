@@ -67,7 +67,7 @@ export async function handleAutoRoomSlash(interaction: ChatInputCommandInteracti
   await deferRoom(interaction, false);
   try {
     await setAutoRoomRunning(ready.tournament.id, true);
-    const result = await openPendingTickets(ready.guild, ready.tournament);
+    const result = await openPendingTickets(ready.guild, ready.tournament, undefined, interaction.user);
     const schedule = `Matches that open later wait for **00:00** or **12:00** UTC. ${create} opens that queue now.`;
     if (result.created.length === 0 && result.failed.length === 0) {
       await respondRoom(

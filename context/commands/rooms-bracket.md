@@ -53,6 +53,21 @@ Respuesta en el canal (no efímera), **tres Components V2** con título grande, 
 
 Al publicar el transcript llama `attachResultsTranscript` con la URL de ese mensaje para enlazar el título de los embeds de `/schedule results` (ticket y canal de resultados). El siguiente ticket espera al reloj si auto-room está on. Log: **Score Upload**.
 
+## `/bracket dq_both`
+
+**Solo dentro del ticket.** Sin campos. Mismo rol que `upload` (staff de torneo u Organiser).
+
+Marca ese partido **lado 1 = 0**, **lado 2 = -1**. En Challonge gana el número más alto, así que el lado 1 avanza y el lado 2 queda eliminado. El lado 1 queda marcado: debe perder la llave a la que avanza. El ticket actual se cierra como `upload` (renombre `✅`, archivo, transcript). La primera confirmación es un Components V2 rojo de descalificación doble (avatar de quien ejecutó). El cierre y el transcript reutilizan sus propios V2. Log: **Score Upload**.
+
+Cuando la llave siguiente ya tiene los dos lados y está `open`, el bot la reporta **antes** de crear sala:
+
+- Si solo uno viene marcado: ese lado recibe **-1** y el otro **0**. El limpio avanza. No hay ticket. Se le quita la marca al que perdió.
+- Si los dos vienen marcados (el comando se usó en las dos llaves que alimentan ese partido): lado 1 recibe **0** y lado 2 **-1**. No hay ticket. El lado 1 **sigue marcado**, y la llave de después se descalifica igual.
+
+Si el rival todavía no está, la marca espera. Completar el otro partido (`upload`, otro `dq_both` o `correct`), `/room create`, encender auto-room o el reloj de 00:00 / 12:00 UTC aplican la marca en cuanto el partido está `open`. Esas llaves no se listan en `/room available` ni abren ticket. Cada forfeit automático también va a **Score Upload**.
+
+`/bracket correct` sobre un marcador que tenía un negativo quita la marca de los dos lados de ese partido.
+
 ## `/bracket correct`
 
 Organiser. Enmienda un marcador ya reportado.

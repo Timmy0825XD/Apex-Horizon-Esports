@@ -2,6 +2,7 @@ import { MessageFlags, type AutocompleteInteraction, type ButtonInteraction, typ
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { handleBracketAuto } from "./autocomplete.js";
 import { handleBracketButton, runBracketCorrect } from "./correct.js";
+import { runBracketDqBoth } from "./dq-both.js";
 import { runBracketUpload } from "./upload.js";
 import { bracketPanel } from "./view.js";
 import { respondBracket } from "./respond.js";
@@ -20,6 +21,10 @@ export async function handleBracketSlash(interaction: ChatInputCommandInteractio
   const sub = interaction.options.getSubcommand();
   if (sub === "upload") {
     await runBracketUpload(interaction);
+    return;
+  }
+  if (sub === "dq_both") {
+    await runBracketDqBoth(interaction);
     return;
   }
   if (sub === "correct") {

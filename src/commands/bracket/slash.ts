@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from "discord.js";
 
 export const bracketSlash = new SlashCommandBuilder()
   .setName("bracket")
-  .setDescription("Report or correct official bracket scores")
+  .setDescription("Report, disqualify, or correct official bracket scores")
   .setDMPermission(false)
   .addSubcommand((subcommand) =>
     subcommand
@@ -17,6 +17,9 @@ export const bracketSlash = new SlashCommandBuilder()
       .addStringOption((option) =>
         option.setName("note").setDescription("Optional note for the score upload log").setRequired(false),
       ),
+  )
+  .addSubcommand((subcommand) =>
+    subcommand.setName("dq_both").setDescription("Disqualify both sides of this battle ticket"),
   )
   .addSubcommand((subcommand) =>
     subcommand

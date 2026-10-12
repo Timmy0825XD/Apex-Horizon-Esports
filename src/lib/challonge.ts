@@ -326,7 +326,7 @@ export function parseScoresCsv(raw: string | null | undefined): { score1: number
   if (!raw) {
     return null;
   }
-  const match = raw.trim().match(/^(\d+)\s*-\s*(\d+)/);
+  const match = raw.trim().match(/^(-?\d+)\s*-\s*(-?\d+)/);
   if (!match) {
     return null;
   }

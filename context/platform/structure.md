@@ -52,7 +52,7 @@ src/
     sheet/             # /sheet add|get|find_player|validate
     auto-room/         # /auto_room
     room/              # /room create|available y la tubería de battle tickets
-    bracket/           # /bracket upload|correct
+    bracket/           # /bracket upload|dq_both|correct
     ticket/            # /ticket close|reopen|delete
     team/              # /team info|list
     role/              # /role user|add all|remove all|list
