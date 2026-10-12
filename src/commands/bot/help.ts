@@ -20,6 +20,9 @@ function helpCommandId(slash: string, ctx: BotViewContext): string | undefined {
   if (slash.startsWith("tournament ")) {
     return ctx.tournamentCommandId;
   }
+  if (slash.startsWith("sheet ")) {
+    return ctx.sheetCommandId;
+  }
   if (slash.startsWith("team ")) {
     return ctx.teamCommandId;
   }

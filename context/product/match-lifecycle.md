@@ -57,13 +57,13 @@ Se puede marcar asistencia sin haber subido el score, y se puede subir el score 
 /tournament add
         → nace el mundo del torneo si ningún in-game ID está en la lista oficial de baneados; la sheet se copia a la BD
 
-/tournament add_sheet
+/sheet add
         → otra sheet entra al archivo global (link+name, o CSV nombre/link)
 
-/tournament get_sheet
+/sheet get
         → link de una hoja por nombre, o CSV de todo el archivo global
 
-/tournament find_player
+/sheet find_player
         → busca en todas las copias del bot (activas, manuales, histórico, cualquier servidor)
 
 /tournament role + /team *

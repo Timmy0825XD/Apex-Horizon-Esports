@@ -1,8 +1,8 @@
 import type { ChatInputCommandInteraction } from "discord.js";
-import { deferTournament, respondTournament } from "./respond.js";
-import { listStoredSheets, type StoredSheetRecord } from "./store.js";
-import type { SheetPlayer, SheetTeam } from "./sheet.js";
-import { playerFoundMessages, tournamentErrorMessage, type PlayerHit } from "./view.js";
+import type { SheetPlayer, SheetTeam } from "../../lib/sheet.js";
+import { listStoredSheets, type StoredSheetRecord } from "../tournament/store.js";
+import { deferSheet, respondSheet } from "./respond.js";
+import { playerFoundMessages, sheetErrorMessage, type PlayerHit } from "./view.js";
 
 type Query = {
   gameId?: string;
@@ -81,10 +81,10 @@ type OpenHit = {
   sheets: Map<string, StoredSheetRecord>;
 };
 
-export async function handleTournamentFindPlayer(interaction: ChatInputCommandInteraction): Promise<void> {
+export async function handleSheetFindPlayer(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = interaction.guild;
   if (!guild) {
-    await respondTournament(interaction, tournamentErrorMessage("Guild only", "This command can only be used in a server."));
+    await respondSheet(interaction, sheetErrorMessage("Guild only", "This command can only be used in a server."));
     return;
   }
 
@@ -96,9 +96,9 @@ export async function handleTournamentFindPlayer(interaction: ChatInputCommandIn
   };
 
   if (!query.gameId && !query.discordId && !query.discordTag && !query.playerName) {
-    await respondTournament(
+    await respondSheet(
       interaction,
-      tournamentErrorMessage(
+      sheetErrorMessage(
         "Need a search field",
         "Fill in at least one of **game ID**, **Discord ID**, **Discord tag**, or **player name**. Several fields use **OR**.",
       ),
@@ -106,7 +106,7 @@ export async function handleTournamentFindPlayer(interaction: ChatInputCommandIn
     return;
   }
 
-  await deferTournament(interaction, true);
+  await deferSheet(interaction, true);
 
   const sheets = (await listStoredSheets()).map((sheet) => ({
     ...sheet,
@@ -154,5 +154,5 @@ export async function handleTournamentFindPlayer(interaction: ChatInputCommandIn
     sheets: [...hit.sheets.values()],
   }));
 
-  await respondTournament(interaction, playerFoundMessages(hits));
+  await respondSheet(interaction, playerFoundMessages(hits));
 }

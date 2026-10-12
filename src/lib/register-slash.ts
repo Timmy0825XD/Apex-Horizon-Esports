@@ -12,6 +12,7 @@ import { roleSlash } from "../commands/role/slash.js";
 import { serverSlash } from "../commands/server/slash.js";
 import { settingsSlash } from "../commands/settings/slash.js";
 import { staffSlash } from "../commands/staff/slash.js";
+import { sheetSlash } from "../commands/sheet/slash.js";
 import { teamSlash } from "../commands/team/slash.js";
 import { tournamentSlash } from "../commands/tournament/slash.js";
 import { userSlash } from "../commands/user/slash.js";
@@ -24,6 +25,7 @@ const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
   serverSlash.toJSON(),
   staffSlash.toJSON(),
   tournamentSlash.toJSON(),
+  sheetSlash.toJSON(),
   teamSlash.toJSON(),
   roleSlash.toJSON(),
   userSlash.toJSON(),
@@ -64,6 +66,7 @@ export const settingsCommandIds = new Map<string, string>();
 export const serverCommandIds = new Map<string, string>();
 export const staffCommandIds = new Map<string, string>();
 export const tournamentCommandIds = new Map<string, string>();
+export const sheetCommandIds = new Map<string, string>();
 export const teamCommandIds = new Map<string, string>();
 export const roleCommandIds = new Map<string, string>();
 export const userCommandIds = new Map<string, string>();
@@ -107,6 +110,13 @@ export function tournamentCommandIdFor(guildId: string | null | undefined): stri
     return undefined;
   }
   return tournamentCommandIds.get(guildId);
+}
+
+export function sheetCommandIdFor(guildId: string | null | undefined): string | undefined {
+  if (!guildId) {
+    return undefined;
+  }
+  return sheetCommandIds.get(guildId);
 }
 
 export function teamCommandIdFor(guildId: string | null | undefined): string | undefined {
@@ -203,6 +213,11 @@ export async function registerSlashCommands(): Promise<void> {
     const tournament = registered.find((command) => command.name === "tournament");
     if (tournament) {
       tournamentCommandIds.set(guildId, tournament.id);
+    }
+
+    const sheet = registered.find((command) => command.name === "sheet");
+    if (sheet) {
+      sheetCommandIds.set(guildId, sheet.id);
     }
 
     const team = registered.find((command) => command.name === "team");

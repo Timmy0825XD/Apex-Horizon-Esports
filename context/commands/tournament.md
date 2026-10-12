@@ -39,55 +39,7 @@ Valida bracket + layout de la hoja. Cada jugador tiene **5** columnas (tag, Disc
 |---|---|---|
 | id | STRING (Autocomplete) | Sí |
 
-Apaga automatización y **borra la config del torneo** más todo lo que el bot guardó de ese mundo: partidos, salas, schedules y asistencias. **No** borra canales Discord, la hoja de Google ni el bracket externo. La copia de la sheet en BD **pasa a histórico** (sigue saliendo en `find_player` / `get_sheet`). Admin. Audita.
-
-## `/tournament add_sheet`
-
-**Para qué:** Meter una hoja al archivo **global** del bot, sin crear un torneo operable. Detecta formato y extra igual que add. Admin. Audita.
-
-Tres campos, todos opcionales; se elige **un** modo:
-
-| Campo | Tipo | Obligatorio | Uso |
-|---|---|---|---|
-| link | STRING | No* | URL de la hoja |
-| name | STRING | No* | Nombre del torneo (etiqueta en el archivo) |
-| csv | ATTACHMENT | No* | Varias hojas a la vez |
-
-\*Una hoja: **link** y **name** van juntos y son obligatorios. Varias hojas: solo **csv**. No mezclar CSV con link/name.
-
-CSV: columna 1 = nombre del torneo, columna 2 = URL de la Google Sheet. **Sin fila de headers**; se lee desde la fila 1. Acepta coma, punto y coma (Excel en español) o tab. Máximo 40 filas. Filas vacías se ignoran. Un link que ya está en el archivo global se omite.
-
-La copia guarda el servidor de origen (`guildId` + nombre) para mostrarlo en `find_player` y `get_sheet`, pero el pozo de búsqueda es de **todo el bot**.
-
-## `/tournament get_sheet`
-
-**Para qué:** Recuperar el link de una hoja archivada por **nombre de torneo**, o exportar el catálogo entero. Lectura; no audita. Público; respuesta efímera.
-
-| Campo | Tipo | Obligatorio | Uso |
-|---|---|---|---|
-| name | STRING (Autocomplete) | No* | Nombre en el archivo global |
-| csv | BOOLEAN | No* | CSV de todos los torneos + links |
-
-\*Al menos uno. Se pueden usar los dos a la vez.
-
-Autocomplete lista las sheets almacenadas de **todo el bot** (nombre · servidor). El valor interno es el id de la copia. Si el texto no es un id, busca por nombre (exacto primero, si no contiene). Varias coincidencias → varias líneas, cada una con servidor y `[Click Here](url)`.
-
-CSV: columnas `Tournament,Sheet,Server` (con header). Incluye activas, manuales e históricas.
-
-## `/tournament find_player`
-
-**Para qué:** Buscar una persona en **todas** las sheets almacenadas del bot (cualquier servidor). Lectura; no audita. Relación: distinto de `/team info` (ese mira la hoja **viva** de un torneo). Público; respuesta efímera.
-
-| Campo | Tipo | Obligatorio |
-|---|---|---|
-| game_id | STRING | No* |
-| discord_id | STRING | No* |
-| discord_tag | STRING | No* |
-| player_name | STRING | No* |
-
-\*Al menos uno. Varios rellenos = **OR**.
-
-Un V2 **por jugador distinto**: datos del capitán (y nombre de equipo si no es 1vs1) + lista de sheets. Cada sheet enseña **el servidor** al que pertenece. Los campos extra de la hoja **no** entran aquí. Varios jugadores → varios V2, cada uno con copy de *ese* jugador.
+Apaga automatización y **borra la config del torneo** más todo lo que el bot guardó de ese mundo: partidos, salas, schedules y asistencias. **No** borra canales Discord, la hoja de Google ni el bracket externo. La copia de la sheet en BD **pasa a histórico** (sigue saliendo en `/sheet find_player` / `/sheet get`). Admin. Audita.
 
 ## `/tournament info` / `/tournament list`
 

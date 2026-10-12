@@ -7,16 +7,16 @@ import {
 } from "discord.js";
 import { emojis } from "../../emojis.js";
 import { embedColors } from "../../lib/embeds.js";
-import { formatSheetLink } from "../../lib/formatters.js";
+import { formatHelpEntry, formatSheetLink } from "../../lib/formatters.js";
 import { attachedFile, divider, textBlock, v2Flags } from "../../lib/v2.js";
-import { deferTournament, respondTournament } from "./respond.js";
 import {
   findStoredSheetById,
   findStoredSheetsByName,
   listStoredSheetSummaries,
   type StoredSheetSummary,
-} from "./store.js";
-import { tournamentErrorMessage } from "./view.js";
+} from "../tournament/store.js";
+import { deferSheet, respondSheet } from "./respond.js";
+import { sheetErrorMessage } from "./view.js";
 
 const SHEET_CSV_NAME = "tournament-sheets.csv";
 
@@ -104,11 +104,12 @@ function catalogContainer(count: number): ContainerBuilder {
     .addFileComponents(attachedFile(SHEET_CSV_NAME));
 }
 
-export function tournamentGetSheetMessage(input: {
+export function sheetGetMessage(input: {
   query?: string;
   matches: StoredSheetSummary[];
   catalog: StoredSheetSummary[];
   csv: boolean;
+  commandId?: string;
 }): InteractionReplyOptions {
   const containers: ContainerBuilder[] = [];
   const files: AttachmentBuilder[] = [];
@@ -124,7 +125,9 @@ export function tournamentGetSheetMessage(input: {
           .setAccentColor(embedColors.info)
           .addTextDisplayComponents(
             textBlock(`# ${emojis.info} Archive is empty`),
-            textBlock("There are no stored sheets to put in a CSV yet. Archive one with `/tournament add_sheet`."),
+            textBlock(
+              `There are no stored sheets to put in a CSV yet. Archive one with ${formatHelpEntry("sheet add", input.commandId)}.`,
+            ),
           ),
       );
     } else {
@@ -147,14 +150,14 @@ function withLiveGuildName(sheet: StoredSheetSummary, liveName: string | undefin
   };
 }
 
-export async function handleTournamentGetSheet(interaction: ChatInputCommandInteraction): Promise<void> {
+export async function handleSheetGet(interaction: ChatInputCommandInteraction, commandId?: string): Promise<void> {
   const query = interaction.options.getString("name")?.trim() || undefined;
   const csv = interaction.options.getBoolean("csv") ?? false;
 
   if (!query && !csv) {
-    await respondTournament(
+    await respondSheet(
       interaction,
-      tournamentErrorMessage(
+      sheetErrorMessage(
         "Need a name or CSV",
         "Pick a **name** to get that sheet link, or set **csv** to export every stored tournament and its sheet.",
       ),
@@ -162,7 +165,7 @@ export async function handleTournamentGetSheet(interaction: ChatInputCommandInte
     return;
   }
 
-  await deferTournament(interaction, true);
+  await deferSheet(interaction, true);
 
   const liveName = (guildId: string, stored: string) =>
     interaction.client.guilds.cache.get(guildId)?.name ?? (stored || "Unknown server");
@@ -175,13 +178,14 @@ export async function handleTournamentGetSheet(interaction: ChatInputCommandInte
 
   const catalog = csv ? await listStoredSheetSummaries() : [];
 
-  await respondTournament(
+  await respondSheet(
     interaction,
-    tournamentGetSheetMessage({
+    sheetGetMessage({
       query,
       matches: matches.map((sheet) => withLiveGuildName(sheet, liveName(sheet.guildId, sheet.guildName))),
       catalog: catalog.map((sheet) => withLiveGuildName(sheet, liveName(sheet.guildId, sheet.guildName))),
       csv,
+      commandId,
     }),
   );
 }

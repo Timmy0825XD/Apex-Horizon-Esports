@@ -1,14 +1,12 @@
 import type { ChatInputCommandInteraction } from "discord.js";
+import { sheetCommandIdFor } from "../../lib/register-slash.js";
 import { isAdminContext, requireAdmin } from "./access.js";
 import { auditTournamentDelete } from "./audit.js";
 import { deferTournament, respondTournament } from "./respond.js";
 import { deleteTournamentWorld, findTournamentById } from "./store.js";
 import { tournamentDeletedMessage, tournamentErrorMessage } from "./view.js";
 
-export async function handleTournamentDelete(
-  interaction: ChatInputCommandInteraction,
-  commandId?: string,
-): Promise<void> {
+export async function handleTournamentDelete(interaction: ChatInputCommandInteraction): Promise<void> {
   await deferTournament(interaction);
 
   const access = await requireAdmin(interaction, "delete a tournament");
@@ -28,7 +26,7 @@ export async function handleTournamentDelete(
   }
 
   const related = await deleteTournamentWorld(guild.id, tournament.id);
-  await respondTournament(interaction, tournamentDeletedMessage(tournament.name, related, commandId));
+  await respondTournament(interaction, tournamentDeletedMessage(tournament.name, related, sheetCommandIdFor(guild.id)));
   await auditTournamentDelete(
     interaction,
     guild,

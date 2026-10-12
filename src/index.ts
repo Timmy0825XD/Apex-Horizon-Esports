@@ -19,6 +19,7 @@ import { handleRoleSlash } from "./commands/role/handle.js";
 import { handleServerSlash } from "./commands/server/handle.js";
 import { handleSettingsSlash } from "./commands/settings/handle.js";
 import { handleStaffAuto, handleStaffSlash } from "./commands/staff/handle.js";
+import { handleSheetAuto, handleSheetSlash } from "./commands/sheet/handle.js";
 import { handleTeamAuto, handleTeamSlash } from "./commands/team/handle.js";
 import { handleTournamentAuto, handleTournamentButton, handleTournamentSlash } from "./commands/tournament/handle.js";
 import { handleUserSlash } from "./commands/user/handle.js";
@@ -93,6 +94,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    if (interaction.isChatInputCommand() && interaction.commandName === "sheet") {
+      await handleSheetSlash(interaction);
+      return;
+    }
+
     if (interaction.isChatInputCommand() && interaction.commandName === "team") {
       await handleTeamSlash(interaction);
       return;
@@ -160,6 +166,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.isAutocomplete() && interaction.commandName === "tournament") {
       await handleTournamentAuto(interaction);
+      return;
+    }
+
+    if (interaction.isAutocomplete() && interaction.commandName === "sheet") {
+      await handleSheetAuto(interaction);
       return;
     }
 
