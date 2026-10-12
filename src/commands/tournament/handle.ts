@@ -8,6 +8,7 @@ import { handleTournamentDelete } from "./delete.js";
 import { handleTournamentEdit } from "./edit.js";
 import { handleTournamentInfo } from "./info.js";
 import { handleTournamentList } from "./list.js";
+import { handleTournamentReport } from "./report.js";
 import { handleTournamentRole, handleTournamentRoleButton, isTournamentRoleButton } from "./role.js";
 import { handleTournamentValidate } from "./validate.js";
 
@@ -51,6 +52,10 @@ export async function handleTournamentSlash(interaction: ChatInputCommandInterac
   }
   if (sub === "validate") {
     await handleTournamentValidate(interaction);
+    return;
+  }
+  if (sub === "report") {
+    await handleTournamentReport(interaction);
   }
 }
 
@@ -61,7 +66,7 @@ export async function handleTournamentAuto(interaction: AutocompleteInteraction)
   }
 
   const sub = interaction.options.getSubcommand(false);
-  if ((sub === "role" || sub === "validate") && !(await canUseTournamentRole(interaction))) {
+  if ((sub === "role" || sub === "validate" || sub === "report") && !(await canUseTournamentRole(interaction))) {
     await interaction.respond([]);
     return;
   }

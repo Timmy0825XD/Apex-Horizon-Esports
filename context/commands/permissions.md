@@ -20,7 +20,7 @@ Jerarquía Discord siempre gana: el bot no puede asignar un rol por encima del s
 |---|---|
 | `add` · `edit` · `delete` | Admin |
 | `info` · `list` | Público |
-| `role` · `validate` | Organiser |
+| `report` · `role` · `validate` | Organiser |
 
 `validate` lee la hoja viva y abre un canal por equipo que no está del todo verificado. `/ticket close` en ese canal archiva el transcript y lo borra. Detalle: [tournament.md](tournament.md).
 

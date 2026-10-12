@@ -50,6 +50,7 @@ export const helpCatalog: HelpCategory[] = [
       { slash: "tournament delete", summary: "Wipe bot records for a tournament. Keeps the stored sheet as history.", access: "Admin" },
       { slash: "tournament info", summary: "Show one tournament.", access: "Public" },
       { slash: "tournament list", summary: "List tournaments in this server.", access: "Public" },
+      { slash: "tournament report", summary: "Export attendance, staff work, results, and setup as a workbook.", access: "Organiser" },
       { slash: "tournament role", summary: "Give a Discord role by Discord ID column, or to every player after confirmation.", access: "Organiser" },
       { slash: "tournament validate", summary: "Open a ticket for each team that is missing the verified role or is not in the server.", access: "Organiser" },
     ],

@@ -149,4 +149,16 @@ export const tournamentSlash = new SlashCommandBuilder()
     addTextChannel(subcommand, "transcript_channel", "Channel where transcripts of these tickets are sent", true);
     addCategory(subcommand, "secondary_category", "Overflow category when the first one is full", false);
     return subcommand;
-  });
+  })
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("report")
+      .setDescription("Export attendance, work, results, and setup as a workbook")
+      .addStringOption((option) =>
+        option
+          .setName("tournament")
+          .setDescription("Tournament to export")
+          .setRequired(true)
+          .setAutocomplete(true),
+      ),
+  );

@@ -47,6 +47,23 @@ Info: un torneo completo. List: todos del servidor (efímero). No mutan. No audi
 
 El panel V2 de add / edit / info separa **Identity**, **Roles**, **Channels** y **Ticket categories**. Omite categorías de tickets (y el canal Events Links) que no estén configuradas: no muestra *Not configured*. Footer: *Created by* con mención de quien registró el torneo.
 
+## `/tournament report`
+
+**Para qué:** Exportar el dossier del torneo. **Organiser**. Efímero. No muta. No audita.
+
+| Campo | Tipo | Obligatorio |
+|---|---|---|
+| tournament | STRING (Autocomplete) | Sí |
+
+Un Components V2 con el icono del servidor, los conteos y un **File** `.xlsx`. El libro tiene cuatro hojas. Los nombres de usuario, rol y canal van en texto plano, con el ID al lado. La API key no se escribe.
+
+| Hoja | Qué lleva |
+|---|---|
+| Attendance | Marcas activas, en orden de bracket. Etapa, partido, juez, recorder, si ocupó los dos puestos, marcador, juegos, ganador, `DW`, grabaciones, prueba del resultado si existe, quién marcó y cuándo. Las borradas no entran. |
+| Work count | Una fila por persona. Rondas y juegos como juez, como recorder y en ambos puestos. Los `DW` entran en esa cubeta y además se listan aparte; esa columna no se suma a las rondas. No muestra oro. La tarifa del encabezado sale del formato guardado. |
+| Results | Declaraciones de `/schedule results`, en orden de bracket. Marcador, ganador, empate, decisión o default win (si la asistencia activa es `DW`), staff del schedule, quién declaró, cuándo, hora programada, notas, nota del schedule, transcript, grabaciones y pruebas. |
+| Configuration | Identidad, roles, canales, categorías, auto-room, alta del mundo y un conteo de partidos, salas, schedules, resultados y asistencias. Lo que no está configurado sale como *Not configured*. |
+
 ## `/tournament role`
 
 **Para qué:** Dar un rol Discord a jugadores de un torneo operable, por columna de **Discord ID**. **Organiser**. Lee la hoja **viva**. Audita si se asignó al menos un rol.
