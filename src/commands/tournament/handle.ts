@@ -3,12 +3,9 @@ import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { tournamentCommandIdFor } from "../../lib/register-slash.js";
 import { canUseTournamentRole } from "./access.js";
 import { handleTournamentAdd } from "./add.js";
-import { handleTournamentAddSheet } from "./add-sheet.js";
 import { handleTournamentAutocomplete } from "./autocomplete.js";
 import { handleTournamentDelete } from "./delete.js";
 import { handleTournamentEdit } from "./edit.js";
-import { handleTournamentFindPlayer } from "./find-player.js";
-import { handleTournamentGetSheet } from "./get-sheet.js";
 import { handleTournamentInfo } from "./info.js";
 import { handleTournamentList } from "./list.js";
 import { handleTournamentRole, handleTournamentRoleButton, isTournamentRoleButton } from "./role.js";
@@ -36,19 +33,7 @@ export async function handleTournamentSlash(interaction: ChatInputCommandInterac
     return;
   }
   if (sub === "delete") {
-    await handleTournamentDelete(interaction, commandId);
-    return;
-  }
-  if (sub === "add_sheet") {
-    await handleTournamentAddSheet(interaction, commandId);
-    return;
-  }
-  if (sub === "get_sheet") {
-    await handleTournamentGetSheet(interaction);
-    return;
-  }
-  if (sub === "find_player") {
-    await handleTournamentFindPlayer(interaction);
+    await handleTournamentDelete(interaction);
     return;
   }
   if (sub === "info") {

@@ -1,14 +1,14 @@
 import type { Attachment, ChatInputCommandInteraction, Guild } from "discord.js";
 import type { GuildSettings } from "@prisma/client";
-import { formatSheetLink } from "../../lib/formatters.js";
-import { isAdminContext, requireAdmin } from "./access.js";
-import { auditAddSheet } from "./audit.js";
-import { deferTournament, respondTournament } from "./respond.js";
-import { SheetError, detectCsvDelimiter, loadParsedSheet, parseCsv, parseSheetUrl } from "./sheet.js";
-import { createManualSheet, findStoredSheetByLink } from "./store.js";
+import { formatHelpEntry, formatSheetLink } from "../../lib/formatters.js";
+import { auditAddSheet } from "../tournament/audit.js";
+import { SheetError, detectCsvDelimiter, loadParsedSheet, parseCsv, parseSheetUrl } from "../tournament/sheet.js";
+import { createManualSheet, findStoredSheetByLink } from "../tournament/store.js";
+import { isSheetAdmin, requireSheetAdmin } from "./access.js";
+import { deferSheet, respondSheet } from "./respond.js";
 import {
-  tournamentErrorMessage,
-  tournamentSheetArchiveResultMessage,
+  sheetArchiveResultMessage,
+  sheetErrorMessage,
   type SheetArchiveFail,
   type SheetArchiveOk,
   type SheetArchiveSkip,
@@ -23,7 +23,7 @@ type ManifestRow = {
 };
 
 function usageError() {
-  return tournamentErrorMessage(
+  return sheetErrorMessage(
     "Need a sheet to archive",
     "For **one** sheet, fill **link** and **name**. To archive several, attach a **CSV** (column 1 = tournament name, column 2 = Google Sheet URL, no header row). Do not mix CSV with link/name.",
     false,
@@ -123,15 +123,12 @@ async function archiveOne(
   }
 }
 
-export async function handleTournamentAddSheet(
-  interaction: ChatInputCommandInteraction,
-  commandId?: string,
-): Promise<void> {
-  await deferTournament(interaction);
+export async function handleSheetAdd(interaction: ChatInputCommandInteraction, commandId?: string): Promise<void> {
+  await deferSheet(interaction);
 
-  const access = await requireAdmin(interaction, "archive a sheet");
-  if (!isAdminContext(access)) {
-    await respondTournament(interaction, access.error);
+  const access = await requireSheetAdmin(interaction, "archive a sheet");
+  if (!isSheetAdmin(access)) {
+    await respondSheet(interaction, access.error);
     return;
   }
 
@@ -141,7 +138,7 @@ export async function handleTournamentAddSheet(
   const csv = interaction.options.getAttachment("csv");
 
   if (csv && (link || name)) {
-    await respondTournament(interaction, usageError());
+    await respondSheet(interaction, usageError());
     return;
   }
 
@@ -151,27 +148,28 @@ export async function handleTournamentAddSheet(
   }
 
   if (!link || !name) {
-    await respondTournament(interaction, usageError());
+    await respondSheet(interaction, usageError());
     return;
   }
 
   const result = await archiveOne(guild, { name, sheetLink: link }, new Set());
   if ("skip" in result) {
-    await respondTournament(
+    await respondSheet(
       interaction,
-      tournamentErrorMessage("Sheet already stored", "That Google Sheet is already in the global archive. `find_player` can already search it.", false),
+      sheetErrorMessage(
+        "Sheet already stored",
+        `That Google Sheet is already in the global archive. ${formatHelpEntry("sheet find_player", commandId)} can already search it.`,
+        false,
+      ),
     );
     return;
   }
   if ("fail" in result) {
-    await respondTournament(interaction, tournamentErrorMessage("Could not archive sheet", result.fail.reason, false));
+    await respondSheet(interaction, sheetErrorMessage("Could not archive sheet", result.fail.reason, false));
     return;
   }
 
-  await respondTournament(
-    interaction,
-    tournamentSheetArchiveResultMessage(guild.name, [result.ok], [], [], commandId),
-  );
+  await respondSheet(interaction, sheetArchiveResultMessage(guild.name, [result.ok], [], [], commandId));
   await auditAddSheet(interaction, guild, settings, [
     `**${result.ok.name}** · \`${result.ok.format}\` · **${result.ok.teams}** teams`,
     `**Sheet:** ${formatSheetLink(result.ok.sheetLink)}`,
@@ -186,16 +184,16 @@ async function archiveFromCsv(
   commandId?: string,
 ): Promise<void> {
   if (file.size > MAX_CSV_BYTES) {
-    await respondTournament(
+    await respondSheet(
       interaction,
-      tournamentErrorMessage("CSV too large", `Keep the CSV under **${MAX_CSV_BYTES / 1024} KB**.`, false),
+      sheetErrorMessage("CSV too large", `Keep the CSV under **${MAX_CSV_BYTES / 1024} KB**.`, false),
     );
     return;
   }
   if (!isCsvAttachment(file)) {
-    await respondTournament(
+    await respondSheet(
       interaction,
-      tournamentErrorMessage("Need a CSV", "Attach a `.csv` with **name,link** on every row and **no header**.", false),
+      sheetErrorMessage("Need a CSV", "Attach a `.csv` with **name,link** on every row and **no header**.", false),
     );
     return;
   }
@@ -204,9 +202,9 @@ async function archiveFromCsv(
   try {
     text = await readAttachmentText(file);
   } catch {
-    await respondTournament(
+    await respondSheet(
       interaction,
-      tournamentErrorMessage("Could not read CSV", "Discord did not return that attachment. Try uploading it again.", false),
+      sheetErrorMessage("Could not read CSV", "Discord did not return that attachment. Try uploading it again.", false),
     );
     return;
   }
@@ -217,13 +215,13 @@ async function archiveFromCsv(
       manifest.invalid > 0
         ? `Read **${manifest.invalid}** incomplete row${manifest.invalid === 1 ? "" : "s"} (need both a name and a link).`
         : "The CSV was empty. Put **tournament name** in column 1 and the **Google Sheet URL** in column 2, starting on row 1.";
-    await respondTournament(interaction, tournamentErrorMessage("CSV had no sheets", note, false));
+    await respondSheet(interaction, sheetErrorMessage("CSV had no sheets", note, false));
     return;
   }
   if (manifest.rows.length > MAX_CSV_ROWS) {
-    await respondTournament(
+    await respondSheet(
       interaction,
-      tournamentErrorMessage(
+      sheetErrorMessage(
         "Too many rows",
         `This CSV has **${manifest.rows.length}** sheets. Archive at most **${MAX_CSV_ROWS}** per command.`,
         false,
@@ -256,10 +254,7 @@ async function archiveFromCsv(
     }
   }
 
-  await respondTournament(
-    interaction,
-    tournamentSheetArchiveResultMessage(guild.name, archived, skipped, failed, commandId),
-  );
+  await respondSheet(interaction, sheetArchiveResultMessage(guild.name, archived, skipped, failed, commandId));
 
   if (archived.length > 0) {
     await auditAddSheet(

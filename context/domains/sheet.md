@@ -1,15 +1,15 @@
 # Participantes: la hoja es la verdad
 
-La inscripción vive en una **Google Sheet** por torneo. El bot no pide nombres de columnas: lee **por posición**. `/sheet headers` enseña el orden de campos según formato (`1vs1` … `5vs5`). Si la fila 1 tiene etiquetas propias, esas etiquetas se reutilizan al mostrar equipos y validar.
+La inscripción vive en una **Google Sheet** por torneo. El bot no pide nombres de columnas: lee **por posición** (`1vs1` … `5vs5`). Si la fila 1 tiene etiquetas propias, esas etiquetas se reutilizan al mostrar equipos y validar.
 
 Cada jugador ocupa **5 columnas**, en este orden: Discord Tag · Discord ID · in-game name · in-game ID · Current Title.
 
 - **`1vs1`:** no hay columna de equipo aparte. El **tag del capitán** es el nombre con el que sale en Challonge. 5 columnas de jugador, luego N opcionales.
 - **`2vs2`, `3vs3`, `4vs4`, `5vs5`:** la **primera columna es el nombre del equipo** (bracket). A partir de la segunda empieza el tag del capitán y el resto de bloques de 5. Luego N opcionales.
 
-Los campos adicionales **siempre van al final**. El bot detecta el formato cogiendo el mayor `k` (5…1) cuyo bloque core cabe, y el resto son extra. `/tournament add` y `/tournament add_sheet` hacen esa detección solos.
+Los campos adicionales **siempre van al final**. El bot detecta el formato cogiendo el mayor `k` (5…1) cuyo bloque core cabe, y el resto son extra. `/tournament add` y `/sheet add` hacen esa detección solos.
 
-El torneo y la copia en BD guardan `format` y `additionalFieldCount`. Los extra se almacenan con el **nombre del header** de la fila 1; `/team` los muestra al final del V2. `/tournament find_player` **no** los usa.
+El torneo y la copia en BD guardan `format` y `additionalFieldCount`. Los extra se almacenan con el **nombre del header** de la fila 1; `/team` los muestra al final del V2. `/sheet find_player` **no** los usa.
 
 Operar un torneo vivo (`/sheet validate`, `/team info`, `/tournament role`) **sigue leyendo Google**. Además, el bot **almacena copias** de hojas en un archivo **global** (todos los servidores del bot). `find_player` no relee Google: mira esas copias, en cualquier gremio.
 
@@ -20,9 +20,9 @@ Un solo pozo de búsqueda para **todo el bot**. Cada copia recuerda de qué serv
 | Origen | Cuándo entra | Qué pasa después |
 |---|---|---|
 | `/tournament add` | Al crear el torneo se **copia** la sheet | Cruza in-game IDs con la lista oficial de baneados; si hay alguno, **no** crea. Si `/tournament edit` cambia `sheet_link`, esa copia se **reemplaza** (mismo cruce). |
-| `/tournament add_sheet` | Alta manual: **link + name**, o un **CSV** (nombre, link, sin headers; coma, `;` o tab) | Detecta formato y extra igual que add. Un link ya archivado se omite. |
-| `/tournament get_sheet` | Lookup por nombre, o CSV de todo el archivo | Lectura. Autocomplete global. No audita. |
-| `/tournament delete` | La config del torneo y sus partidos / salas / schedules / asistencias se borran | La sheet **pasa a histórico**. Sigue saliendo en `find_player` / `get_sheet` (global). |
+| `/sheet add` | Alta manual: **link + name**, o un **CSV** (nombre, link, sin headers; coma, `;` o tab) | Detecta formato y extra igual que add. Un link ya archivado se omite. |
+| `/sheet get` | Lookup por nombre, o CSV de todo el archivo | Lectura. Autocomplete global. No audita. |
+| `/tournament delete` | La config del torneo y sus partidos / salas / schedules / asistencias se borran | La sheet **pasa a histórico**. Sigue saliendo en `/sheet find_player` / `/sheet get` (global). |
 
 La copia guarda link, formato, cuántos campos extra hay, el nombre del torneo, y el servidor de origen.
 
@@ -32,7 +32,7 @@ La copia guarda link, formato, cuántos campos extra hay, el nombre del torneo, 
 
 1. El ID de juego no está en la lista pública de baneados.
 2. Discord ID e in-game ID son únicos en toda la hoja.
-3. La cuenta Discord tiene más de un mes.
+3. La cuenta Discord tiene más de **30 días**.
 4. Discord ID (snowflake) e in-game ID (hex) tienen forma válida.
 5. La persona no tiene roles de staff / judge / recorder del servidor.
 6. Es miembro del servidor actual.
@@ -51,7 +51,7 @@ La hoja tiene que ser **visible con el link**. El bot lee **una fila por equipo*
 
 Un ban de Discord **no** es el cruce con la lista de IDs de juego baneados. Esa lista interviene al validar la hoja, al crear o cambiar la sheet de un torneo, y al asignar roles de torneo.
 
-## `/tournament find_player`
+## `/sheet find_player`
 
 Busca en **todas** las copies almacenadas del bot (activas, manuales e histórico, **cualquier servidor**). No es `/team info`.
 
@@ -72,4 +72,5 @@ No audita (lectura). Comandos: [../commands/tournament.md](../commands/tournamen
 
 - Comandos de hoja viva: [../commands/sheet-teams.md](../commands/sheet-teams.md)
 - Moderación: [moderation.md](moderation.md)
-- Alta de torneo / add_sheet / get_sheet / find_player / role: [../commands/tournament.md](../commands/tournament.md)
+- Alta de torneo y role: [../commands/tournament.md](../commands/tournament.md)
+- `/sheet add` / `get` / `find_player` / `validate`: [../commands/sheet-teams.md](../commands/sheet-teams.md)

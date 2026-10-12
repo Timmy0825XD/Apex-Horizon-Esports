@@ -14,6 +14,15 @@ Fuente de actores: [../product/actors.md](../product/actors.md).
 
 Jerarquía Discord siempre gana: el bot no puede asignar un rol por encima del suyo, ni un humano puede gestionar roles iguales o superiores al propio.
 
+## `/sheet`
+
+| Subcomando | Rol |
+|---|---|
+| `add` · `validate` | Admin |
+| `get` · `find_player` | Público |
+
+`validate` es efímero y no archiva la hoja. Detalle: [sheet-teams.md](sheet-teams.md).
+
 ## `/schedule`
 
 El rol se mira tal cual. Tener uno no abre los subcomandos de otro.
