@@ -3,6 +3,28 @@ import type { ChatInputCommandInteraction, Guild } from "discord.js";
 import { auditLogTitles, publishAudit } from "../../lib/audit.js";
 import { formatChannel, formatCategory } from "../../lib/formatters.js";
 
+export async function auditValidationClose(
+  interaction: ChatInputCommandInteraction,
+  guild: Guild,
+  settings: GuildSettings,
+  tournamentName: string,
+  channelId: string,
+  transcriptChannelId: string,
+): Promise<void> {
+  await publishAudit({
+    guild,
+    channelId: settings.botLogsChannelId,
+    title: auditLogTitles.ticketSystem,
+    description: `A group validation ticket for **${tournamentName}** was archived and deleted.`,
+    details: [
+      `**Tournament:** **${tournamentName}**`,
+      `**Ticket:** ${formatChannel(guild, channelId)}`,
+      `**Transcripts:** ${formatChannel(guild, transcriptChannelId)}`,
+    ],
+    actor: interaction.user,
+  });
+}
+
 export async function auditTicket(
   interaction: ChatInputCommandInteraction,
   guild: Guild,

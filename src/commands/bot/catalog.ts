@@ -51,6 +51,7 @@ export const helpCatalog: HelpCategory[] = [
       { slash: "tournament info", summary: "Show one tournament.", access: "Public" },
       { slash: "tournament list", summary: "List tournaments in this server.", access: "Public" },
       { slash: "tournament role", summary: "Give a Discord role by Discord ID column, or to every player after confirmation.", access: "Organiser" },
+      { slash: "tournament validate", summary: "Open a ticket for each team that is missing the verified role or is not in the server.", access: "Organiser" },
     ],
   },
   {
@@ -110,7 +111,7 @@ export const helpCatalog: HelpCategory[] = [
     title: "Ticket",
     description: "Close, reopen, or delete the match channel. Not the bracket.",
     entries: [
-      { slash: "ticket close", summary: "Silence the ticket and move it to closed.", access: "Organiser" },
+      { slash: "ticket close", summary: "Silence a battle ticket. A validation ticket is transcribed and removed.", access: "Organiser" },
       { slash: "ticket reopen", summary: "Restore permissions and the original category when known.", access: "Organiser" },
       { slash: "ticket delete", summary: "Destroy the channel and forget the match link.", access: "Organiser" },
     ],

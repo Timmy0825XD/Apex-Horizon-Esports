@@ -26,6 +26,8 @@ El bot es el **operador de torneo** de un servidor Discord. Un servidor puede te
 
 Un **ticket** es un canal privado = **un partido**. Nace cuando el partido está `open` en el bracket, ambos lados tienen nombres reales (no placeholders tipo “Winner of…”) y todavía no hay sala. Muere cuando se cierra, se mueve a categoría de cerrados, se borra, o se recrea porque una corrección de bracket cambió quién debía jugar ahí.
 
+`/tournament validate` puede abrir otro canal privado, uno por equipo cuyo roster no está verificado. Ese canal no es la sala de un partido. `/ticket close` lo archiva: HTML al canal de transcript elegido y el canal se borra.
+
 Regla dura: **un partido, una sala**. Si ya existe ticket para ese match, no se crea otro.
 
 ## Dos capas de configuración

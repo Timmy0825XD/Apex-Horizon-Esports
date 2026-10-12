@@ -133,4 +133,20 @@ export const tournamentSlash = new SlashCommandBuilder()
           .setRequired(false)
           .setAutocomplete(true),
       ),
-  );
+  )
+  .addSubcommand((subcommand) => {
+    subcommand
+      .setName("validate")
+      .setDescription("Open a ticket for each team that is not fully verified")
+      .addStringOption((option) =>
+        option
+          .setName("tournament")
+          .setDescription("Tournament to validate")
+          .setRequired(true)
+          .setAutocomplete(true),
+      );
+    addCategory(subcommand, "category", "Category where validation tickets are created", true);
+    addTextChannel(subcommand, "transcript_channel", "Channel where transcripts of these tickets are sent", true);
+    addCategory(subcommand, "secondary_category", "Overflow category when the first one is full", false);
+    return subcommand;
+  });

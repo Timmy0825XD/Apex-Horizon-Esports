@@ -48,7 +48,7 @@ src/
     settings/          # /settings set|edit|show
     server/            # /server info|banlist|tree|invites
     staff/             # /staff config, recruit, fire, work
-    tournament/        # /tournament add|edit|delete|info|list|role
+    tournament/        # /tournament add|edit|delete|info|list|role|validate
     sheet/             # /sheet add|get|find_player|validate
     auto-room/         # /auto_room
     room/              # /room create|available y la tubería de battle tickets
