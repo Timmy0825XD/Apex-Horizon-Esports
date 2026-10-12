@@ -173,6 +173,11 @@ export async function loadTicketQueue(tournament: TournamentRecord): Promise<Tic
     select: { challongeMatchId: true },
   });
   const taken = new Set(rooms.map((room) => room.challongeMatchId));
+  const forfeits = await prisma.pendingForfeit.findMany({
+    where: { tournamentId: tournament.id },
+    select: { participantId: true },
+  });
+  const pendingForfeit = new Set(forfeits.map((row) => row.participantId));
 
   await Promise.all(
     bracket.matches.map((match) => {
@@ -218,6 +223,12 @@ export async function loadTicketQueue(tournament: TournamentRecord): Promise<Tic
 
   for (const match of bracket.matches) {
     if (!eligibleStage(bracket, match, openHaveGroups) || taken.has(match.id)) {
+      continue;
+    }
+    if (
+      (match.player1Id != null && pendingForfeit.has(match.player1Id)) ||
+      (match.player2Id != null && pendingForfeit.has(match.player2Id))
+    ) {
       continue;
     }
     const leftName = realSideName(names.get(match.player1Id ?? -1));

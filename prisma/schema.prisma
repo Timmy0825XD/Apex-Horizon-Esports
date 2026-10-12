@@ -116,6 +116,18 @@ model Match {
   @@map("matches")
 }
 
+model PendingForfeit {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  guildId       String
+  tournamentId  String   @db.ObjectId
+  participantId Int
+  createdAt     DateTime @default(now())
+
+  @@unique([tournamentId, participantId])
+  @@index([guildId, tournamentId])
+  @@map("pending_forfeits")
+}
+
 model Room {
   id               String   @id @default(auto()) @map("_id") @db.ObjectId
   guildId          String

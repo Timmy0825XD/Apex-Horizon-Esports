@@ -8,7 +8,7 @@ export async function auditScoreUpload(
   guild: Guild,
   settings: GuildSettings,
   input: {
-    action: "uploaded" | "corrected";
+    action: "uploaded" | "corrected" | "disqualified" | "forfeited";
     tournamentName: string;
     matchId: number;
     leftName: string;
@@ -50,7 +50,11 @@ export async function auditScoreUpload(
     description:
       input.action === "uploaded"
         ? `Official score uploaded for **${input.tournamentName}**.`
-        : `Bracket score corrected for **${input.tournamentName}**.`,
+        : input.action === "corrected"
+          ? `Bracket score corrected for **${input.tournamentName}**.`
+          : input.action === "disqualified"
+            ? `Both sides disqualified for **${input.tournamentName}**.`
+            : `Advancing side forfeited for **${input.tournamentName}**.`,
     details,
     actor: actor.user,
   });

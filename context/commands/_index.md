@@ -18,7 +18,7 @@ Al nacer, renombrarse o eliminarse un comando: actualizar **este índice** y el 
 | Staff | [staff.md](staff.md) | `/staff config set` · `edit` · `view` · `/staff recruit` · `fire` · `work` |
 | Tournament | [tournament.md](tournament.md) | `/tournament add` · `edit` · `delete` · `info` · `list` · `report` · `role` · `validate` |
 | Sheet y equipos | [sheet-teams.md](sheet-teams.md) | `/sheet add` · `get` · `find_player` · `validate` · `/team info` · `list` · `/utility discord_tag` |
-| Salas y bracket | [rooms-bracket.md](rooms-bracket.md) | `/auto_room` · `/room create` · `available` · `/bracket upload` · `/bracket correct` |
+| Salas y bracket | [rooms-bracket.md](rooms-bracket.md) | `/auto_room` · `/room create` · `available` · `/bracket upload` · `/bracket dq_both` · `/bracket correct` |
 | Schedule | [schedule.md](schedule.md) | `/schedule create` · `update` · `show` · `delete` · `unassigned` · `refresh` · `resign` · `results` · `results_delete` |
 | Attendance | [attendance.md](attendance.md) | `/attendance mark` · `delete` · `list` · `/get attendance` · `/get sheet` · `/link add` · `delete` · `missing` |
 | Tickets | [tickets.md](tickets.md) | `/ticket close` · `reopen` · `delete` |

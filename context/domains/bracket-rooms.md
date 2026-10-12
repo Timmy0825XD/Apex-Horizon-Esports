@@ -4,6 +4,7 @@ El organizador crea y siembra el bracket **fuera**. El bot guarda la identidad d
 
 - **Sincroniza** partidos (ronda, grupo/fase, nombres, estado y si es el partido de 3er puesto).
 - **Reporta** un marcador (`/bracket upload`).
+- **Descalifica** los dos lados (`/bracket dq_both`): lado 1 avanza con `0` y pierde la llave siguiente sin ticket.
 - **Corrige** un marcador ya subido (`/bracket correct`) y deja rastro de “antes / después”.
 
 Empates en el bracket **no se aceptan**. El ganador se deduce del marcador.
@@ -67,6 +68,8 @@ Si `/bracket correct` cambia quién avanza y ya había ticket(s) en partidos des
 `/room available` no crea nada: enseña la cola (quién podría tener sala ahora, y quién está bloqueado por la hoja).
 
 `/bracket upload` solo se usa **dentro del ticket**. Reporta al bracket, completa el match, renombra (sin `🔴`, solo `✅`), cierra/archiva, genera transcript completo (nombre = título del canal) en un Components V2 del canal de transcripts, con el emoji `transcript_thumnail` de thumbnail, y enlaza esa URL a los embeds de `/schedule results` si existen. Las tres confirmaciones en el ticket son Components V2 con título grande: avatar de quien ejecutó, emoji `open_close` y emoji `transcript_thumnail`. La advertencia y el éxito de `/bracket correct` son Components V2; el éxito lleva el emoji de Challonge como thumbnail. El siguiente ticket, si auto-room está on, espera a 00:00 o 12:00 UTC. Empate prohibido.
+
+`/bracket dq_both` tampoco tiene campos y solo se usa dentro del ticket. Reporta **lado 1 = 0** y **lado 2 = -1**, cierra el ticket igual que `upload`, y marca al lado 1. Esa marca hace que su siguiente partido `open` se reporte antes de crear sala: el marcado pierde **-1** y el rival gana **0**, sin ticket. Si los dos lados de esa llave están marcados, el marcador es otra vez lado 1 **0** / lado 2 **-1**, sin ticket, y el lado 1 sigue marcado hacia la próxima llave. `/room available` no las enseña. Corregir un marcador con negativo quita la marca de esos dos lados.
 
 ## Relacionado
 
