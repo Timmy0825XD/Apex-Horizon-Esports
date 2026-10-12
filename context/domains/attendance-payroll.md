@@ -50,6 +50,7 @@ El link no cambia el salario. Recorder cobra su tarifa y la misma persona cobra 
 | `/attendance list` | Ficha de **una persona**. La tabla sale del formato del torneo e incluye los DW |
 | `/staff work` | Tablero del torneo: matches y rounds por persona. No muestra oro |
 | `/get sheet` | Excel. La tarifa sale del formato guardado del torneo, no de `tournament_type` |
+| `/tournament report` | Excel del torneo: asistencia activa, rounds y games por persona, resultados declarados y configuración. No escribe oro. Organiser. Efímero |
 
 Se paga y se evalúa a partir de la **asistencia**, no del bracket.
 
