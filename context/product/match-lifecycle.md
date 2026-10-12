@@ -69,6 +69,12 @@ Se puede marcar asistencia sin haber subido el score, y se puede subir el score 
 /tournament role + /team *
         → el servidor reconoce a los jugadores
 
+/tournament validate
+        → un canal por equipo que no está del todo verificado (no es la sala del partido)
+
+/ticket close en ese canal
+        → transcript HTML al canal elegido y el canal se borra
+
 /auto_room status:true  o  /room create
         → el partido se vuelve ticket
 

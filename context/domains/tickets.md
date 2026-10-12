@@ -4,12 +4,14 @@ Cerrar un ticket **no** es lo mismo que reportar el score. El canal nace en [bra
 
 | Comando | Efecto |
 |---|---|
-| `/ticket close` | Silencia y mueve a categoría de cerrados. Se puede reabrir. |
+| `/ticket close` | Sala de partido: silencia y mueve a categoría de cerrados. Se puede reabrir. Ticket de `/tournament validate`: transcript HTML al canal guardado en el topic y el canal se borra. |
 | `/ticket reopen` | Restaura permisos y, si se sabe, la categoría original. |
 | `/ticket delete` | El canal desaparece; se olvida el vínculo partido↔canal. Irreversible. |
 | `/bracket upload` | Además de reportar al bracket, renombra/cierra/archiva y transcribe como parte del cierre **oficial** del partido. |
 
 Regla dura (producto): **un partido, una sala**. Ver [../product/overview.md](../product/overview.md).
+
+`/tournament validate` abre canales de validación de roster. No son salas de partido. `/ticket close` en ese canal avisa en efímero que se borra en **5** segundos, envía el HTML al transcript elegido al crearlo (no al de las salas) y después borra el canal. `/ticket reopen` y `/ticket delete` no lo archivan.
 
 ## Transcript
 

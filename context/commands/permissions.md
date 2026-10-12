@@ -14,6 +14,16 @@ Fuente de actores: [../product/actors.md](../product/actors.md).
 
 Jerarquía Discord siempre gana: el bot no puede asignar un rol por encima del suyo, ni un humano puede gestionar roles iguales o superiores al propio.
 
+## `/tournament`
+
+| Subcomando | Rol |
+|---|---|
+| `add` · `edit` · `delete` | Admin |
+| `info` · `list` | Público |
+| `role` · `validate` | Organiser |
+
+`validate` lee la hoja viva y abre un canal por equipo que no está del todo verificado. `/ticket close` en ese canal archiva el transcript y lo borra. Detalle: [tournament.md](tournament.md).
+
 ## `/sheet`
 
 | Subcomando | Rol |

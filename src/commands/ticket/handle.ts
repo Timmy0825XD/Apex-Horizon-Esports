@@ -4,12 +4,14 @@ import { formatHelpEntry } from "../../lib/formatters.js";
 import { memberIsOrganiser } from "../../lib/organiser.js";
 import { prisma } from "../../lib/prisma.js";
 import { settingsCommandIdFor } from "../../lib/register-slash.js";
+import { parseValidationTicketTopic } from "../../lib/validation-ticket.js";
 import { deferRoom, respondRoom } from "../room/respond.js";
 import { categoryMention, roomPanel } from "../room/view.js";
 import { loadGuildSettings } from "../settings/store.js";
 import { findTournamentById } from "../tournament/store.js";
 import { auditTicket } from "./audit.js";
 import { closeTicket, deleteTicket, reopenTicket } from "./lifecycle.js";
+import { closeValidationTicket } from "./validation.js";
 
 const unauthorized = {
   content: "This server is not authorized to use this bot.",
@@ -36,7 +38,7 @@ export async function handleTicketSlash(interaction: ChatInputCommandInteraction
     await respondRoom(
       interaction,
       roomPanel("error", "Organiser required", [
-        "Only an **Organiser** (manager role) or a Discord **Administrator** can change a battle ticket.",
+        "Only an **Organiser** (manager role) or a Discord **Administrator** can change a ticket.",
       ]),
     );
     return;
@@ -50,6 +52,35 @@ export async function handleTicketSlash(interaction: ChatInputCommandInteraction
         `Run ${formatHelpEntry("settings set", settingsCommandIdFor(guild.id))} first.`,
       ]),
     );
+    return;
+  }
+
+  const validation = parseValidationTicketTopic(channel.topic);
+  if (validation) {
+    const sub = interaction.options.getSubcommand();
+    if (sub !== "close") {
+      await respondRoom(
+        interaction,
+        roomPanel(
+          "info",
+          sub === "reopen" ? "Validation ticket stays open" : "Close archives this ticket",
+          [
+            sub === "reopen"
+              ? "A group validation ticket is not reopened. Close it to save the transcript and remove the channel."
+              : "Close this validation ticket to save the transcript and remove the channel.",
+          ],
+        ),
+      );
+      return;
+    }
+
+    await deferRoom(interaction);
+    try {
+      await closeValidationTicket(interaction, channel, guild, settings, validation);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "That ticket action could not be finished.";
+      await respondRoom(interaction, roomPanel("error", "Ticket action failed", [message])).catch(() => undefined);
+    }
     return;
   }
 

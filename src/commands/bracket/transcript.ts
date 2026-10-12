@@ -63,8 +63,8 @@ export async function publishTicketTranscript(
   },
 ): Promise<string> {
   const channel = await guild.channels.fetch(transcriptChannelId).catch(() => null);
-  if (!channel || channel.type !== ChannelType.GuildText) {
-    throw new Error("The tournament transcript channel is missing or not a text channel.");
+  if (!channel || (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement)) {
+    throw new Error("The transcript channel is missing or not a text channel.");
   }
 
   const channelName = input.channelName ?? ticket.name;

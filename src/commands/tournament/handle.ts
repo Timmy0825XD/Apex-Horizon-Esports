@@ -9,6 +9,7 @@ import { handleTournamentEdit } from "./edit.js";
 import { handleTournamentInfo } from "./info.js";
 import { handleTournamentList } from "./list.js";
 import { handleTournamentRole, handleTournamentRoleButton, isTournamentRoleButton } from "./role.js";
+import { handleTournamentValidate } from "./validate.js";
 
 const unauthorized = {
   content: "This server is not authorized to use this bot.",
@@ -48,6 +49,9 @@ export async function handleTournamentSlash(interaction: ChatInputCommandInterac
     await handleTournamentRole(interaction);
     return;
   }
+  if (sub === "validate") {
+    await handleTournamentValidate(interaction);
+  }
 }
 
 export async function handleTournamentAuto(interaction: AutocompleteInteraction): Promise<void> {
@@ -56,7 +60,8 @@ export async function handleTournamentAuto(interaction: AutocompleteInteraction)
     return;
   }
 
-  if (interaction.options.getSubcommand(false) === "role" && !(await canUseTournamentRole(interaction))) {
+  const sub = interaction.options.getSubcommand(false);
+  if ((sub === "role" || sub === "validate") && !(await canUseTournamentRole(interaction))) {
     await interaction.respond([]);
     return;
   }

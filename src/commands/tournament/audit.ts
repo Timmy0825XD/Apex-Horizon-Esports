@@ -1,5 +1,5 @@
 import type { GuildSettings } from "@prisma/client";
-import type { ButtonInteraction, ChatInputCommandInteraction, Guild } from "discord.js";
+import type { ButtonInteraction, ChatInputCommandInteraction, Guild, User } from "discord.js";
 import { auditLogTitles, publishAudit } from "../../lib/audit.js";
 import { formatCategory, formatChannel, formatRole, formatSheetLink } from "../../lib/formatters.js";
 import {
@@ -169,6 +169,45 @@ export async function auditTournamentRole(
       `**Players granted:** \`${assigned}\``,
     ],
     actor: interaction.user,
+  });
+}
+
+export async function auditValidationTickets(
+  guild: Guild,
+  settings: GuildSettings,
+  actor: User,
+  tournamentName: string,
+  transcriptChannelId: string,
+  created: { channelId: string }[],
+  notOpened: number,
+): Promise<void> {
+  if (created.length === 0) {
+    return;
+  }
+  const shown = created.slice(0, 15).map((ticket) => formatChannel(guild, ticket.channelId));
+  const extra = created.length - shown.length;
+  if (extra > 0) {
+    shown.push(`*And **${extra}** more.*`);
+  }
+  const details = [
+    `**Tournament:** **${tournamentName}**`,
+    `**Tickets opened:** \`${created.length}\``,
+    `**Transcripts:** ${formatChannel(guild, transcriptChannelId)}`,
+    ...shown,
+  ];
+  if (notOpened > 0) {
+    details.push(`**Not opened:** \`${notOpened}\``);
+  }
+  await publishAudit({
+    guild,
+    channelId: settings.botLogsChannelId,
+    title: auditLogTitles.botLogs,
+    description:
+      created.length === 1
+        ? `A group validation ticket was opened for **${tournamentName}**.`
+        : `Group validation tickets were opened for **${tournamentName}**.`,
+    details,
+    actor,
   });
 }
 

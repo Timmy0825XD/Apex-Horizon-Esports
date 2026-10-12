@@ -39,11 +39,11 @@ Cada embed de auditoría, en inglés, lleva al menos: **qué pasó**, **Triggere
 | Familia | Eventos |
 |---|---|
 | Servidor | Settings set/edit; staff config set/edit; recruit; fire; rol individual; rol masivo; ban; unban |
-| Torneo | Alta, edición, baja; `/sheet add`; `/tournament role`; auto-room on/off; salas creadas |
+| Torneo | Alta, edición, baja; `/sheet add`; `/tournament role`; `/tournament validate` (si abrió al menos un ticket); auto-room on/off; salas creadas |
 | Bracket | Score subido; score corregido (marcador viejo → nuevo + ganador) |
 | Schedule | Crear, actualizar (con motivo), borrar, refresh, resign, asignar por botón, resultado declarado, resultado borrado |
 | Asistencia | Marcar, borrar, añadir link, borrar links |
-| Ticket | Close, reopen, delete |
+| Ticket | Close, reopen, delete. En un ticket de validación, close archiva y borra |
 | Utility | Purga de canal; wipe de categoría; emoji robado; embed publicado o reescrito; Components V2 publicado o reescrito |
 
 Los transcripts **no** son este sistema: son el archivo del chat, en otro canal, con otra identidad.
