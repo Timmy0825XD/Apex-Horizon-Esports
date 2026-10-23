@@ -5,7 +5,7 @@ import type { TournamentRecord } from "../tournament/fields.js";
 import type { Match } from "@prisma/client";
 import { markTicket } from "./channel.js";
 import { createScheduleEvent, syncScheduleEvent } from "./event.js";
-import { replaceThumbnail, syncPosts, thumbnailImageUrl } from "./messages.js";
+import { replaceThumbnail, syncPosts, thumbnailImageUrl, type SchedulePing } from "./messages.js";
 import { presentFace } from "./store.js";
 import { loadThumbnailFace, renderScheduleThumbnail } from "./thumbnail.js";
 
@@ -17,6 +17,7 @@ export async function paintSchedule(
   match: Match,
   schedule: Schedule,
   regenerate: boolean,
+  ping: SchedulePing = "keep",
 ): Promise<Schedule> {
   let thumbnailMessageId = schedule.messages.thumbnailMessageId;
   let image: Buffer | undefined;
@@ -42,7 +43,7 @@ export async function paintSchedule(
       console.error("Schedule event update failed", error);
     });
   }
-  const messages = await syncPosts(guild, ticket, settings.schedulesChannelId, { ...schedule, messages: { ...schedule.messages, thumbnailMessageId } }, face);
+  const messages = await syncPosts(guild, ticket, settings.schedulesChannelId, { ...schedule, messages: { ...schedule.messages, thumbnailMessageId } }, face, ping);
   return prisma.schedule.update({
     where: { id: schedule.id },
     data: { messages, ...(eventId && eventId !== schedule.eventId ? { eventId } : {}) },

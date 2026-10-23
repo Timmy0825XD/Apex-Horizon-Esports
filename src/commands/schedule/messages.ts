@@ -1,23 +1,51 @@
 import { AttachmentBuilder, type Guild, type Message, type NewsChannel, type TextChannel } from "discord.js";
 import type { Schedule, ScheduleMessages } from "@prisma/client";
 import { emojis } from "../../emojis.js";
-import { formatRole } from "../../lib/formatters.js";
+import { formatRole, formatUser } from "../../lib/formatters.js";
 import { loadGuildStaffState } from "../staff/store.js";
 import { textChannel } from "./channel.js";
 import { claimRow, claimsAreOpen, scheduleEmbed, urgentScheduleEmbed, type ScheduleFace } from "./view.js";
 
 type PostChannel = TextChannel | NewsChannel;
 
-function boardBody(face: ScheduleFace, scheduleId: string, unlocked: boolean) {
+export type SchedulePing = "captains" | "staff" | "keep";
+
+function pingUsers(face: ScheduleFace, includeStaff: boolean): string[] {
+  const ids = [face.captain1Id, face.captain2Id];
+  if (includeStaff) {
+    ids.push(face.judgeId, face.recorderId);
+  }
+  const users: string[] = [];
+  for (const id of ids) {
+    if (id && !users.includes(id)) {
+      users.push(id);
+    }
+  }
+  return users;
+}
+
+function mentionLine(users: string[]): string | undefined {
+  return users.length ? users.map((id) => formatUser(id)).join(" ") : undefined;
+}
+
+function boardBody(face: ScheduleFace, scheduleId: string, unlocked: boolean, content?: string) {
   return {
+    ...(content === undefined ? {} : { content }),
     embeds: [scheduleEmbed(face)],
     components: [claimRow(scheduleId, face.judgeId, face.recorderId, unlocked)],
     allowedMentions: { parse: [] as const },
   };
 }
 
-async function upsertBoard(channel: PostChannel, messageId: string | null, face: ScheduleFace, scheduleId: string, unlocked: boolean): Promise<string> {
-  const body = boardBody(face, scheduleId, unlocked);
+async function upsertBoard(
+  channel: PostChannel,
+  messageId: string | null,
+  face: ScheduleFace,
+  scheduleId: string,
+  unlocked: boolean,
+  content?: string,
+): Promise<string> {
+  const body = boardBody(face, scheduleId, unlocked, content);
   if (messageId) {
     const existing = await channel.messages.fetch(messageId).catch(() => null);
     if (existing) {
@@ -29,8 +57,26 @@ async function upsertBoard(channel: PostChannel, messageId: string | null, face:
   return sent.id;
 }
 
-async function upsertTicket(channel: PostChannel, messageId: string | null, face: ScheduleFace): Promise<string> {
-  const body = { embeds: [scheduleEmbed(face)], components: [], allowedMentions: { parse: [] as const } };
+async function upsertTicket(channel: PostChannel, messageId: string | null, face: ScheduleFace, ping: SchedulePing): Promise<string> {
+  const users = ping === "keep" ? [] : pingUsers(face, ping === "staff");
+  const content = ping === "keep" ? undefined : mentionLine(users);
+  const notify = Boolean(content);
+  const body = {
+    ...(content === undefined ? {} : { content }),
+    embeds: [scheduleEmbed(face)],
+    components: [],
+    allowedMentions: notify ? { users, parse: [] as const } : { parse: [] as const },
+  };
+  if (notify) {
+    const sent = await channel.send(body);
+    if (messageId) {
+      const previous = await channel.messages.fetch(messageId).catch(() => null);
+      if (previous && previous.id !== sent.id) {
+        await previous.delete().catch(() => undefined);
+      }
+    }
+    return sent.id;
+  }
   if (messageId) {
     const existing = await channel.messages.fetch(messageId).catch(() => null);
     if (existing) {
@@ -80,14 +126,16 @@ export async function syncPosts(
   schedulesChannelId: string,
   schedule: Schedule,
   face: ScheduleFace,
+  ping: SchedulePing = "keep",
 ): Promise<ScheduleMessages> {
   const board = await textChannel(guild, schedulesChannelId);
   if (!board) {
     throw new Error("The schedules channel is missing or is not a text channel.");
   }
   const unlocked = claimsAreOpen(schedule.claimsOpenUntil);
-  const ticketMessageId = await upsertTicket(ticket, schedule.messages.ticketMessageId, face);
-  const scheduleChannelMessageId = await upsertBoard(board, schedule.messages.scheduleChannelMessageId, face, schedule.id, unlocked);
+  const line = ping === "keep" ? undefined : mentionLine(pingUsers(face, ping === "staff"));
+  const ticketMessageId = await upsertTicket(ticket, schedule.messages.ticketMessageId, face, ping);
+  const scheduleChannelMessageId = await upsertBoard(board, schedule.messages.scheduleChannelMessageId, face, schedule.id, unlocked, line);
   const messages = { ...schedule.messages, ticketMessageId, scheduleChannelMessageId };
   if (messages.t0MessageId && face.alert) {
     await editUrgent(board, messages.t0MessageId, face, schedule.id, unlocked);
