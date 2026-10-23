@@ -19,7 +19,7 @@ import { canUploadScore } from "./access.js";
 import { settlePendingForfeits } from "./forfeit.js";
 import { auditScoreUpload } from "./audit.js";
 import { deferBracket, respondBracket } from "./respond.js";
-import { publishTicketTranscript, transcriptFilename } from "./transcript.js";
+import { publishTicketTranscript, transcriptFilename } from "../ticket/transcript/index.js";
 import {
   bracketPanel,
   channelClosedMessage,

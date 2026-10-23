@@ -2,11 +2,11 @@ import type { GuildSettings } from "@prisma/client";
 import type { ChatInputCommandInteraction, Guild, TextChannel } from "discord.js";
 import { formatChannel } from "../../lib/formatters.js";
 import { findTournamentByChallongeId } from "../tournament/store.js";
-import { publishTicketTranscript } from "../bracket/transcript.js";
 import { escapeDiscord } from "../room/labels.js";
 import { respondRoom } from "../room/respond.js";
 import { roomPanel } from "../room/view.js";
 import { auditValidationClose } from "./audit.js";
+import { publishTicketTranscript } from "./transcript/index.js";
 
 const DELETE_DELAY_MS = 5000;
 

@@ -6,7 +6,7 @@
 | Lenguaje | **TypeScript** |
 | Paquetes | **npm** |
 | Cliente Discord | **discord.js** |
-| Transcripts | **discord-html-transcripts** (archivo HTML de battle tickets) |
+| Transcripts | **Generador HTML propio** (snapshot de tickets, previews híbridos y salida multiparte) |
 | Base de datos | **MongoDB** (almacén de config, torneos, partidos, schedules, asistencia, bans) |
 | ORM | **Prisma** (conector MongoDB) |
 | Deploy | **HiddenCloud** |
