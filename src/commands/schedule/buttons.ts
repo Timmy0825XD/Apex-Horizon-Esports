@@ -10,6 +10,7 @@ import { paintSchedule } from "./live.js";
 import { formatUser } from "../../lib/formatters.js";
 import { schedulePlain } from "./respond.js";
 import { postSeatLine, seatAssignedLine } from "./seat.js";
+import { handleShowButton } from "./show.js";
 import { claimsAreOpen, confirmRow, parseScheduleButton } from "./view.js";
 
 function privateReply(interaction: ButtonInteraction, kind: "error" | "success" | "info", title: string, body: string) {
@@ -24,6 +25,10 @@ function privateReply(interaction: ButtonInteraction, kind: "error" | "success" 
 }
 
 export async function handleScheduleButton(interaction: ButtonInteraction): Promise<void> {
+  if (interaction.customId.startsWith("schedule:show:")) {
+    await handleShowButton(interaction);
+    return;
+  }
   const parsed = parseScheduleButton(interaction.customId);
   const guild = interaction.guild;
   if (!parsed || !guild) {

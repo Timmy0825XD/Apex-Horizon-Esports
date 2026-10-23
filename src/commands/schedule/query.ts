@@ -2,52 +2,9 @@ import type { ChatInputCommandInteraction } from "discord.js";
 import { formatChannel, formatUser } from "../../lib/formatters.js";
 import { prisma } from "../../lib/prisma.js";
 import { escapeDiscord } from "../room/labels.js";
-import { loadGuildSettings } from "../settings/store.js";
 import { loadGuildStaffState } from "../staff/store.js";
-import { findTournamentById } from "../tournament/store.js";
 import { isStaff } from "./access.js";
-import { thumbnailImageUrl } from "./messages.js";
 import { replySchedule, scheduleNotice } from "./respond.js";
-import { presentFace } from "./store.js";
-import { scheduleEmbed } from "./view.js";
-
-export async function runShow(interaction: ChatInputCommandInteraction): Promise<void> {
-  const guild = interaction.guild;
-  if (!guild || !interaction.guildId) {
-    return;
-  }
-  const { staff } = await loadGuildStaffState(guild.id);
-  if (!staff || !isStaff(interaction, staff)) {
-    await replySchedule(interaction, scheduleNotice("error", "Staff required", "Only members with the **staff** role can view a schedule."));
-    return;
-  }
-  const settings = await loadGuildSettings(guild.id);
-  if (!settings) {
-    await replySchedule(interaction, scheduleNotice("error", "Settings missing", "Server settings are not configured yet."));
-    return;
-  }
-  const tournamentId = interaction.options.getString("tournament", true);
-  const matchRaw = interaction.options.getString("match", true);
-  const matchId = Number(matchRaw);
-  if (!Number.isInteger(matchId)) {
-    await replySchedule(interaction, scheduleNotice("error", "Unknown match", "Pick a match from the list."));
-    return;
-  }
-  const tournament = await findTournamentById(guild.id, tournamentId);
-  const match = await prisma.match.findUnique({
-    where: { tournamentId_challongeMatchId: { tournamentId, challongeMatchId: matchId } },
-  });
-  const schedule = await prisma.schedule.findUnique({
-    where: { tournamentId_challongeMatchId: { tournamentId, challongeMatchId: matchId } },
-  });
-  if (!tournament || tournament.guildId !== guild.id || !match || !schedule) {
-    await replySchedule(interaction, scheduleNotice("error", "Schedule not found", "That match does not have a schedule in this server."));
-    return;
-  }
-  const imageUrl = await thumbnailImageUrl(guild, settings.thumbnailChannelId, schedule.messages.thumbnailMessageId);
-  const face = await presentFace(guild, tournament, match, schedule, imageUrl);
-  await replySchedule(interaction, { embeds: [scheduleEmbed(face)] });
-}
 
 export async function runUnassigned(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = interaction.guild;
