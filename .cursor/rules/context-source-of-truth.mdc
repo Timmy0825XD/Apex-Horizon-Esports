@@ -29,8 +29,11 @@ Checklist:
 4. [context/product/match-lifecycle.md](context/product/match-lifecycle.md) si cambió el encadenado
 5. [context/platform/audit.md](context/platform/audit.md) si nace un tipo de log o cambia qué se audita
 6. structure / discord-ui / autocomplete en `context/platform/` si cambia cómo se organiza el código o la UI
+7. [context/commands/access.md](context/commands/access.md) si nace, se renombra o se elimina un comando, o cambia quién puede usarlo
 
 No dejes reglas solo en el código. Si código y context discrepan, **actualiza context** para describir lo que el bot hace al ejecutarse.
+
+Excepción: en acceso a comandos gana [context/commands/access.md](context/commands/access.md). Si el checklist o las restricciones cambian, el código se alinea a ellos.
 
 ```text
 ❌ /schedule create en código y context/commands/schedule.md sin el campo nuevo

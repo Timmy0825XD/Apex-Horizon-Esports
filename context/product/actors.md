@@ -29,7 +29,7 @@ Reclutar un puesto **añade un paquete de roles** (p. ej. Judge implica también
 | Staff de torneo | Roles judge/recorder/staff del servidor, o admin/helper del torneo |
 | Público | Cualquier miembro, solo en servidor |
 
-Detalle por comando: [../commands/permissions.md](../commands/permissions.md)
+Detalle por comando: [../commands/access.md](../commands/access.md)
 
 ## Relacionado
 

@@ -1,0 +1,33 @@
+---
+description: El acceso de cada comando lo manda context/commands/access.md. Al crear o cambiar un comando, actualizar ese archivo y aplicar sus celdas al código.
+alwaysApply: true
+---
+
+# Acceso a comandos
+
+[context/commands/access.md](context/commands/access.md) es la única fuente de quién puede usar cada comando y de sus restricciones de acceso. Manda sobre el código.
+
+## Al tocar un comando
+
+En el mismo cambio:
+
+1. Si nace, se renombra o se elimina un slash o subcomando, añade, mueve o quita su checklist y sus restricciones.
+2. Si cambia quién puede usarlo, o una restricción de acceso, actualiza el checklist y el texto para que digan lo mismo.
+3. No dejes el permiso solo en el handler.
+
+## Si el archivo y el código no coinciden
+
+Gana el archivo. Aplica el checklist y las restricciones al comando. No reescribas el archivo para copiar un guard viejo, salvo que el usuario pida documentar el código tal cual.
+
+`- [x]` marca permiso. `- [ ]` es que no lo tiene. Las restricciones de ese comando afinan el rol.
+
+## Qué no va aquí
+
+Marcador, auditoría y copy viven en el dominio o en `commands/<familia>.md`. Este archivo es solo acceso.
+
+```text
+❌ /schedule results deja pasar a Grabador y access.md lo deja en `- [ ]`
+✅ Grabador en `- [ ]` → el handler lo rechaza
+❌ el usuario desmarca Admin y solo se edita el md
+✅ Admin en `- [ ]` → el comando deja de aceptar a ese actor
+```

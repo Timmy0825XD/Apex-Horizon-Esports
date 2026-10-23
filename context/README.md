@@ -54,6 +54,8 @@ El desarrollo de código y comandos sigue **el orden y las indicaciones del usua
 
 Índice: [commands/_index.md](commands/_index.md)
 
+Quién puede usar cada comando: [commands/access.md](commands/access.md). Esos checklists mandan sobre el código.
+
 ---
 
 ## Contrato de mantenimiento
@@ -66,7 +68,10 @@ Cuando se cree un comando nuevo, se cambie uno existente, o se toque el **core /
 4. [product/match-lifecycle.md](product/match-lifecycle.md) si cambia el encadenado entre sistemas.
 5. [platform/audit.md](platform/audit.md) si nace un tipo de log o cambia qué se audita (mutación vs lectura).
 6. [platform/structure.md](platform/structure.md) / [platform/discord-ui.md](platform/discord-ui.md) / [platform/autocomplete.md](platform/autocomplete.md) si cambia cómo se organiza el código o la UI.
+7. [commands/access.md](commands/access.md) si nace, se renombra o se elimina un comando, o cambia quién puede usarlo.
 
 No dejar reglas solo en el código. Si código y context discrepan, **actualizar context** para describir lo que el bot hace al ejecutarse.
+
+Excepción: en acceso a comandos gana [commands/access.md](commands/access.md). Si el checklist o las restricciones cambian, el código se alinea a ellos.
 
 `LOGIC.md` en la raíz es un puntero histórico. No se edita como fuente de verdad.
