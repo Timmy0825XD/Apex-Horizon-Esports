@@ -4,3 +4,7 @@ dist/
 .env.local
 *.log
 .prisma/
+
+# Clone local si startup.js se ejecuta dentro de este repo
+apex-horizon/
+.env.apex-horizon
