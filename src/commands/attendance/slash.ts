@@ -31,8 +31,8 @@ export const attendanceSlash = new SlashCommandBuilder()
   )
   .addSubcommand((subcommand) =>
     subcommand
-      .setName("list")
-      .setDescription("Salary card for one person in a tournament")
+      .setName("report")
+      .setDescription("Salary report for one person in a tournament")
       .addStringOption((option) =>
         option.setName("tournament").setDescription("Tournament").setRequired(true).setAutocomplete(true),
       )

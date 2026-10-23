@@ -28,7 +28,7 @@ Requiere schedule y hora alcanzada. Un activo por partido. Empate permitido. El 
 
 Creador, admin u organiser. `confirm` tiene que ser true. Soft-delete de todas las activas de ese ticket. Se borran el aviso del ticket y el del canal de asistencia. Los posts de `events_links` no se tocan. La respuesta del comando, en el canal, es el Components V2 rojo `Attendance Deleted`. Los errores siguen efímeros. Llama `attachResultsLinks` con la lista vacía. Audita `Attendance Deleted`.
 
-## `/attendance list`
+## `/attendance report`
 
 Ficha de **una persona**. Sustituye a `/work_done` y usa la misma lectura: no escribe pago.
 

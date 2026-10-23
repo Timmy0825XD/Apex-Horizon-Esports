@@ -8,7 +8,7 @@ import { deferPublic, editAttendance } from "./respond.js";
 import { findGuildTournament, listUserAttendance } from "./store.js";
 import { attendanceError, salaryMessage, type SalaryUnit } from "./view.js";
 
-export async function handleAttendanceList(interaction: ChatInputCommandInteraction): Promise<void> {
+export async function handleAttendanceReport(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = interaction.guild;
   if (!guild) {
     await interaction.reply({ embeds: [attendanceError("Guild only", "This command can only be used in a server.")] });

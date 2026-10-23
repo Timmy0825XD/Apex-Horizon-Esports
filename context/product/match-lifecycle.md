@@ -103,7 +103,7 @@ botones + worker T-10/T-0
 /bracket correct
         → el cuadro se enmienda y las salas mentirosas se reconstruyen (con confirmación si hay que borrar tickets)
 
-/get sheet  /  /staff work  /  /attendance list
+/get sheet  /  /staff work  /  /attendance report
         → se paga y se evalúa a partir de la asistencia, no del bracket
 ```
 
