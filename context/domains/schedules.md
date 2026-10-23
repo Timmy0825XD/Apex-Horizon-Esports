@@ -4,7 +4,7 @@ Un partido tiene **como máximo un schedule activo**. Se crea **dentro del ticke
 
 Sin `schedules_channel` de `/settings` no hay `/schedule create`.
 
-Las respuestas del comando son **Components V2**, publicadas en el canal. El aviso de asignar, el de renuncia o reemplazo y la confirmación de asistencia siguen en texto plano. El post del schedule creado (ticket y canal de schedules) y la declaración de results siguen siendo el embed clásico. Nada de este flujo es efímero.
+Las respuestas del comando son **Components V2**, publicadas en el canal. `/schedule update` es la excepción: el aviso de que se actualizó y los errores de ese subcomando son **efímeros**. El aviso de asignar, el de renuncia o reemplazo y la confirmación de asistencia siguen en texto plano. El post del schedule creado (ticket y canal de schedules) y la declaración de results siguen siendo el embed clásico.
 
 | Acción | Rol |
 |---|---|
@@ -48,7 +48,7 @@ El schedule guarda su número. `regenerate_image` reconstruye la tarjeta con **e
 
 ## Al actualizar
 
-Cualquier `/schedule update` vuelve a publicar el mensaje del ticket. El texto menciona a los capitanes y, si el juez o el grabador están asignados, también a ellos. Esas menciones hacen ping. El post del canal de schedules enseña el mismo texto y no vuelve a notificar.
+La respuesta de `/schedule update` (éxito y error) es efímera. Cualquier `/schedule update` vuelve a publicar el mensaje del ticket. El texto menciona a los capitanes y, si el juez o el grabador están asignados, también a ellos. Esas menciones hacen ping. El post del canal de schedules enseña el mismo texto y no vuelve a notificar.
 
 ## Al actualizar fecha/hora
 

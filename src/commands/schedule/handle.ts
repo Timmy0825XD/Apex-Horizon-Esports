@@ -1,4 +1,4 @@
-import { type ChatInputCommandInteraction } from "discord.js";
+import { MessageFlags, type ChatInputCommandInteraction } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { runCreate } from "./create.js";
 import { runDelete } from "./remove.js";
@@ -30,11 +30,12 @@ export async function handleScheduleSlash(interaction: ChatInputCommandInteracti
 }
 
 async function dispatchSchedule(interaction: ChatInputCommandInteraction): Promise<void> {
+  const sub = interaction.options.getSubcommand();
+  const hidden = sub === "update";
   if (!isAllowedGuild(interaction.guildId)) {
-    await interaction.reply(unauthorized);
+    await interaction.reply(hidden ? { ...unauthorized, flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral] } : unauthorized);
     return;
   }
-  const sub = interaction.options.getSubcommand();
   if (sub === "show") {
     await runShow(interaction);
     return;
@@ -48,7 +49,7 @@ async function dispatchSchedule(interaction: ChatInputCommandInteraction): Promi
     return;
   }
   if (!interaction.deferred && !interaction.replied) {
-    await interaction.deferReply();
+    await interaction.deferReply(hidden ? { flags: MessageFlags.Ephemeral } : undefined);
   }
   const loaded = await loadTicket(interaction);
   if (typeof loaded === "string") {
