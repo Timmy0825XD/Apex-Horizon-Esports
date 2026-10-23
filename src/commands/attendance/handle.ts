@@ -1,7 +1,7 @@
 import type { AutocompleteInteraction, ChatInputCommandInteraction } from "discord.js";
 import { handleAttendanceAutocomplete } from "./autocomplete.js";
 import { handleAttendanceDelete } from "./delete.js";
-import { handleAttendanceList } from "./list.js";
+import { handleAttendanceReport } from "./report.js";
 import { handleAttendanceMark } from "./mark.js";
 
 export async function handleAttendanceSlash(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -14,8 +14,8 @@ export async function handleAttendanceSlash(interaction: ChatInputCommandInterac
     await handleAttendanceDelete(interaction);
     return;
   }
-  if (sub === "list") {
-    await handleAttendanceList(interaction);
+  if (sub === "report") {
+    await handleAttendanceReport(interaction);
   }
 }
 

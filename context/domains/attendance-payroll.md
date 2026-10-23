@@ -34,20 +34,20 @@ Cada asistencia cae en una de tres cubetas:
 
 El link no cambia el salario. Recorder cobra su tarifa y la misma persona cobra dual aunque no haya YouTube.
 
-`/attendance list` incluye los DW siempre. `/staff work` y `/get sheet` los omiten salvo `include_default_wins` o `include_default_win_salary`.
+`/attendance report` incluye los DW siempre. `/staff work` y `/get sheet` los omiten salvo `include_default_wins` o `include_default_win_salary`.
 
 | Formato | Judge | Recorder | Dual (misma persona) |
 |---|---|---|---|
 | 1v1 / 2v2 / 3v3 (por partido) | 450 gold | 450 gold | 575 gold |
 | 4v4 / 5v5 (por game) | 325 × games | 325 × games | 425 × games |
 
-`games` es `team1_score + team2_score`. `/attendance list` y `/get sheet` toman la tabla del formato guardado del torneo. ArtCoin = gold / 10.
+`games` es `team1_score + team2_score`. `/attendance report` y `/get sheet` toman la tabla del formato guardado del torneo. ArtCoin = gold / 10.
 
 ## Superficies de nómina
 
 | Comando | Qué es |
 |---|---|
-| `/attendance list` | Ficha de **una persona**. La tabla sale del formato del torneo e incluye los DW |
+| `/attendance report` | Ficha de **una persona**. La tabla sale del formato del torneo e incluye los DW |
 | `/staff work` | Tablero del torneo: matches y rounds por persona. No muestra oro |
 | `/get sheet` | Excel. La tarifa sale del formato guardado del torneo, no de `tournament_type` |
 | `/tournament report` | Excel del torneo: asistencia activa, rounds y games por persona, resultados declarados y configuración. No escribe oro. Organiser. Efímero |

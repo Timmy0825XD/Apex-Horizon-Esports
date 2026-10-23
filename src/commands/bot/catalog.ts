@@ -101,7 +101,7 @@ export const helpCatalog: HelpCategory[] = [
     entries: [
       { slash: "attendance mark", summary: "Record match attendance and scores inside the ticket.", access: "Judge / Recorder" },
       { slash: "attendance delete", summary: "Soft-delete the attendance in this ticket.", access: "Creator or Organiser" },
-      { slash: "attendance list", summary: "Salary card for one person. Default wins included.", access: "Own card: staff. Another person: Admin or Organiser" },
+      { slash: "attendance report", summary: "Salary card for one person. Default wins included.", access: "Own card: staff. Another person: Admin or Organiser" },
       { slash: "get attendance", summary: "View a user's attendance records.", access: "Staff of the tournament" },
       { slash: "get sheet", summary: "Export attendance and work statistics. Rates follow the stored format.", access: "Organiser" },
       { slash: "link add", summary: "Attach a recording link to a match.", access: "Recorder of that attendance" },
