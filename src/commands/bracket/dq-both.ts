@@ -13,7 +13,7 @@ import { canUploadScore } from "./access.js";
 import { auditScoreUpload } from "./audit.js";
 import { markPendingForfeit, settlePendingForfeits } from "./forfeit.js";
 import { deferBracket, respondBracket } from "./respond.js";
-import { publishTicketTranscript, transcriptFilename } from "./transcript.js";
+import { publishTicketTranscript, transcriptFilename } from "../ticket/transcript/index.js";
 import { bothDisqualifiedMessage, bracketPanel, channelClosedMessage, transcriptGeneratedMessage } from "./view.js";
 
 function archivedChannelName(current: string): string {

@@ -43,7 +43,7 @@ Solo lectura. Se publica en el canal (no efímero). V2 con barra verde: título 
 | score2 | INTEGER | Sí |
 | note | STRING | No |
 
-Reporta al bracket, completa el match, renombra el canal (quita el `🔴` del schedule si estaba y deja solo el prefijo `✅`), cierra/archiva y genera transcript HTML con **todo** lo que permite `discord-html-transcripts` (mensajes, embeds, imágenes, vídeos, emojis, adjuntos). El archivo se nombra como el canal (`✅…html`). En el canal de transcripts publica un **Components V2** con torneo, canal, enlace de descarga, el HTML adjunto y el emoji `transcript_thumnail` como thumbnail. Empate prohibido.
+Reporta al bracket, completa el match, renombra el canal (quita el `🔴` del schedule si estaba y deja solo el prefijo `✅`), cierra/archiva y genera con el renderer propio un transcript HTML del estado final visible. Incluye texto y markdown, menciones, comandos y respuestas, embeds, Components V2, imágenes, reacciones, stickers, emojis y archivos no audiovisuales; excluye efímeros, hilos, audio, vídeo e historial eliminado/editado. El archivo se nombra como el canal (`✅…html`). En el canal de transcripts publica un **Components V2** con torneo, canal, enlace de descarga, el HTML adjunto y el emoji `transcript_thumnail` como thumbnail. Si supera el límite seguro de subida, publica varias partes HTML y el Components V2 enlaza el índice. Empate prohibido.
 
 Respuesta en el canal (no efímera), **tres Components V2** con título grande, en este orden:
 

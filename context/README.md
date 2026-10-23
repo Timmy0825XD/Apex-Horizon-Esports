@@ -47,6 +47,7 @@ El desarrollo de código y comandos sigue **el orden y las indicaciones del usua
 | [platform/workers.md](platform/workers.md) | Bucles de fondo |
 | [platform/gateway.md](platform/gateway.md) | WebSocket, latencia, `/bot ping` |
 | [platform/audit.md](platform/audit.md) | Webhooks, identidades, mapa de eventos |
+| [platform/transcripts.md](platform/transcripts.md) | Snapshot HTML propio, cobertura, assets y multipartes |
 | [platform/ux.md](platform/ux.md) | Idioma, forma, multi-servidor, fallos |
 
 ### Comandos

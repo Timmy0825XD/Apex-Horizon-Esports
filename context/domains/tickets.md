@@ -15,7 +15,9 @@ Regla dura (producto): **un partido, una sala**. Ver [../product/overview.md](..
 
 ## Transcript
 
-El transcript es una **foto HTML** del canal en el momento del archivo, generada con `discord-html-transcripts` (mensajes, embeds, imágenes, vídeos, emojis, adjuntos). Vive en Discord (canal de transcripts del torneo). Si se pierde el mensaje, se perdió el archivo. Tras `/bracket upload`, la URL de ese mensaje se enlaza al título de los embeds de `/schedule results`.
+El transcript es una **foto HTML** del estado final visible del canal, generada por el bot con su renderer propio. Incluye texto y markdown, menciones, comandos y respuestas, embeds, Components V2, imágenes, reacciones, stickers, emojis y archivos no audiovisuales. No incluye efímeros, hilos, audio, vídeo, mensajes eliminados ni versiones anteriores de mensajes editados. Las imágenes usan previews incrustados con enlace al original; si excede el tamaño seguro, el transcript se divide en varias páginas HTML bajo un mensaje índice.
+
+Vive en Discord (canal de transcripts del torneo). Si se pierde el mensaje, se perdió el archivo. Tras `/bracket upload`, la URL del mensaje índice se enlaza al título de los embeds de `/schedule results`. Detalle técnico y límites: [../platform/transcripts.md](../platform/transcripts.md).
 
 Los transcripts **no** son el sistema de auditoría: son el archivo del chat, en otro canal, con otra identidad (ver [../platform/audit.md](../platform/audit.md)).
 
