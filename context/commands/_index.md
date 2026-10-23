@@ -26,7 +26,7 @@ Al nacer, renombrarse o eliminarse un comando: actualizar **este índice** y el 
 | Server y usuario | [server-user.md](server-user.md) | `/server info` · `banlist` · `tree` · `invites` · `/user ban` · `unban` |
 | Utility | [utility.md](utility.md) | `/utility clear_category` · `clear` · `emoji_steal` · `random` · `utc` · `discord_tag` · `avatar` · `toss` · `enlarge` · `embed` · `edit_embed` · `v2` · `edit_v2` |
 | Interacciones | [interactions.md](interactions.md) | Botones y menús (no slash) |
-| Permisos | [permissions.md](permissions.md) | Resumen de etiquetas |
+| Acceso | [access.md](access.md) | Quién puede usar cada comando. Manda sobre el código |
 
 ## Relacionado
 
