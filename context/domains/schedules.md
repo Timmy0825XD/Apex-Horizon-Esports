@@ -29,7 +29,7 @@ El capitán no ejecuta ningún subcomando.
 ## Al crear
 
 - Crear es atómico: posts, punto rojo y evento quedan juntos. Si un paso falla o tarda demasiado, se deshace todo y el comando responde con el error. No se queda en “pensando”.
-- Se publican dos embeds (ticket + canal de schedules).
+- Se publican dos embeds (ticket + canal de schedules). Encima, los dos mencionan a los capitanes. El ping sale en el ticket.
 - `judge` y `recorder` solo se asignan si ese usuario tiene el rol de juez o de grabador. Si no lo tiene, no se crea ni se actualiza el schedule.
 - Se crea un evento externo del servidor: nombre `lado vs lado`, portada del thumbnail, inicio a la hora UTC y fin 30 minutos después, ubicación el nombre del servidor, y la descripción con torneo, grupo, ronda, hora local, canal, capitanes y staff.
 - Si hay Judge/Recorder en el comando, se asignan *después* de publicar (el anuncio no espera a la hoja).
@@ -45,6 +45,10 @@ El bot compone sobre ese fondo una tarjeta 16:9 de estilo esports con la identid
 Etapa impresa: con grupo, `GROUP A · ROUND n`; ronda negativa, `LOSERS ROUND n`; la última ronda del cuadro de ganadores es `FINAL` (`GRAND FINAL` si hay cuadro de perdedores); la anterior a la final en eliminación simple es `SEMIFINAL`; el partido cuyos dos lados llegan como perdedores de otro partido es `3RD PLACE`. El resto: `ROUND n`. El indicador de 3er puesto lo trae Challonge (`player1_is_prereq_match_loser` y `player2_is_prereq_match_loser`) y se guarda en el partido al sincronizar el bracket.
 
 El schedule guarda su número. `regenerate_image` reconstruye la tarjeta con **ese** fondo y los datos actuales, la aplica al embed, al mensaje del canal de thumbnails y a la portada del evento. No consume el siguiente número. Cambiar la fecha u hora también reconstruye la imagen automáticamente.
+
+## Al actualizar
+
+Cualquier `/schedule update` vuelve a publicar el mensaje del ticket. El texto menciona a los capitanes y, si el juez o el grabador están asignados, también a ellos. Esas menciones hacen ping. El post del canal de schedules enseña el mismo texto y no vuelve a notificar.
 
 ## Al actualizar fecha/hora
 
@@ -65,7 +69,7 @@ Dos minutos antes, si falta un puesto o alguien asignado no confirmó, el canal 
 
 ## Results (declaración pública, no bracket)
 
-`/schedule results` lo ejecuta quien tiene el rol **judge**. Exige: schedule existente, hora ya pasada, un solo resultado por schedule. El único empate permitido es **0 - 0**. Las imágenes son opcionales. Publica el embed en el ticket y en el canal de resultados: la misma tarjeta del schedule, con **Results** y **Links**. **Links** lo llenan `/attendance mark` y `/link add` con `attachResultsLinks`. `/link delete` y `/attendance delete` lo vacían. El título se enlaza al mensaje del transcript cuando `/bracket upload` lo publique y llame `attachResultsTranscript`. El capitán no interviene.
+`/schedule results` lo ejecuta quien tiene el rol **judge**. Exige: schedule existente, hora ya pasada, un solo resultado por schedule. El único empate permitido es **0 - 0**. Las imágenes son opcionales. Publica el embed en el ticket y en el canal de resultados: la misma tarjeta del schedule, con **Results** y **Links**. El texto del ticket dice **Match Complete**, menciona a los capitanes y les hace ping. **Links** lo llenan `/attendance mark` y `/link add` con `attachResultsLinks`. `/link delete` y `/attendance delete` lo vacían. El título se enlaza al mensaje del transcript cuando `/bracket upload` lo publique y llame `attachResultsTranscript`. El capitán no interviene.
 
 `/schedule results_delete` también lo ejecuta el rol **judge**. Quita la declaración del ticket y del canal de resultados; **no** borra el schedule. **No** deshace `/bracket upload`.
 

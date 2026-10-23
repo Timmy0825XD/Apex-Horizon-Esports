@@ -94,7 +94,7 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
   const announced: string[] = [];
   try {
     let face = await within(8_000, presentFace(guild, bundle.tournament, bundle.match, { ...created, judgeId: null, recorderId: null }, imageUrl), "Schedule details");
-    let messages = await within(15_000, syncPosts(guild, bundle.channel, bundle.settings.schedulesChannelId, created, face), "Schedule posts");
+    let messages = await within(15_000, syncPosts(guild, bundle.channel, bundle.settings.schedulesChannelId, created, face, "captains"), "Schedule posts");
     if (judge) {
       await grantTicket(bundle.channel, judge.id);
       granted.push(judge.id);
