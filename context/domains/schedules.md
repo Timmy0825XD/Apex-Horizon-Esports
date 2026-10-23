@@ -16,6 +16,16 @@ Las respuestas del comando son **Components V2**, publicadas en el canal. El avi
 
 El capitán no ejecuta ningún subcomando.
 
+## Ver
+
+`/schedule show` lista o abre la ficha de cualquier schedule cuyo torneo **sigue registrado**. No hay un estado “inactivo” aparte: si el torneo se borró, el schedule no se muestra. El estado del schedule no lo oculta.
+
+- **Pending**: la hora es futura y no hay declaración.
+- **Completed**: existe `/schedule results`.
+- **Result pending**: la hora ya pasó y no hay declaración.
+
+`filter` puede ser todos, solo pendientes, pasados (completados y resultado atrasado) o solo resultado atrasado. `tour` y `user` (juez o recorder) se combinan con ese filtro. `match` abre una sola ficha. La respuesta es Components V2 en el canal, 5 por página. No audita.
+
 ## Al crear
 
 - Crear es atómico: posts, punto rojo y evento quedan juntos. Si un paso falla o tarda demasiado, se deshace todo y el comando responde con el error. No se queda en “pensando”.

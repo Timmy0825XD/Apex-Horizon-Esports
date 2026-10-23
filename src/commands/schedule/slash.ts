@@ -32,9 +32,23 @@ export const scheduleSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("show")
-      .setDescription("Show")
-      .addStringOption((option) => option.setName("tournament").setDescription("Tournament").setRequired(true).setAutocomplete(true))
-      .addStringOption((option) => option.setName("match").setDescription("Match").setRequired(true).setAutocomplete(true)),
+      .setDescription("View schedules and results")
+      .addStringOption((option) =>
+        option.setName("match").setDescription("Select a match to view details").setAutocomplete(true),
+      )
+      .addStringOption((option) =>
+        option
+          .setName("filter")
+          .setDescription("Filter schedules by status")
+          .addChoices(
+            { name: "All schedules", value: "all" },
+            { name: "Pending only", value: "pending" },
+            { name: "Past/Completed only", value: "past" },
+            { name: "Result pending (overdue)", value: "overdue" },
+          ),
+      )
+      .addStringOption((option) => option.setName("tour").setDescription("Filter by tournament").setAutocomplete(true))
+      .addUserOption((option) => option.setName("user").setDescription("Filter by judge or recorder")),
   )
   .addSubcommand((subcommand) =>
     subcommand

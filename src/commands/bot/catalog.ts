@@ -86,7 +86,7 @@ export const helpCatalog: HelpCategory[] = [
     entries: [
       { slash: "schedule create", summary: "Set the UTC time inside a ticket. Minimum +10 minutes.", access: "Tournament admin or helper" },
       { slash: "schedule update", summary: "Change time, judge, recorder, or note.", access: "Tournament admin or helper" },
-      { slash: "schedule show", summary: "View a schedule embed in the channel.", access: "Staff" },
+      { slash: "schedule show", summary: "List schedules or open one match card. Any status, while the tournament still exists.", access: "Staff" },
       { slash: "schedule delete", summary: "Remove the active schedule. Not recoverable.", access: "Tournament admin or helper" },
       { slash: "schedule unassigned", summary: "List matches missing judge or recorder.", access: "Staff" },
       { slash: "schedule refresh", summary: "Renew claim buttons on a schedule from any channel.", access: "Judge / Recorder" },

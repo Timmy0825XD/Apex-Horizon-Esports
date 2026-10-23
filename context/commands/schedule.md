@@ -35,12 +35,26 @@ Mínimo +10 minutos. Marca `🔴`. Admin o helper del torneo. Posts, punto rojo 
 
 ## `/schedule show`
 
-| Campo | Tipo | Obligatorio |
-|---|---|---|
-| tournament | STRING (Autocomplete) | Sí |
-| match | STRING (Autocomplete) | Sí |
+Cualquier canal. Rol **staff**. No audita. Siempre **Components V2** en el canal, sin ping. Muestra schedules de cualquier estado mientras el torneo **siga registrado** en el servidor. Si el torneo se borró, ese schedule no sale.
 
-Embed publicado en el canal. Rol staff. No audita.
+| Campo | Tipo | Obligatorio | Uso |
+|---|---|---|---|
+| match | STRING (Autocomplete) | No | Abre la ficha de ese schedule. Se ve `lado vs lado`; el valor es el id interno. Si viene, gana sobre el resto. |
+| filter | STRING (Choice) | No | `all` · `pending` · `past` · `overdue`. Por defecto `all`. |
+| tour | STRING (Autocomplete) | No | Solo ese torneo. |
+| user | USER | No | Schedules donde esa persona es juez o recorder. |
+
+Sin `match`, lista. `tour`, `user` y `filter` se combinan. Sin ninguno, lista todos los schedules de torneos que siguen existiendo. 5 por página, el más reciente primero. Cada fila lleva enfrentamiento, hora relativa y UTC, torneo, estado, id de Challonge, y juez o recorder si están asignados. Las flechas las pulsa quien tenga el rol staff.
+
+Estados:
+
+- **Pending**: hora futura y sin declaración.
+- **Completed**: hay `/schedule results`.
+- **Result pending**: la hora ya pasó y no hay declaración.
+
+`past` (Past/Completed) incluye Completed y Result pending.
+
+La ficha de `match` repite la tarjeta del schedule. Con declaración muestra la hora del resultado, el marcador, remarks, links y transcript, más botones al post de results y al post del canal de schedules. Sin declaración muestra la hora programada y el remark. Verde si está completado, dorado si está pendiente, rojo si el resultado está atrasado.
 
 ## `/schedule delete`
 
