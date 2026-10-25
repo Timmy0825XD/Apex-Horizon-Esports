@@ -37,7 +37,7 @@ Ficha de **una persona**. Sustituye a `/work_done` y usa la misma lectura: no es
 | tournament | STRING (Autocomplete) | Sí |
 | user | USER | No | Por defecto, quien ejecuta |
 
-La propia ficha: staff, judge, recorder, admin u organiser. La de otro: solo admin u organiser. Cualquier canal. Respuesta pública. Incluye los DW. La tarifa sale del formato guardado del torneo (`4vs4`/`5vs5` por game, el resto por partido; sin formato, por partido). Empieza en ArtCoin. Components V2 con acento amarillo neón: botones **GOLD** y **AC**, separador, título grande con `stats` y el avatar, torneo y tipo en una línea, **Judge** y **Recorder** con su emoji y la cifra al lado, **Both Roles**, separador y **Total** con el emoji de la moneda elegida. Los botones duran 2 minutos. No audita.
+La propia ficha: staff, judge, recorder, helper, admin u organiser. La de otro: solo admin u organiser. Cualquier canal. Respuesta pública. Incluye los DW. La tarifa sale del formato guardado del torneo (`4vs4`/`5vs5` por game, el resto por partido; sin formato, por partido). Empieza en ArtCoin. Components V2 con acento amarillo neón: botones **GOLD** y **AC**, separador, título grande con `stats` y el avatar, torneo y tipo en una línea, **Judge** y **Recorder** con su emoji y la cifra al lado, **Both Roles**, separador y **Total** con el emoji de la moneda elegida. Los botones duran 2 minutos. No audita.
 
 ## `/get attendance`
 
@@ -46,7 +46,7 @@ La propia ficha: staff, judge, recorder, admin u organiser. La de otro: solo adm
 | tournament | STRING (Autocomplete) | Sí |
 | user | USER | Sí |
 
-Staff, judge, recorder, admin u organiser. Historial público, 5 por página, botones 2 minutos. Incluye DW. Un `DW` sin link se muestra como no obligatorio. En el resto, faltar el link no cambia el salario. No audita.
+Staff, judge, recorder, helper, admin u organiser. El admin del torneo no entra por ese rol. Historial público, 5 por página, botones 2 minutos. Incluye DW. Un `DW` sin link se muestra como no obligatorio. En el resto, faltar el link no cambia el salario. No audita.
 
 ## `/get sheet`
 

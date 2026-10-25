@@ -1,5 +1,6 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 import { prisma } from "../../lib/prisma.js";
+import { memberIsOrganiser } from "../../lib/organiser.js";
 import { isTournamentAdminOrHelper } from "./access.js";
 import { auditSchedule, ticketLine } from "./audit.js";
 import { revokeTicket, ticketChannel, unmarkTicket } from "./channel.js";
@@ -15,8 +16,15 @@ export async function runDelete(interaction: ChatInputCommandInteraction, bundle
     await replySchedule(interaction, scheduleNotice("error", "No schedule", "This ticket does not have a schedule."));
     return;
   }
-  if (!isTournamentAdminOrHelper(interaction, bundle.tournament)) {
-    await replySchedule(interaction, scheduleNotice("error", "Tournament admin or helper required", "Only that tournament's **admin** or **helper** can delete a schedule."));
+  if (!isTournamentAdminOrHelper(interaction, bundle.tournament) && !(await memberIsOrganiser(interaction))) {
+    await replySchedule(
+      interaction,
+      scheduleNotice(
+        "error",
+        "Tournament admin, helper, or organiser required",
+        "Only that tournament's **admin** or **helper**, or an **Organiser**, can delete a schedule.",
+      ),
+    );
     return;
   }
   if (!interaction.options.getBoolean("confirm", true)) {

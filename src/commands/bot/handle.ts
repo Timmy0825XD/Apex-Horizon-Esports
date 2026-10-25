@@ -5,6 +5,7 @@ import {
   type Client,
 } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { autoRoomCommandIdFor, botCommandIdFor, roleCommandIdFor, roomCommandIdFor, scheduleCommandIdFor, serverCommandIdFor, settingsCommandIdFor, sheetCommandIdFor, staffCommandIdFor, teamCommandIdFor, ticketCommandIdFor, tournamentCommandIdFor, userCommandIdFor, utilityCommandIdFor } from "../../lib/register-slash.js";
 import { buildAboutContainer } from "./about.js";
 import { buildHelpContainer, normalizeHelpPage } from "./help.js";
@@ -15,6 +16,24 @@ const unauthorized = {
   content: "This server is not authorized to use this bot.",
   flags: MessageFlags.Ephemeral,
 } as const;
+
+function botAccessDenied(panel: BotPanel) {
+  const who =
+    panel === "help"
+      ? "You need **Admin**, **Organiser**, a tournament **helper** role, or the **staff** role to open help."
+      : "You need **Admin**, **Organiser**, or a tournament **helper** role to open this panel.";
+  return { content: who, flags: MessageFlags.Ephemeral } as const;
+}
+
+async function canOpenBotPanel(
+  interaction: ChatInputCommandInteraction | ButtonInteraction,
+  panel: BotPanel,
+): Promise<boolean> {
+  if (panel === "help") {
+    return actorMatches(interaction, { admin: true, organiser: true, helper: true, staff: true });
+  }
+  return actorMatches(interaction, { admin: true, organiser: true, helper: true });
+}
 
 async function buildPanel(panel: BotPanel, ctx: BotViewContext) {
   if (panel === "about") {
@@ -34,6 +53,10 @@ export async function handleBotSlash(interaction: ChatInputCommandInteraction, c
 
   const sub = interaction.options.getSubcommand();
   const panel: BotPanel = sub === "about" || sub === "help" || sub === "ping" ? sub : "ping";
+  if (!(await canOpenBotPanel(interaction, panel))) {
+    await interaction.reply(botAccessDenied(panel));
+    return;
+  }
   await interaction.reply(
     await buildPanel(panel, {
       client,
@@ -82,6 +105,11 @@ export async function handleBotButton(interaction: ButtonInteraction, client: Cl
     panel = "help";
     helpPage = normalizeHelpPage(Number(id.slice("bot:help:".length)));
   } else {
+    return;
+  }
+
+  if (!(await canOpenBotPanel(interaction, panel))) {
+    await interaction.reply(botAccessDenied(panel));
     return;
   }
 

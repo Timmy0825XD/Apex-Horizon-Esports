@@ -46,7 +46,7 @@ Solo lectura de la jerarquía (menciones; marca roles/canales que ya no existen;
 
 **Para qué:** Dar un **paquete de roles** y saludar en staff chat.
 
-Solo Administrator de Discord. Audita. Jerarquía Discord gana (bot y actor por encima de los roles y del miembro).
+Admin u Organiser (`admin_role`, `manager_role` o Administrator). Audita. Jerarquía Discord gana (bot y actor por encima de los roles y del miembro).
 
 | Campo | Tipo | Obligatorio |
 |---|---|---|
@@ -73,7 +73,7 @@ Si el miembro ya tiene todo el paquete, no se vuelve a saludar. El welcome en st
 
 **Para qué:** Quitar un puesto o todos. Solo Discord. **No** borra asistencias históricas.
 
-Solo Administrator de Discord. Audita.
+Solo Admin u Organiser. Audita.
 
 | Campo | Tipo | Obligatorio |
 |---|---|---|
@@ -86,7 +86,7 @@ Un choice suelto quita **ese** rol de puesto, no el paquete de recruit (p. ej. f
 
 ## `/staff work`
 
-**Para qué:** Nómina visual del torneo. Se publica en el canal. No audita (consulta). Admin.
+**Para qué:** Nómina visual del torneo. Se publica en el canal. No audita (consulta). Requiere `/settings set`. Admin, Organiser, Helper de un torneo o `staff_role`.
 
 | Campo | Tipo | Obligatorio | Uso |
 |---|---|---|---|

@@ -1,6 +1,7 @@
 import { MessageFlags, type AutocompleteInteraction, type ButtonInteraction, type ChatInputCommandInteraction } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { tournamentCommandIdFor } from "../../lib/register-slash.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { canUseTournamentRole } from "./access.js";
 import { handleTournamentAdd } from "./add.js";
 import { handleTournamentAutocomplete } from "./autocomplete.js";
@@ -66,7 +67,13 @@ export async function handleTournamentAuto(interaction: AutocompleteInteraction)
   }
 
   const sub = interaction.options.getSubcommand(false);
-  if ((sub === "role" || sub === "validate" || sub === "report") && !(await canUseTournamentRole(interaction))) {
+  const organiserOnly = sub === "role" || sub === "validate" || sub === "report";
+  const adminOrOrganiser = sub === "add" || sub === "edit" || sub === "delete" || sub === "info" || sub === "list";
+  if (organiserOnly && !(await canUseTournamentRole(interaction))) {
+    await interaction.respond([]);
+    return;
+  }
+  if (adminOrOrganiser && !(await actorMatches(interaction, { admin: true, organiser: true }))) {
     await interaction.respond([]);
     return;
   }

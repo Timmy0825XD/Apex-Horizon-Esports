@@ -35,7 +35,7 @@ Solo lectura. Se publica en el canal (no efímero). V2 con barra verde: título 
 
 ## `/bracket upload`
 
-**Solo dentro del ticket.** Staff de torneo (admin/helper del torneo, o roles staff/judge/recorder del servidor). Organiser también.
+**Solo dentro del ticket.** Admin o helper de ese torneo, u Organiser.
 
 | Campo | Tipo | Obligatorio |
 |---|---|---|
@@ -55,7 +55,7 @@ Al publicar el transcript llama `attachResultsTranscript` con la URL de ese mens
 
 ## `/bracket dq_both`
 
-**Solo dentro del ticket.** Sin campos. Mismo rol que `upload` (staff de torneo u Organiser).
+**Solo dentro del ticket.** Sin campos. Mismo rol que `upload` (admin o helper de ese torneo, u Organiser).
 
 Marca ese partido **lado 1 = 0**, **lado 2 = -1**. En Challonge gana el número más alto, así que el lado 1 avanza y el lado 2 queda eliminado. El lado 1 queda marcado: debe perder la llave a la que avanza. El ticket actual se cierra como `upload` (renombre `✅`, archivo, transcript). La primera confirmación es un Components V2 rojo de descalificación doble (avatar de quien ejecutó). El cierre y el transcript reutilizan sus propios V2. Log: **Score Upload**.
 

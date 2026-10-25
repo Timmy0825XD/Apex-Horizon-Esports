@@ -1,4 +1,5 @@
 import type { ChatInputCommandInteraction } from "discord.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { isOrganiser } from "../../lib/permissions.js";
 import { prisma } from "../../lib/prisma.js";
 import { respondRole } from "./respond.js";
@@ -14,6 +15,21 @@ async function loadStaff(guildId: string) {
   } catch {
     return null;
   }
+}
+
+export async function requireRoleAdmin(
+  interaction: ChatInputCommandInteraction,
+  action: string,
+): Promise<boolean> {
+  if (await actorMatches(interaction, { admin: true })) {
+    return true;
+  }
+
+  await respondRole(
+    interaction,
+    roleErrorMessage("Admin required", `You need **Admin** to ${action}.`),
+  );
+  return false;
 }
 
 export async function requireRoleOrganiser(

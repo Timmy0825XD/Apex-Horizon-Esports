@@ -20,7 +20,8 @@ import { emojis } from "../../emojis.js";
 import { embedColors, infoEmbed, successEmbed } from "../../lib/embeds.js";
 import { formatChannel, formatHelpEntry } from "../../lib/formatters.js";
 import { utilityCommandIdFor } from "../../lib/register-slash.js";
-import { botHasChannelPermission, canManageMessages } from "./access.js";
+import { actorMatches } from "../../lib/command-access.js";
+import { botHasChannelPermission } from "./access.js";
 import { auditUtility } from "./audit.js";
 import { fetchGuildMessage, fetchPostChannel, isBotMessage, isPostChannel } from "./channels.js";
 import { parseColor, parseHttpUrl } from "./parse.js";
@@ -174,7 +175,7 @@ function textModal(id: string, title: string, label: string, value: string | und
 }
 
 async function denyBuilder(interaction: ChatInputCommandInteraction | ButtonInteraction | ModalSubmitInteraction) {
-  const payload = utilityError("Manage Messages required", "You need **Manage Messages** to use the embed builder.");
+  const payload = utilityError("Admin or organiser required", "You need **Admin** or **Organiser** to use the embed builder.");
   if (interaction.deferred || interaction.replied) {
     await interaction.followUp(payload);
     return;
@@ -183,7 +184,7 @@ async function denyBuilder(interaction: ChatInputCommandInteraction | ButtonInte
 }
 
 export async function handleEmbedCreate(interaction: ChatInputCommandInteraction, guild: Guild): Promise<void> {
-  if (!canManageMessages(interaction)) {
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
     await denyBuilder(interaction);
     return;
   }
@@ -206,7 +207,7 @@ export async function handleEmbedCreate(interaction: ChatInputCommandInteraction
 }
 
 export async function handleEmbedEdit(interaction: ChatInputCommandInteraction, guild: Guild): Promise<void> {
-  if (!canManageMessages(interaction)) {
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
     await denyBuilder(interaction);
     return;
   }
@@ -277,7 +278,7 @@ export async function handleEmbedButton(interaction: ButtonInteraction): Promise
   if (!guild) {
     return;
   }
-  if (!canManageMessages(interaction)) {
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
     await denyBuilder(interaction);
     return;
   }
@@ -435,6 +436,10 @@ export async function handleEmbedButton(interaction: ButtonInteraction): Promise
 export async function handleEmbedModal(interaction: ModalSubmitInteraction): Promise<void> {
   const guild = interaction.guild;
   if (!guild) {
+    return;
+  }
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
+    await denyBuilder(interaction);
     return;
   }
   const session = requireSession(guild.id, interaction.user.id, "embed");

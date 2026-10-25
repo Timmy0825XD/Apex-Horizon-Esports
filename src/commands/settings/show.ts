@@ -1,6 +1,7 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 import { formatHelpEntry } from "../../lib/formatters.js";
-import { isGuildAdmin } from "../../lib/permissions.js";
+import { isGuildAdmin, isOrganiser } from "../../lib/permissions.js";
+import { loadStaffConfig } from "../../lib/organiser.js";
 import { deferSettings, respondSettings } from "./respond.js";
 import { loadGuildSettings } from "./store.js";
 import { settingsErrorMessage, settingsMessage } from "./view.js";
@@ -30,12 +31,13 @@ export async function handleSettingsShow(
     return;
   }
 
-  if (!isGuildAdmin(interaction, settings)) {
+  const staff = await loadStaffConfig(guild.id);
+  if (!isGuildAdmin(interaction, settings) && !isOrganiser(interaction, staff)) {
     await respondSettings(
       interaction,
       settingsErrorMessage(
-        "Admin only",
-        "You need the Discord **Administrator** permission or the configured **Admin Role** to view settings.",
+        "Admin or organiser required",
+        "You need **Admin** or **Organiser** to view settings.",
         false,
       ),
     );

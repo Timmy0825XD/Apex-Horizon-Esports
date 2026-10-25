@@ -1,8 +1,9 @@
 import { ContainerBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { emojis } from "../../emojis.js";
 import { embedColors } from "../../lib/embeds.js";
-import { formatUser } from "../../lib/formatters.js";
-import { isGuildAdmin } from "../../lib/permissions.js";
+import { formatHelpEntry, formatUser } from "../../lib/formatters.js";
+import { actorMatches } from "../../lib/command-access.js";
+import { settingsCommandIdFor } from "../../lib/register-slash.js";
 import { prisma } from "../../lib/prisma.js";
 import { divider, textBlock, v2Flags } from "../../lib/v2.js";
 import { escapeDiscord } from "../room/labels.js";
@@ -78,12 +79,23 @@ export async function handleStaffWork(interaction: ChatInputCommandInteraction):
   await deferStaff(interaction);
 
   const { settings } = await loadGuildStaffState(guild.id);
-  if (!isGuildAdmin(interaction, settings)) {
+  if (!settings) {
     await respondStaff(
       interaction,
       staffErrorMessage(
-        "Admin only",
-        "You need the Discord **Administrator** permission or the configured **Admin Role** to view the payroll board.",
+        "Settings not configured",
+        `Run ${formatHelpEntry("settings set", settingsCommandIdFor(guild.id))} before opening the payroll board.`,
+        false,
+      ),
+    );
+    return;
+  }
+  if (!(await actorMatches(interaction, { admin: true, organiser: true, helper: true, staff: true }))) {
+    await respondStaff(
+      interaction,
+      staffErrorMessage(
+        "Payroll restricted",
+        "You need **Admin**, **Organiser**, a tournament **helper** role, or the **staff** role to view the payroll board.",
         false,
       ),
     );

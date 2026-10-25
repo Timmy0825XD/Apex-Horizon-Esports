@@ -1,6 +1,7 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 import { formatHelpEntry } from "../../lib/formatters.js";
-import { isGuildAdmin } from "../../lib/permissions.js";
+import { isGuildAdmin, isOrganiser } from "../../lib/permissions.js";
+import { loadStaffConfig } from "../../lib/organiser.js";
 import { auditSettingsMutation } from "./audit.js";
 import { changedSettingKeys, mergeSettings, readSettingsPatch } from "./options.js";
 import { deferSettings, respondSettings } from "./respond.js";
@@ -32,12 +33,13 @@ export async function handleSettingsEdit(
     return;
   }
 
-  if (!isGuildAdmin(interaction, current)) {
+  const staff = await loadStaffConfig(guild.id);
+  if (!isGuildAdmin(interaction, current) && !isOrganiser(interaction, staff)) {
     await respondSettings(
       interaction,
       settingsErrorMessage(
-        "Admin only",
-        "You need the Discord **Administrator** permission or the configured **Admin Role** to edit settings.",
+        "Admin or organiser required",
+        "You need **Admin** or **Organiser** to edit settings.",
         false,
       ),
     );

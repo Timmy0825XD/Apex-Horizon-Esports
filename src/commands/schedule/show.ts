@@ -19,9 +19,8 @@ import { prisma } from "../../lib/prisma.js";
 import { divider, textBlock, v2Flags } from "../../lib/v2.js";
 import { escapeDiscord, roundLabel } from "../room/labels.js";
 import { loadGuildSettings } from "../settings/store.js";
-import { loadGuildStaffState } from "../staff/store.js";
 import { findTournamentById, objectIdLike } from "../tournament/store.js";
-import { isStaff } from "./access.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { thumbnailImageUrl } from "./messages.js";
 import { replySchedule, scheduleNotice } from "./respond.js";
 import { presentFace } from "./store.js";
@@ -552,9 +551,15 @@ export async function runShow(interaction: ChatInputCommandInteraction): Promise
   if (!guild) {
     return;
   }
-  const { staff } = await loadGuildStaffState(guild.id);
-  if (!staff || !isStaff(interaction, staff)) {
-    await replySchedule(interaction, scheduleNotice("error", "Staff required", "Only members with the **staff** role can view schedules."));
+  if (!(await actorMatches(interaction, { admin: true, organiser: true, helper: true, staff: true }))) {
+    await replySchedule(
+      interaction,
+      scheduleNotice(
+        "error",
+        "Schedule access required",
+        "You need **Admin**, **Organiser**, a tournament **helper** role, or the **staff** role to view schedules.",
+      ),
+    );
     return;
   }
   if (!interaction.deferred && !interaction.replied) {
@@ -591,9 +596,14 @@ export async function handleShowButton(interaction: ButtonInteraction): Promise<
     await interaction.reply(scheduleNotice("error", "Page expired", "Run `/schedule show` again to open a fresh list.")).catch(() => undefined);
     return;
   }
-  const { staff } = await loadGuildStaffState(guild.id);
-  if (!staff || !isStaff(interaction, staff)) {
-    await interaction.reply(scheduleNotice("error", "Staff required", "Only members with the **staff** role can turn this page."));
+  if (!(await actorMatches(interaction, { admin: true, organiser: true, helper: true, staff: true }))) {
+    await interaction.reply(
+      scheduleNotice(
+        "error",
+        "Schedule access required",
+        "You need **Admin**, **Organiser**, a tournament **helper** role, or the **staff** role to turn this page.",
+      ),
+    );
     return;
   }
   await interaction.deferUpdate();

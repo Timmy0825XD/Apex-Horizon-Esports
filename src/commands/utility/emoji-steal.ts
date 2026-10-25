@@ -10,19 +10,16 @@ import { embedColors } from "../../lib/embeds.js";
 import { formatHelpEntry } from "../../lib/formatters.js";
 import { utilityCommandIdFor } from "../../lib/register-slash.js";
 import { attachedFile, textBlock, v2Flags } from "../../lib/v2.js";
-import { canManageExpressions } from "./access.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { auditUtility } from "./audit.js";
 import { customEmojiCdnUrl, parseEmojiRef } from "./parse.js";
 import { deferUtility, respondUtility, utilityError } from "./view.js";
 
 export async function handleEmojiSteal(interaction: ChatInputCommandInteraction, guild: Guild): Promise<void> {
-  if (!canManageExpressions(interaction)) {
+  if (!(await actorMatches(interaction, { admin: true }))) {
     await respondUtility(
       interaction,
-      utilityError(
-        "Manage Emojis required",
-        "You need **Manage Emojis and Stickers** to remove a custom emoji from this server.",
-      ),
+      utilityError("Admin required", "You need **Admin** to remove a custom emoji from this server."),
     );
     return;
   }

@@ -8,6 +8,7 @@ import { emojis, numberEmojis } from "../../emojis.js";
 import { embedColors } from "../../lib/embeds.js";
 import { formatUserFromUser } from "../../lib/formatters.js";
 import { attachedFile, divider, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { customEmojiCdnUrl, parseDisplayEmoji, parseSnowflakes, pickRandom, splitChoices, twemojiUrl, utcDate } from "./parse.js";
 import { deferUtility, respondUtility, utilityError, utilityInfo, utilitySuccess } from "./view.js";
 
@@ -122,6 +123,14 @@ export async function handleUtc(interaction: ChatInputCommandInteraction): Promi
 }
 
 export async function handleDiscordTag(interaction: ChatInputCommandInteraction): Promise<void> {
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
+    await respondUtility(
+      interaction,
+      utilityError("Admin or organiser required", "You need **Admin** or **Organiser** to convert Discord IDs."),
+    );
+    return;
+  }
+
   const ids = parseSnowflakes(interaction.options.getString("ids", true));
   if (ids.length === 0) {
     await respondUtility(

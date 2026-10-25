@@ -1,5 +1,6 @@
 import { MessageFlags, type AutocompleteInteraction, type ChatInputCommandInteraction } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { staffCommandIdFor } from "../../lib/register-slash.js";
 import { handleStaffAutocomplete } from "./autocomplete.js";
 import { handleStaffConfigEdit } from "./edit.js";
@@ -54,6 +55,10 @@ export async function handleStaffSlash(interaction: ChatInputCommandInteraction)
 
 export async function handleStaffAuto(interaction: AutocompleteInteraction): Promise<void> {
   if (!isAllowedGuild(interaction.guildId)) {
+    await interaction.respond([]);
+    return;
+  }
+  if (!(await actorMatches(interaction, { admin: true, organiser: true, helper: true, staff: true }))) {
     await interaction.respond([]);
     return;
   }

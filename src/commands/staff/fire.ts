@@ -1,6 +1,6 @@
 import type { ChatInputCommandInteraction, Guild, GuildMember } from "discord.js";
 import { formatHelpEntry, formatMember, formatRole, formatUser } from "../../lib/formatters.js";
-import { isDiscordAdministrator } from "../../lib/permissions.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { auditStaffMembership } from "./audit.js";
 import {
   actorCanManageMember,
@@ -23,10 +23,10 @@ export async function handleStaffFire(
     return;
   }
 
-  if (!isDiscordAdministrator(interaction)) {
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
     await respondStaff(
       interaction,
-      staffErrorMessage("Administrator required", "Only a Discord **Administrator** can fire staff."),
+      staffErrorMessage("Admin or organiser required", "You need **Admin** or **Organiser** to fire staff."),
     );
     return;
   }

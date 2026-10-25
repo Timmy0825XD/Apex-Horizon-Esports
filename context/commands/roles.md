@@ -1,6 +1,6 @@
 # Roles (Discord, no torneo)
 
-Organiser (`manager_role` o Administrator). No persisten nada propio. Respuestas en **Components V2**. Auditan excepto `list`.
+`/role user` y `/role list`: Organiser (`manager_role` o Administrator). `admin_role` no entra. `/role add all` y `/role remove all`: Admin (`admin_role` o Administrator). `manager_role` no entra. No persisten nada propio. Respuestas en **Components V2**. Auditan excepto `list`.
 
 Jerarquía Discord siempre gana: no se toca `@everyone`, un rol de integración, ni un rol igual o por encima del actor o del bot. En `/role user` tampoco se gestiona a alguien con rol igual o superior al propio. Ver [../domains/moderation.md](../domains/moderation.md), [../product/actors.md](../product/actors.md).
 
@@ -23,7 +23,7 @@ El objetivo tiene que estar en el servidor. El bot necesita **Manage Roles**. Au
 |---|---|---|
 | role | ROLE | Sí |
 
-Organiser. El bot necesita **Manage Roles**. Audita solo si al menos un miembro cambió.
+Admin. El bot necesita **Manage Roles**. Audita solo si al menos un miembro cambió.
 
 ## `/role list`
 

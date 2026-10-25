@@ -8,7 +8,7 @@ Reglas: [../domains/moderation.md](../domains/moderation.md).
 
 Muestra: nombre, ID, owner (mención), enlace del icono, miembros (total / humanos / bots), canales (texto / voz / categorías), roles, fecha de creación y antigüedad. No incluye boosts ni emojis del servidor.
 
-**Campos:** ninguno. Público. No audita.
+**Campos:** ninguno. Admin u Organiser. No audita.
 
 ## `/server banlist`
 

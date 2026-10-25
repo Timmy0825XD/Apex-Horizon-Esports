@@ -12,7 +12,8 @@ import {
 import { emojis } from "../../emojis.js";
 import { customEmoji } from "../../lib/custom-emoji.js";
 import { formatCategory, formatChannel } from "../../lib/formatters.js";
-import { botHasChannelPermission, canClearCategory, canManageMessages } from "./access.js";
+import { actorMatches } from "../../lib/command-access.js";
+import { botHasChannelPermission } from "./access.js";
 import { auditUtility } from "./audit.js";
 import { wait } from "./channels.js";
 import { deferUtility, respondUtility, asMessageEdit, utilityError, utilityInfo, utilitySuccess } from "./view.js";
@@ -46,11 +47,8 @@ export async function handleClear(interaction: ChatInputCommandInteraction, guil
     return;
   }
 
-  if (!canManageMessages(interaction)) {
-    await respondUtility(
-      interaction,
-      utilityError("Manage Messages required", "You need **Manage Messages** to purge this channel."),
-    );
+  if (!(await actorMatches(interaction, { admin: true }))) {
+    await respondUtility(interaction, utilityError("Admin required", "You need **Admin** to purge this channel."));
     return;
   }
 
@@ -148,13 +146,10 @@ export async function handleClear(interaction: ChatInputCommandInteraction, guil
 }
 
 export async function handleClearCategory(interaction: ChatInputCommandInteraction, guild: Guild): Promise<void> {
-  if (!canClearCategory(interaction)) {
+  if (!(await actorMatches(interaction, { admin: true }))) {
     await respondUtility(
       interaction,
-      utilityError(
-        "Administrator required",
-        "Only a Discord **Administrator** can delete every channel under a category.",
-      ),
+      utilityError("Admin required", "You need **Admin** to delete every channel under a category."),
     );
     return;
   }
@@ -226,10 +221,8 @@ export async function handleClearCategoryButton(interaction: ButtonInteraction):
     return;
   }
 
-  if (!canClearCategory(interaction)) {
-    await interaction.reply(
-      utilityError("Administrator required", "Only a Discord **Administrator** can confirm this wipe."),
-    );
+  if (!(await actorMatches(interaction, { admin: true }))) {
+    await interaction.reply(utilityError("Admin required", "You need **Admin** to confirm this wipe."));
     return;
   }
 

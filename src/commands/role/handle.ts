@@ -1,6 +1,6 @@
 import { MessageFlags, type ChatInputCommandInteraction } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
-import { requireRoleOrganiser } from "./access.js";
+import { requireRoleAdmin, requireRoleOrganiser } from "./access.js";
 import { handleRoleList } from "./list.js";
 import { handleRoleMass } from "./mass.js";
 import { handleRoleUser } from "./toggle.js";
@@ -23,12 +23,18 @@ export async function handleRoleSlash(interaction: ChatInputCommandInteraction):
     return;
   }
 
-  if (!(await requireRoleOrganiser(interaction, "manage Discord roles"))) {
-    return;
-  }
-
   const group = interaction.options.getSubcommandGroup(false);
   const sub = interaction.options.getSubcommand();
+  const mass = (group === "add" || group === "remove") && sub === "all";
+
+  if (mass) {
+    const action = group === "add" ? "add this role to everyone" : "remove this role from everyone";
+    if (!(await requireRoleAdmin(interaction, action))) {
+      return;
+    }
+  } else if (!(await requireRoleOrganiser(interaction, "manage Discord roles"))) {
+    return;
+  }
 
   if (group === "add" && sub === "all") {
     await handleRoleMass(interaction, "add");

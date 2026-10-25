@@ -1,6 +1,7 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 import type { SheetPlayer, SheetTeam } from "../../lib/sheet.js";
 import { listStoredSheets, type StoredSheetRecord } from "../tournament/store.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { deferSheet, respondSheet } from "./respond.js";
 import { playerFoundMessages, sheetErrorMessage, type PlayerHit } from "./view.js";
 
@@ -85,6 +86,14 @@ export async function handleSheetFindPlayer(interaction: ChatInputCommandInterac
   const guild = interaction.guild;
   if (!guild) {
     await respondSheet(interaction, sheetErrorMessage("Guild only", "This command can only be used in a server."));
+    return;
+  }
+
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
+    await respondSheet(
+      interaction,
+      sheetErrorMessage("Admin or organiser required", "You need **Admin** or **Organiser** to search stored sheets."),
+    );
     return;
   }
 

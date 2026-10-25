@@ -1,6 +1,7 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 import { loadGuildStaffState } from "../staff/store.js";
-import { canUseAttendanceTools, canViewOtherSalary } from "./access.js";
+import { actorMatches } from "../../lib/command-access.js";
+import { canViewOtherSalary } from "./access.js";
 import { v2Flags } from "../../lib/v2.js";
 import { watchSalaryButtons } from "./buttons.js";
 import { payModeForFormat, salaryFor } from "./payroll.js";
@@ -18,9 +19,22 @@ export async function handleAttendanceReport(interaction: ChatInputCommandIntera
   const { settings, staff } = await loadGuildStaffState(guild.id);
   const target = interaction.options.getUser("user") ?? interaction.user;
   if (target.id === interaction.user.id) {
-    if (!canUseAttendanceTools(interaction, settings, staff)) {
+    const ownCard = await actorMatches(interaction, {
+      admin: true,
+      organiser: true,
+      helper: true,
+      staff: true,
+      judge: true,
+      recorder: true,
+    });
+    if (!ownCard) {
       await editAttendance(interaction, {
-        embeds: [attendanceError("Staff only", "You need a staff, judge, or recorder role to view your salary.")],
+        embeds: [
+          attendanceError(
+            "Staff only",
+            "You need **staff**, **judge**, **recorder**, **helper**, **Admin**, or **Organiser** to view your salary.",
+          ),
+        ],
       });
       return;
     }

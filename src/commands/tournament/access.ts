@@ -33,11 +33,12 @@ export async function requireAdmin(
     };
   }
 
-  if (!isGuildAdmin(interaction, settings)) {
+  const staff = await loadStaff(guild.id);
+  if (!isGuildAdmin(interaction, settings) && !isOrganiser(interaction, staff)) {
     return {
       error: tournamentErrorMessage(
-        "Admin only",
-        `You need the Discord **Administrator** permission or the configured **Admin Role** to ${action}.`,
+        "Admin or organiser required",
+        `You need **Admin** or **Organiser** to ${action}.`,
         false,
       ),
     };

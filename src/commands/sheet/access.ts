@@ -1,7 +1,8 @@
 import type { GuildSettings } from "@prisma/client";
 import type { ChatInputCommandInteraction, Guild, InteractionReplyOptions } from "discord.js";
 import { formatHelpEntry } from "../../lib/formatters.js";
-import { isGuildAdmin } from "../../lib/permissions.js";
+import { loadStaffConfig } from "../../lib/organiser.js";
+import { isGuildAdmin, isOrganiser } from "../../lib/permissions.js";
 import { settingsCommandIdFor } from "../../lib/register-slash.js";
 import { loadGuildSettings } from "../settings/store.js";
 import { sheetErrorMessage } from "./view.js";
@@ -14,6 +15,7 @@ export type SheetAdminContext = {
 export async function requireSheetAdmin(
   interaction: ChatInputCommandInteraction,
   action: string,
+  options?: { organiser?: boolean },
 ): Promise<SheetAdminContext | { error: InteractionReplyOptions }> {
   const guild = interaction.guild;
   if (!guild) {
@@ -31,11 +33,14 @@ export async function requireSheetAdmin(
     };
   }
 
-  if (!isGuildAdmin(interaction, settings)) {
+  const staff = options?.organiser ? await loadStaffConfig(guild.id) : null;
+  if (!isGuildAdmin(interaction, settings) && !(options?.organiser && isOrganiser(interaction, staff))) {
     return {
       error: sheetErrorMessage(
-        "Admin only",
-        `You need the Discord **Administrator** permission or the configured **Admin Role** to ${action}.`,
+        options?.organiser ? "Admin or organiser required" : "Admin only",
+        options?.organiser
+          ? `You need **Admin** or **Organiser** to ${action}.`
+          : `You need the Discord **Administrator** permission or the configured **Admin Role** to ${action}.`,
         false,
       ),
     };

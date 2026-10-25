@@ -6,15 +6,15 @@ Las respuestas del comando (éxito, error e info) son **Components V2** en el ca
 
 | Subcomando | Quién |
 |---|---|
-| `create` · `update` · `delete` | Rol **admin** o **helper** de ese torneo |
-| `show` · `unassigned` | Rol **staff** del servidor (`/staff config`) |
-| `refresh` | Rol **judge** o **recorder** del servidor |
+| `create` · `update` · `delete` | Admin o helper **de ese torneo**, u Organiser |
+| `show` · `unassigned` | Admin, Organiser, helper de un torneo o rol **staff** |
+| `refresh` | Organiser, helper de un torneo, **staff**, **judge** o **recorder** |
 | `results` · `results_delete` | Rol **judge** del servidor |
 | `resign` | Solo quien está asignado a ese schedule, dentro del ticket |
 
 ## `/schedule create`
 
-**Solo ticket.** Admin o helper del torneo. Requiere canal de schedules.
+**Solo ticket.** Admin o helper del torneo, u Organiser. Requiere canal de schedules.
 
 | Campo | Tipo | Obligatorio | Uso |
 |---|---|---|---|
@@ -27,15 +27,15 @@ Las respuestas del comando (éxito, error e info) son **Components V2** en el ca
 | recorder | USER | No | Preasignar. Tiene que tener el rol **recorder** |
 | remark | STRING | No | Máx. 130 |
 
-Mínimo +10 minutos. Marca `🔴`. Admin o helper del torneo. Posts, punto rojo y evento son una sola operación: si uno falla, se borran el resto y el comando responde el error. Si el create trae juez o recorder, el ticket publica el mismo texto plano que el botón Assign. Encima del embed, el ticket y el canal de schedules mencionan a los dos capitanes. El ping sale en el ticket. La respuesta al crear es un Components V2: **Schedule created** y `Match scheduled successfully. Thumbnail generated.` El thumbnail se compone sobre el fondo rotativo con icono del servidor, torneo, etapa (`ROUND n`, `SEMIFINAL`, `FINAL`, `3RD PLACE`…), equipos, fecha y hora UTC y nombre del servidor; los nombres demasiado anchos reducen fuente y luego terminan en elipsis. Relación: attendance, results, worker T-10/T-0, thumbnails de settings.
+Mínimo +10 minutos. Marca `🔴`. Admin o helper del torneo, u Organiser. Posts, punto rojo y evento son una sola operación: si uno falla, se borran el resto y el comando responde el error. Si el create trae juez o recorder, el ticket publica el mismo texto plano que el botón Assign. Encima del embed, el ticket y el canal de schedules mencionan a los dos capitanes. El ping sale en el ticket. La respuesta al crear es un Components V2: **Schedule created** y `Match scheduled successfully. Thumbnail generated.` El thumbnail se compone sobre el fondo rotativo con icono del servidor, torneo, etapa (`ROUND n`, `SEMIFINAL`, `FINAL`, `3RD PLACE`…), equipos, fecha y hora UTC y nombre del servidor; los nombres demasiado anchos reducen fuente y luego terminan en elipsis. Relación: attendance, results, worker T-10/T-0, thumbnails de settings.
 
 ## `/schedule update`
 
-**Solo ticket.** Admin o helper del torneo. La respuesta del comando, tanto si se actualizó como si falló, es **efímera**. El ticket vuelve a publicar el schedule: el texto menciona a los capitanes y, si hay juez o grabador asignado, también a ellos, y ese mensaje hace ping. El canal de schedules muestra las mismas menciones y no vuelve a notificar. `hour`, `minute`, `day`, `month` y `year` son opcionales y se pueden mandar de uno en uno: el trozo que falta se conserva. La fecha resultante no puede estar en el pasado ni a menos de 10 minutos en el momento del comando. También `judge`, `recorder`, `note`, `remove_judge`, `remove_recorder`, `reason`, `regenerate_image`. Al menos un campo. `judge` y `recorder` solo se aceptan si ese usuario tiene el rol correspondiente; si no, no se actualiza nada. Asignar publica en el ticket el texto del botón Assign. Quitar o reemplazar publica el texto de resign del puesto anterior y, si entra alguien nuevo, el de Assign. Recalendarizar resetea recordatorios y reconstruye el thumbnail con la fecha/hora actualizada. `regenerate_image` reconstruye la composición con el fondo ya asignado y los datos actuales sobre el embed, el post del canal de thumbnails y el evento. No avanza la rotación.
+**Solo ticket.** Admin o helper del torneo, u Organiser. La respuesta del comando, tanto si se actualizó como si falló, es **efímera**. El ticket vuelve a publicar el schedule: el texto menciona a los capitanes y, si hay juez o grabador asignado, también a ellos, y ese mensaje hace ping. El canal de schedules muestra las mismas menciones y no vuelve a notificar. `hour`, `minute`, `day`, `month` y `year` son opcionales y se pueden mandar de uno en uno: el trozo que falta se conserva. La fecha resultante no puede estar en el pasado ni a menos de 10 minutos en el momento del comando. También `judge`, `recorder`, `note`, `remove_judge`, `remove_recorder`, `reason`, `regenerate_image`. Al menos un campo. `judge` y `recorder` solo se aceptan si ese usuario tiene el rol correspondiente; si no, no se actualiza nada. Asignar publica en el ticket el texto del botón Assign. Quitar o reemplazar publica el texto de resign del puesto anterior y, si entra alguien nuevo, el de Assign. Recalendarizar resetea recordatorios y reconstruye el thumbnail con la fecha/hora actualizada. `regenerate_image` reconstruye la composición con el fondo ya asignado y los datos actuales sobre el embed, el post del canal de thumbnails y el evento. No avanza la rotación.
 
 ## `/schedule show`
 
-Cualquier canal. Rol **staff**. No audita. Siempre **Components V2** en el canal, sin ping. Muestra schedules de cualquier estado mientras el torneo **siga registrado** en el servidor. Si el torneo se borró, ese schedule no sale.
+Cualquier canal. Admin, Organiser, helper de un torneo o rol **staff**. No audita. Siempre **Components V2** en el canal, sin ping. Muestra schedules de cualquier estado mientras el torneo **siga registrado** en el servidor. Si el torneo se borró, ese schedule no sale.
 
 | Campo | Tipo | Obligatorio | Uso |
 |---|---|---|---|
@@ -44,7 +44,7 @@ Cualquier canal. Rol **staff**. No audita. Siempre **Components V2** en el canal
 | tour | STRING (Autocomplete) | No | Solo ese torneo. |
 | user | USER | No | Schedules donde esa persona es juez o recorder. |
 
-Sin `match`, lista. `tour`, `user` y `filter` se combinan. Sin ninguno, lista todos los schedules de torneos que siguen existiendo. 5 por página, el más reciente primero. Cada fila lleva enfrentamiento, hora relativa y UTC, torneo, estado, id de Challonge, y juez o recorder si están asignados. Las flechas las pulsa quien tenga el rol staff.
+Sin `match`, lista. `tour`, `user` y `filter` se combinan. Sin ninguno, lista todos los schedules de torneos que siguen existiendo. 5 por página, el más reciente primero. Cada fila lleva enfrentamiento, hora relativa y UTC, torneo, estado, id de Challonge, y juez o recorder si están asignados. Las flechas las pulsa quien puede usar `/schedule show`.
 
 Estados:
 
@@ -63,7 +63,7 @@ La ficha de `match` repite la tarjeta del schedule. Con declaración muestra la 
 | confirm | BOOLEAN | Sí |
 | reason | STRING | No |
 
-`confirm=False` cancela. Quita `🔴`. Admin o helper del torneo.
+`confirm=False` cancela. Quita `🔴`. Admin o helper del torneo, u Organiser.
 
 ## `/schedule unassigned`
 
@@ -71,11 +71,11 @@ La ficha de `match` repite la tarjeta del schedule. Con declaración muestra la 
 |---|---|---|
 | filter | STRING (Choice) | Depende de implementación | `all` · `missing_judge` · `missing_recorder` · `any` |
 
-Consulta. Rol staff. Alimenta reclutamiento de staff de mesa.
+Consulta. Admin, Organiser, helper de un torneo o rol staff. Alimenta reclutamiento de staff de mesa.
 
 ## `/schedule refresh`
 
-**Cualquier canal.** Rol judge o recorder. Abre otra vez los botones de reclamar durante 10 minutos. Un puesto ya ocupado sigue apagado. No cambia la hora. La respuesta incluye el **Link** al post del schedule en el canal de schedules.
+**Cualquier canal.** Organiser, helper de un torneo, staff, judge o recorder. `admin_role` no entra. Abre otra vez los botones de reclamar durante 10 minutos. Un puesto ya ocupado sigue apagado. No cambia la hora. La respuesta incluye el **Link** al post del schedule en el canal de schedules.
 
 | Campo | Tipo | Obligatorio |
 |---|---|---|

@@ -29,8 +29,8 @@ Canales: texto o announcement. **Relación:** prerrequisito de casi toda mutaci�
 
 **Para qué:** Cambiar un rol o canal sin reescribir el resto.
 
-Mismos campos que `set`, todos opcionales. Al menos uno, y tiene que cambiar el valor guardado. Requiere set previo. Admin (Administrator de Discord **o** `admin_role`). Audita.
+Mismos campos que `set`, todos opcionales. Al menos uno, y tiene que cambiar el valor guardado. Requiere set previo. Admin u Organiser. Audita.
 
 ## `/settings show`
 
-**Para qué:** Ver la config actual y si roles/canales siguen existiendo. No cambia nada. No audita. Admin.
+**Para qué:** Ver la config actual y si roles/canales siguen existiendo. No cambia nada. No audita. Admin u Organiser.
