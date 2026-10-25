@@ -29,7 +29,8 @@ import { embedColors } from "../../lib/embeds.js";
 import { formatChannel, formatHelpEntry } from "../../lib/formatters.js";
 import { utilityCommandIdFor } from "../../lib/register-slash.js";
 import { divider, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
-import { botHasChannelPermission, canManageMessages } from "./access.js";
+import { actorMatches } from "../../lib/command-access.js";
+import { botHasChannelPermission } from "./access.js";
 import { auditUtility } from "./audit.js";
 import { fetchGuildMessage, fetchPostChannel, isBotMessage, isPostChannel } from "./channels.js";
 import { parseColor, parseHttpUrl } from "./parse.js";
@@ -206,8 +207,8 @@ function textModal(id: string, title: string, label: string, value: string | und
 
 async function denyBuilder(interaction: ChatInputCommandInteraction | ButtonInteraction | ModalSubmitInteraction) {
   const payload = utilityError(
-    "Manage Messages required",
-    "You need **Manage Messages** to use the Components V2 builder.",
+    "Admin or organiser required",
+    "You need **Admin** or **Organiser** to use the Components V2 builder.",
   );
   if (interaction.deferred || interaction.replied) {
     await interaction.followUp(payload);
@@ -217,7 +218,7 @@ async function denyBuilder(interaction: ChatInputCommandInteraction | ButtonInte
 }
 
 export async function handleV2Create(interaction: ChatInputCommandInteraction, guild: Guild): Promise<void> {
-  if (!canManageMessages(interaction)) {
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
     await denyBuilder(interaction);
     return;
   }
@@ -240,7 +241,7 @@ export async function handleV2Create(interaction: ChatInputCommandInteraction, g
 }
 
 export async function handleV2Edit(interaction: ChatInputCommandInteraction, guild: Guild): Promise<void> {
-  if (!canManageMessages(interaction)) {
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
     await denyBuilder(interaction);
     return;
   }
@@ -305,7 +306,7 @@ export async function handleV2Button(interaction: ButtonInteraction): Promise<vo
   if (!guild) {
     return;
   }
-  if (!canManageMessages(interaction)) {
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
     await denyBuilder(interaction);
     return;
   }
@@ -410,6 +411,10 @@ export async function handleV2Button(interaction: ButtonInteraction): Promise<vo
 export async function handleV2Modal(interaction: ModalSubmitInteraction): Promise<void> {
   const guild = interaction.guild;
   if (!guild) {
+    return;
+  }
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
+    await denyBuilder(interaction);
     return;
   }
   const session = requireSession(guild.id, interaction.user.id, "v2");

@@ -10,7 +10,7 @@ Los tres paneles son **Components V2** (container + color de acento, no embed cl
 
 **Campos:** ninguno.
 
-**Relación:** Diagnóstico de presencia ([../platform/gateway.md](../platform/gateway.md)). Público. No audita.
+**Relación:** Diagnóstico de presencia ([../platform/gateway.md](../platform/gateway.md)). Admin, Organiser o Helper de un torneo. No audita.
 
 ## `/bot about`
 
@@ -18,7 +18,7 @@ Los tres paneles son **Components V2** (container + color de acento, no embed cl
 
 **Campos:** ninguno. Solo en servidor.
 
-**Relación:** Informativo. Público. No audita.
+**Relación:** Informativo. Admin, Organiser o Helper de un torneo. No audita.
 
 ## `/bot help`
 
@@ -26,4 +26,4 @@ Los tres paneles son **Components V2** (container + color de acento, no embed cl
 
 **Campos:** ninguno.
 
-**Relación:** Índice vivo ([_index.md](_index.md)). Público. No audita. Paginación: [interactions.md](interactions.md).
+**Relación:** Índice vivo ([_index.md](_index.md)). Admin, Organiser, Helper de un torneo o `staff_role`. No audita. Paginación: [interactions.md](interactions.md).

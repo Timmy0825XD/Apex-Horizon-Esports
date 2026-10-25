@@ -1,4 +1,5 @@
 import type { AutocompleteInteraction } from "discord.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { prisma } from "../../lib/prisma.js";
 import { objectIdLike } from "../tournament/store.js";
 import { isShowFilter, matchesShowFilter, scheduleStatus, type ScheduleStatus } from "./show.js";
@@ -43,6 +44,14 @@ export async function handleScheduleAuto(interaction: AutocompleteInteraction): 
   }
   const focused = interaction.options.getFocused(true);
   const sub = interaction.options.getSubcommand(false);
+  if ((sub === "show" || sub === "unassigned") && !(await actorMatches(interaction, { admin: true, organiser: true, helper: true, staff: true }))) {
+    await interaction.respond([]);
+    return;
+  }
+  if (sub === "refresh" && !(await actorMatches(interaction, { organiser: true, helper: true, staff: true, judge: true, recorder: true }))) {
+    await interaction.respond([]);
+    return;
+  }
 
   if (sub === "refresh" && focused.name === "match") {
     const query = focused.value.trim().toLowerCase();

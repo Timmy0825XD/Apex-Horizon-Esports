@@ -1,6 +1,7 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 import { formatRole } from "../../lib/formatters.js";
 import { prisma } from "../../lib/prisma.js";
+import { memberIsOrganiser } from "../../lib/organiser.js";
 import { isTournamentAdminOrHelper, memberHasRole } from "./access.js";
 import { auditSchedule, peopleLine, ticketLine } from "./audit.js";
 import { takeNextBackground } from "./backgrounds.js";
@@ -22,8 +23,15 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
   if (!guild) {
     return;
   }
-  if (!isTournamentAdminOrHelper(interaction, bundle.tournament)) {
-    await replySchedule(interaction, scheduleNotice("error","Tournament admin or helper required", "Only that tournament's **admin** or **helper** can create a schedule."));
+  if (!isTournamentAdminOrHelper(interaction, bundle.tournament) && !(await memberIsOrganiser(interaction))) {
+    await replySchedule(
+      interaction,
+      scheduleNotice(
+        "error",
+        "Tournament admin, helper, or organiser required",
+        "Only that tournament's **admin** or **helper**, or an **Organiser**, can create a schedule.",
+      ),
+    );
     return;
   }
   if (bundle.schedule) {

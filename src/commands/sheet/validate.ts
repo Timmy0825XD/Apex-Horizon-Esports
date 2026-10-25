@@ -283,7 +283,7 @@ export async function handleSheetValidate(
 ): Promise<void> {
   await deferSheet(interaction, true);
 
-  const access = await requireSheetAdmin(interaction, "validate a sheet");
+  const access = await requireSheetAdmin(interaction, "validate a sheet", { organiser: true });
   if (!isSheetAdmin(access)) {
     await respondSheet(interaction, access.error);
     return;

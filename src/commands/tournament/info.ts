@@ -1,4 +1,5 @@
 import type { ChatInputCommandInteraction } from "discord.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { deferTournament, respondTournament } from "./respond.js";
 import { findTournamentById } from "./store.js";
 import { tournamentErrorMessage, tournamentWorldMessage } from "./view.js";
@@ -7,6 +8,14 @@ export async function handleTournamentInfo(interaction: ChatInputCommandInteract
   const guild = interaction.guild;
   if (!guild) {
     await respondTournament(interaction, tournamentErrorMessage("Guild only", "This command can only be used in a server."));
+    return;
+  }
+
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
+    await respondTournament(
+      interaction,
+      tournamentErrorMessage("Admin or organiser required", "You need **Admin** or **Organiser** to view a tournament."),
+    );
     return;
   }
 

@@ -1,7 +1,12 @@
 import type { AutocompleteInteraction } from "discord.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { listStoredSheetSummaries } from "../tournament/store.js";
 
 export async function handleSheetAutocomplete(interaction: AutocompleteInteraction): Promise<void> {
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
+    await interaction.respond([]);
+    return;
+  }
   const focused = interaction.options.getFocused(true);
   const sub = interaction.options.getSubcommand(false);
   if (sub !== "get" || focused.name !== "name") {

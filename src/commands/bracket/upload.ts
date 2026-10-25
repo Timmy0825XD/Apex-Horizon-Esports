@@ -12,7 +12,6 @@ import { prisma } from "../../lib/prisma.js";
 import { settingsCommandIdFor } from "../../lib/register-slash.js";
 import { attachResultsTranscript } from "../schedule/results.js";
 import { loadGuildSettings } from "../settings/store.js";
-import { loadStaffConfig } from "../../lib/organiser.js";
 import { closeTicket } from "../ticket/lifecycle.js";
 import { findTournamentById } from "../tournament/store.js";
 import { canUploadScore } from "./access.js";
@@ -108,12 +107,11 @@ export async function runBracketUpload(interaction: ChatInputCommandInteraction)
     return;
   }
 
-  const staff = await loadStaffConfig(guild.id);
-  if (!(await canUploadScore(interaction, tournament, staff))) {
+  if (!(await canUploadScore(interaction, tournament))) {
     await respondBracket(
       interaction,
-      bracketPanel("error", "Staff required", [
-        "Only tournament staff (admin/helper, judge, recorder, or staff role) or an **Organiser** can upload a score.",
+      bracketPanel("error", "Tournament staff required", [
+        "Only that tournament's **admin** or **helper**, or an **Organiser**, can upload a score.",
       ]),
     );
     return;

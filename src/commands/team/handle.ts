@@ -16,11 +16,10 @@ export async function handleTeamSlash(interaction: ChatInputCommandInteraction):
     return;
   }
 
-  if (!(await requireTeamOrganiser(interaction, "use team commands"))) {
+  const sub = interaction.options.getSubcommand();
+  if (sub === "list" && !(await requireTeamOrganiser(interaction, "list teams"))) {
     return;
   }
-
-  const sub = interaction.options.getSubcommand();
   if (sub === "info") {
     await handleTeamInfo(interaction);
     return;
@@ -31,7 +30,13 @@ export async function handleTeamSlash(interaction: ChatInputCommandInteraction):
 }
 
 export async function handleTeamAuto(interaction: AutocompleteInteraction): Promise<void> {
-  if (!isAllowedGuild(interaction.guildId) || !(await canUseTeamCommands(interaction))) {
+  if (!isAllowedGuild(interaction.guildId)) {
+    await interaction.respond([]);
+    return;
+  }
+
+  const sub = interaction.options.getSubcommand(false);
+  if (sub === "list" && !(await canUseTeamCommands(interaction))) {
     await interaction.respond([]);
     return;
   }

@@ -15,6 +15,7 @@ import {
   listStoredSheetSummaries,
   type StoredSheetSummary,
 } from "../tournament/store.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { deferSheet, respondSheet } from "./respond.js";
 import { sheetErrorMessage } from "./view.js";
 
@@ -151,6 +152,14 @@ function withLiveGuildName(sheet: StoredSheetSummary, liveName: string | undefin
 }
 
 export async function handleSheetGet(interaction: ChatInputCommandInteraction, commandId?: string): Promise<void> {
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
+    await respondSheet(
+      interaction,
+      sheetErrorMessage("Admin or organiser required", "You need **Admin** or **Organiser** to read stored sheets."),
+    );
+    return;
+  }
+
   const query = interaction.options.getString("name")?.trim() || undefined;
   const csv = interaction.options.getBoolean("csv") ?? false;
 

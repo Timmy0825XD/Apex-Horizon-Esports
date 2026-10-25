@@ -4,7 +4,7 @@ Reglas de producto: [../product/overview.md](../product/overview.md). Bracket: [
 
 ## `/tournament add`
 
-**Para qué:** Registrar un torneo operable. Admin. Requiere `/settings set`.
+**Para qué:** Registrar un torneo operable. Admin u Organiser. Requiere `/settings set`.
 
 | Campo | Tipo | Obligatorio | Uso |
 |---|---|---|---|
@@ -31,7 +31,7 @@ Valida bracket + layout de la hoja. Cada jugador tiene **5** columnas (tag, Disc
 
 ## `/tournament edit`
 
-**Para qué:** Parchear el mundo del torneo. Admin. Mismos campos que add (excepto `id` de alta): `id` (autocomplete, obligatorio) + el resto opcional. No toca auto-room. Si cambia `sheet_link`, la copia almacenada se **reemplaza** y se vuelve a cruzar la lista oficial de IDs baneados (si hay coincidencias, no se aplica el cambio). Audita.
+**Para qué:** Parchear el mundo del torneo. Admin u Organiser. Mismos campos que add (excepto `id` de alta): `id` (autocomplete, obligatorio) + el resto opcional. No toca auto-room. Si cambia `sheet_link`, la copia almacenada se **reemplaza** y se vuelve a cruzar la lista oficial de IDs baneados (si hay coincidencias, no se aplica el cambio). Audita.
 
 ## `/tournament delete`
 
@@ -39,11 +39,11 @@ Valida bracket + layout de la hoja. Cada jugador tiene **5** columnas (tag, Disc
 |---|---|---|
 | id | STRING (Autocomplete) | Sí |
 
-Apaga automatización y **borra la config del torneo** más todo lo que el bot guardó de ese mundo: partidos, salas, schedules y asistencias. **No** borra canales Discord, la hoja de Google ni el bracket externo. La copia de la sheet en BD **pasa a histórico** (sigue saliendo en `/sheet find_player` / `/sheet get`). Admin. Audita.
+Apaga automatización y **borra la config del torneo** más todo lo que el bot guardó de ese mundo: partidos, salas, schedules y asistencias. **No** borra canales Discord, la hoja de Google ni el bracket externo. La copia de la sheet en BD **pasa a histórico** (sigue saliendo en `/sheet find_player` / `/sheet get`). Admin u Organiser. Audita.
 
 ## `/tournament info` / `/tournament list`
 
-Info: un torneo completo. List: todos del servidor (efímero). No mutan. No auditan. Público.
+Info: un torneo completo. List: todos del servidor (efímero). No mutan. No auditan. Admin u Organiser.
 
 El panel V2 de add / edit / info separa **Identity**, **Roles**, **Channels** y **Ticket categories**. Omite categorías de tickets (y el canal Events Links) que no estén configuradas: no muestra *Not configured*. Footer: *Created by* con mención de quien registró el torneo.
 

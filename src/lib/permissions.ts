@@ -3,10 +3,15 @@ import {
   type AutocompleteInteraction,
   type ButtonInteraction,
   type ChatInputCommandInteraction,
+  type ModalSubmitInteraction,
 } from "discord.js";
 import type { GuildSettings, StaffConfig } from "@prisma/client";
 
-type PermissionInteraction = ChatInputCommandInteraction | AutocompleteInteraction | ButtonInteraction;
+export type PermissionInteraction =
+  | ChatInputCommandInteraction
+  | AutocompleteInteraction
+  | ButtonInteraction
+  | ModalSubmitInteraction;
 
 export function isDiscordAdministrator(interaction: PermissionInteraction): boolean {
   return interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) ?? false;
@@ -23,7 +28,7 @@ export function memberHasRole(interaction: PermissionInteraction, roleId: string
   return roles.includes(roleId);
 }
 
-export function isGuildAdmin(interaction: ChatInputCommandInteraction, settings: GuildSettings | null): boolean {
+export function isGuildAdmin(interaction: PermissionInteraction, settings: GuildSettings | null): boolean {
   if (isDiscordAdministrator(interaction)) {
     return true;
   }

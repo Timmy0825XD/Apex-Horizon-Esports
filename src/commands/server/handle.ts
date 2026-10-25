@@ -1,5 +1,6 @@
 import { MessageFlags, type ChatInputCommandInteraction } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { v2Flags } from "../../lib/v2.js";
 import { handleServerBanlist } from "./banlist.js";
 import { buildServerInfoContainer } from "./info.js";
@@ -40,6 +41,13 @@ export async function handleServerSlash(interaction: ChatInputCommandInteraction
     return;
   }
   if (sub !== "info") {
+    return;
+  }
+
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
+    await interaction.reply(
+      serverErrorMessage("Admin or organiser required", "You need **Admin** or **Organiser** to view server info."),
+    );
     return;
   }
 

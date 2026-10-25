@@ -1,9 +1,10 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 import { prisma } from "../../lib/prisma.js";
 import { loadGuildSettings } from "../settings/store.js";
-import { loadGuildStaffState } from "../staff/store.js";
 import { findTournamentById } from "../tournament/store.js";
-import { isJudge, isRecorder, isTournamentAdminOrHelper, memberHasRole } from "./access.js";
+import { actorMatches } from "../../lib/command-access.js";
+import { memberIsOrganiser } from "../../lib/organiser.js";
+import { isTournamentAdminOrHelper, memberHasRole } from "./access.js";
 import { auditSchedule, peopleLine, ticketLine } from "./audit.js";
 import { isAtLeastTenMinutesAhead, utcFromParts, type ClockParts } from "./clock.js";
 import { grantTicket, revokeTicket, ticketChannel } from "./channel.js";
@@ -38,8 +39,15 @@ export async function runUpdate(interaction: ChatInputCommandInteraction, bundle
     await replySchedule(interaction, scheduleNotice("error", "No schedule", "Create a schedule in this ticket first."));
     return;
   }
-  if (!isTournamentAdminOrHelper(interaction, bundle.tournament)) {
-    await replySchedule(interaction, scheduleNotice("error", "Tournament admin or helper required", "Only that tournament's **admin** or **helper** can update a schedule."));
+  if (!isTournamentAdminOrHelper(interaction, bundle.tournament) && !(await memberIsOrganiser(interaction))) {
+    await replySchedule(
+      interaction,
+      scheduleNotice(
+        "error",
+        "Tournament admin, helper, or organiser required",
+        "Only that tournament's **admin** or **helper**, or an **Organiser**, can update a schedule.",
+      ),
+    );
     return;
   }
   const clock = readClock(interaction, schedule.scheduledAt);
@@ -179,15 +187,14 @@ export async function runRefresh(interaction: ChatInputCommandInteraction): Prom
   if (!interaction.deferred && !interaction.replied) {
     await interaction.deferReply();
   }
-  const { staff } = await loadGuildStaffState(guild.id);
-  if (!staff) {
-    await replySchedule(interaction, scheduleNotice("error", "Staff not configured", "Staff roles are not configured yet."));
-    return;
-  }
-  if (!isJudge(interaction, staff) && !isRecorder(interaction, staff)) {
+  if (!(await actorMatches(interaction, { organiser: true, helper: true, staff: true, judge: true, recorder: true }))) {
     await replySchedule(
       interaction,
-      scheduleNotice("error", "Judge or recorder required", "Only members with the **judge** or **recorder** role can refresh a schedule."),
+      scheduleNotice(
+        "error",
+        "Schedule refresh restricted",
+        "You need **Organiser**, a tournament **helper** role, or the **staff**, **judge**, or **recorder** role to refresh a schedule.",
+      ),
     );
     return;
   }

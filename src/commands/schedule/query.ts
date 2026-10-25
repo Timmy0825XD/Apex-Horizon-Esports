@@ -2,8 +2,7 @@ import type { ChatInputCommandInteraction } from "discord.js";
 import { formatChannel, formatUser } from "../../lib/formatters.js";
 import { prisma } from "../../lib/prisma.js";
 import { escapeDiscord } from "../room/labels.js";
-import { loadGuildStaffState } from "../staff/store.js";
-import { isStaff } from "./access.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { replySchedule, scheduleNotice } from "./respond.js";
 
 export async function runUnassigned(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -11,9 +10,15 @@ export async function runUnassigned(interaction: ChatInputCommandInteraction): P
   if (!guild) {
     return;
   }
-  const { staff } = await loadGuildStaffState(guild.id);
-  if (!staff || !isStaff(interaction, staff)) {
-    await replySchedule(interaction, scheduleNotice("error", "Staff required", "Only members with the **staff** role can list open seats."));
+  if (!(await actorMatches(interaction, { admin: true, organiser: true, helper: true, staff: true }))) {
+    await replySchedule(
+      interaction,
+      scheduleNotice(
+        "error",
+        "Schedule access required",
+        "You need **Admin**, **Organiser**, a tournament **helper** role, or the **staff** role to list open seats.",
+      ),
+    );
     return;
   }
   const filter = interaction.options.getString("filter") ?? "any";

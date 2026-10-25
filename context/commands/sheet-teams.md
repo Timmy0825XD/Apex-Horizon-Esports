@@ -22,7 +22,7 @@ La copia guarda el servidor de origen (`guildId` + nombre) para mostrarlo en `fi
 
 ## `/sheet get`
 
-**Para qué:** Recuperar el link de una hoja archivada por **nombre de torneo**, o exportar el catálogo entero. Lectura; no audita. Público; respuesta efímera.
+**Para qué:** Recuperar el link de una hoja archivada por **nombre de torneo**, o exportar el catálogo entero. Lectura; no audita. Admin u Organiser; respuesta efímera.
 
 | Campo | Tipo | Obligatorio | Uso |
 |---|---|---|---|
@@ -37,7 +37,7 @@ CSV: columnas `Tournament,Sheet,Server` (con header). Incluye activas, manuales 
 
 ## `/sheet find_player`
 
-**Para qué:** Buscar una persona en **todas** las sheets almacenadas del bot (cualquier servidor). Lectura; no audita. Relación: distinto de `/team info` (ese mira la hoja **viva** de un torneo). Público; respuesta efímera.
+**Para qué:** Buscar una persona en **todas** las sheets almacenadas del bot (cualquier servidor). Lectura; no audita. Relación: distinto de `/team info` (ese mira la hoja **viva** de un torneo). Admin u Organiser; respuesta efímera.
 
 | Campo | Tipo | Obligatorio |
 |---|---|---|
@@ -56,7 +56,7 @@ Un V2 **por jugador distinto**: datos del capitán (y nombre de equipo si no es 
 |---|---|---|
 | sheet_link | STRING | Sí |
 
-Admin. Previo a crear torneo. Efímero. No archiva la hoja y no audita. Relación: `/utility discord_tag` para corregir tags, `/tournament add` para registrar después.
+Admin u Organiser. Previo a crear torneo. Efímero. No archiva la hoja y no audita. Relación: `/utility discord_tag` para corregir tags, `/tournament add` para registrar después.
 
 Recorre cada jugador de la hoja viva y aplica las comprobaciones de [../domains/sheet.md](../domains/sheet.md). Si algo falla, un V2 de resumen y un V2 por tipo de fallo. Si pasa, indica que se puede registrar con `/tournament add`.
 
@@ -66,7 +66,7 @@ Recorre cada jugador de la hoja viva y aplica las comprobaciones de [../domains/
 |---|---|---|
 | ids | STRING | Sí |
 
-Público. Salida efímera, un username por línea.
+Admin u Organiser. Salida efímera, un username por línea.
 
 ## `/team info`
 
@@ -76,7 +76,7 @@ Público. Salida efímera, un username por línea.
 | user | USER | No* |
 | alias | STRING | No* |
 
-\*Al menos uno. Si van los dos, la fila tiene que coincidir en **ambos**. **Organiser**. Lectura de la hoja **viva** de Google de ese torneo (no la copia en BD). No audita.
+\*Al menos uno. Si van los dos, la fila tiene que coincidir en **ambos**. Cualquier miembro. Lectura de la hoja **viva** de Google de ese torneo (no la copia en BD). No audita.
 
 Busca en **cualquier jugador** de la fila. `user` coincide por Discord ID. `alias` coincide por **game ID**, **in-game name** o **Discord ID** (el bot clasifica el texto: snowflake → Discord ID, hex 8–16 → game ID, si no → nombre; nombre exacto primero, si no contiene con ≥ 3 caracteres).
 

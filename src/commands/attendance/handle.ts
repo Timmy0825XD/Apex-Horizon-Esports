@@ -1,4 +1,5 @@
 import type { AutocompleteInteraction, ChatInputCommandInteraction } from "discord.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { handleAttendanceAutocomplete } from "./autocomplete.js";
 import { handleAttendanceDelete } from "./delete.js";
 import { handleAttendanceReport } from "./report.js";
@@ -20,5 +21,18 @@ export async function handleAttendanceSlash(interaction: ChatInputCommandInterac
 }
 
 export async function handleAttendanceAuto(interaction: AutocompleteInteraction): Promise<void> {
+  if (
+    !(await actorMatches(interaction, {
+      admin: true,
+      organiser: true,
+      helper: true,
+      staff: true,
+      judge: true,
+      recorder: true,
+    }))
+  ) {
+    await interaction.respond([]);
+    return;
+  }
   await handleAttendanceAutocomplete(interaction);
 }

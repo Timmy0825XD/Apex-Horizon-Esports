@@ -1,12 +1,11 @@
 import type { Attendance, Match } from "@prisma/client";
 import type { ChatInputCommandInteraction } from "discord.js";
-import { canUseAttendanceTools } from "../attendance/access.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { watchButtons } from "../attendance/buttons.js";
 import { hasRecordingLink, isDefaultWin } from "../attendance/payroll.js";
 import { deferPublic, editAttendance } from "../attendance/respond.js";
 import { findGuildTournament, listUserAttendance, matchesById } from "../attendance/store.js";
 import { attendanceError, historyEmbed, matchSummary, pagerRow, roleLabel } from "../attendance/view.js";
-import { loadGuildStaffState } from "../staff/store.js";
 
 const PAGE = 5;
 
@@ -41,10 +40,23 @@ export async function handleGetAttendance(interaction: ChatInputCommandInteracti
     return;
   }
   await deferPublic(interaction);
-  const { settings, staff } = await loadGuildStaffState(guild.id);
-  if (!canUseAttendanceTools(interaction, settings, staff)) {
+  if (
+    !(await actorMatches(interaction, {
+      admin: true,
+      organiser: true,
+      helper: true,
+      staff: true,
+      judge: true,
+      recorder: true,
+    }))
+  ) {
     await editAttendance(interaction, {
-      embeds: [attendanceError("Staff only", "You need a staff, judge, or recorder role to view attendance.")],
+      embeds: [
+        attendanceError(
+          "Staff only",
+          "You need **staff**, **judge**, **recorder**, **helper**, **Admin**, or **Organiser** to view attendance.",
+        ),
+      ],
     });
     return;
   }

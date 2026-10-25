@@ -36,10 +36,10 @@ El permiso Administrator entra en **Admin** y en **Organiser**. El rol `admin_ro
 - [x] Admin
 - [x] Organiser
 - [x] Helper
-- [x] Staff
-- [x] Juez
-- [x] Grabador
-- [x] Público
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
 
 Ninguna.
 
@@ -48,10 +48,10 @@ Ninguna.
 - [x] Admin
 - [x] Organiser
 - [x] Helper
-- [x] Staff
-- [x] Juez
-- [x] Grabador
-- [x] Público
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
 
 Ninguna.
 
@@ -61,9 +61,9 @@ Ninguna.
 - [x] Organiser
 - [x] Helper
 - [x] Staff
-- [x] Juez
-- [x] Grabador
-- [x] Público
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
 
 Ninguna.
 
@@ -86,7 +86,7 @@ Ninguna.
 ### `/settings edit`
 
 - [x] Admin
-- [ ] Organiser
+- [x] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
@@ -98,7 +98,7 @@ Ninguna.
 ### `/settings show`
 
 - [x] Admin
-- [ ] Organiser
+- [x] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
@@ -148,38 +148,36 @@ Ninguna.
 
 ### `/staff recruit`
 
-- [ ] Admin
-- [ ] Organiser
+- [x] Admin
+- [x] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
 - [ ] Grabador
 - [ ] Público
 
-- Ningún rol marcado. Solo el permiso **Administrator** de Discord.
-- `admin_role` y Organiser no bastan.
+- Admin (`admin_role` o Administrator) u Organiser (`manager_role` o Administrator).
 - La jerarquía de Discord gana: no asigna un rol por encima del bot ni del actor.
 
 ### `/staff fire`
 
-- [ ] Admin
-- [ ] Organiser
+- [x] Admin
+- [x] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
 - [ ] Grabador
 - [ ] Público
 
-- Ningún rol marcado. Solo el permiso **Administrator** de Discord.
-- `admin_role` y Organiser no bastan.
+- Admin (`admin_role` o Administrator) u Organiser (`manager_role` o Administrator).
 - La jerarquía de Discord gana.
 
 ### `/staff work`
 
 - [x] Admin
-- [ ] Organiser
-- [ ] Helper
-- [ ] Staff
+- [x] Organiser
+- [x] Helper
+- [x] Staff
 - [ ] Juez
 - [ ] Grabador
 - [ ] Público
@@ -191,7 +189,7 @@ Ninguna.
 ### `/tournament add`
 
 - [x] Admin
-- [ ] Organiser
+- [x] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
@@ -203,7 +201,7 @@ Ninguna.
 ### `/tournament edit`
 
 - [x] Admin
-- [ ] Organiser
+- [x] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
@@ -215,7 +213,7 @@ Ninguna.
 ### `/tournament delete`
 
 - [x] Admin
-- [ ] Organiser
+- [x] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
@@ -228,11 +226,11 @@ Ninguna.
 
 - [x] Admin
 - [x] Organiser
-- [x] Helper
-- [x] Staff
-- [x] Juez
-- [x] Grabador
-- [x] Público
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
 
 Ninguna.
 
@@ -240,11 +238,11 @@ Ninguna.
 
 - [x] Admin
 - [x] Organiser
-- [x] Helper
-- [x] Staff
-- [x] Juez
-- [x] Grabador
-- [x] Público
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
 
 Ninguna.
 
@@ -303,11 +301,11 @@ Ninguna.
 
 - [x] Admin
 - [x] Organiser
-- [x] Helper
-- [x] Staff
-- [x] Juez
-- [x] Grabador
-- [x] Público
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
 
 Ninguna.
 
@@ -315,18 +313,18 @@ Ninguna.
 
 - [x] Admin
 - [x] Organiser
-- [x] Helper
-- [x] Staff
-- [x] Juez
-- [x] Grabador
-- [x] Público
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
 
 Ninguna.
 
 ### `/sheet validate`
 
 - [x] Admin
-- [ ] Organiser
+- [x] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
@@ -337,15 +335,15 @@ Ninguna.
 
 ### `/team info`
 
-- [ ] Admin
+- [x] Admin
 - [x] Organiser
-- [ ] Helper
-- [ ] Staff
-- [ ] Juez
-- [ ] Grabador
-- [ ] Público
+- [x] Helper
+- [x] Staff
+- [x] Juez
+- [x] Grabador
+- [x] Público
 
-- `admin_role` no entra. Administrator de Discord entra por Organiser.
+Ninguna.
 
 ### `/team list`
 
@@ -403,15 +401,14 @@ Ninguna.
 - [x] Admin
 - [x] Organiser
 - [x] Helper
-- [x] Staff
-- [x] Juez
-- [x] Grabador
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
 - [ ] Público
 
 - Solo dentro del ticket del partido.
 - Admin aquí es el `admin_role` de **ese** torneo. El de `/settings` no cuenta.
 - Helper es el `helper_role` de **ese** torneo.
-- Staff, Juez y Grabador son los roles de `/staff config`.
 - Organiser (`manager_role` o Administrator) también entra.
 
 ### `/bracket dq_both`
@@ -419,15 +416,14 @@ Ninguna.
 - [x] Admin
 - [x] Organiser
 - [x] Helper
-- [x] Staff
-- [x] Juez
-- [x] Grabador
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
 - [ ] Público
 
 - Solo dentro del ticket del partido.
 - Admin aquí es el `admin_role` de **ese** torneo. El de `/settings` no cuenta.
 - Helper es el `helper_role` de **ese** torneo.
-- Staff, Juez y Grabador son los roles de `/staff config`.
 - Organiser (`manager_role` o Administrator) también entra.
 
 ### `/bracket correct`
@@ -451,7 +447,7 @@ El capitán no ejecuta ningún `/schedule`. Tener un rol no abre los subcomandos
 ### `/schedule create`
 
 - [x] Admin
-- [ ] Organiser
+- [x] Organiser
 - [x] Helper
 - [ ] Staff
 - [ ] Juez
@@ -459,14 +455,15 @@ El capitán no ejecuta ningún `/schedule`. Tener un rol no abre los subcomandos
 - [ ] Público
 
 - Solo dentro del ticket del partido.
-- Admin aquí es el `admin_role` de **ese** torneo. El de `/settings` y el permiso Administrator no bastan.
+- Admin aquí es el `admin_role` de **ese** torneo. El de `/settings` no cuenta.
 - Helper es el `helper_role` de **ese** torneo.
+- Organiser (`manager_role` o Administrator) también entra.
 - Hace falta el canal de schedules de `/settings`.
 
 ### `/schedule update`
 
 - [x] Admin
-- [ ] Organiser
+- [x] Organiser
 - [x] Helper
 - [ ] Staff
 - [ ] Juez
@@ -474,27 +471,30 @@ El capitán no ejecuta ningún `/schedule`. Tener un rol no abre los subcomandos
 - [ ] Público
 
 - Solo dentro del ticket del partido.
-- Admin aquí es el `admin_role` de **ese** torneo. El de `/settings` y el permiso Administrator no bastan.
+- Admin aquí es el `admin_role` de **ese** torneo. El de `/settings` no cuenta.
 - Helper es el `helper_role` de **ese** torneo.
+- Organiser (`manager_role` o Administrator) también entra.
 
 ### `/schedule show`
 
-- [ ] Admin
-- [ ] Organiser
-- [ ] Helper
+- [x] Admin
+- [x] Organiser
+- [x] Helper
 - [x] Staff
 - [ ] Juez
 - [ ] Grabador
 - [ ] Público
 
 - Cualquier canal.
-- Solo `staff_role`. Juez, Grabador, Admin y Organiser no sustituyen ese rol.
-- Las flechas de página también exigen `staff_role`.
+- Admin (`admin_role` de `/settings` o Administrator), Organiser, Helper o `staff_role`.
+- Helper es el `helper_role` de un torneo de este servidor.
+- Juez y Grabador no entran por ese rol.
+- Las flechas de página exigen el mismo acceso.
 
 ### `/schedule delete`
 
 - [x] Admin
-- [ ] Organiser
+- [x] Organiser
 - [x] Helper
 - [ ] Staff
 - [ ] Juez
@@ -502,35 +502,39 @@ El capitán no ejecuta ningún `/schedule`. Tener un rol no abre los subcomandos
 - [ ] Público
 
 - Solo dentro del ticket del partido, y solo si ese ticket tiene schedule.
-- Admin aquí es el `admin_role` de **ese** torneo. El de `/settings` y el permiso Administrator no bastan.
+- Admin aquí es el `admin_role` de **ese** torneo. El de `/settings` no cuenta.
 - Helper es el `helper_role` de **ese** torneo.
+- Organiser (`manager_role` o Administrator) también entra.
 - `confirm` en false no borra.
 
 ### `/schedule unassigned`
 
-- [ ] Admin
-- [ ] Organiser
-- [ ] Helper
+- [x] Admin
+- [x] Organiser
+- [x] Helper
 - [x] Staff
 - [ ] Juez
 - [ ] Grabador
 - [ ] Público
 
 - Cualquier canal.
-- Solo `staff_role`. Los demás roles no sustituyen ese rol.
+- Admin (`admin_role` de `/settings` o Administrator), Organiser, Helper o `staff_role`.
+- Helper es el `helper_role` de un torneo de este servidor.
+- Juez y Grabador no entran por ese rol.
 
 ### `/schedule refresh`
 
 - [ ] Admin
-- [ ] Organiser
-- [ ] Helper
-- [ ] Staff
+- [x] Organiser
+- [x] Helper
+- [x] Staff
 - [x] Juez
 - [x] Grabador
 - [ ] Público
 
 - Cualquier canal.
-- Juez o Grabador. Staff, Admin, Helper y Organiser no sustituyen esos roles.
+- Organiser, Helper, `staff_role`, Juez o Grabador. `admin_role` no entra. Administrator entra por Organiser.
+- Helper es el `helper_role` de un torneo de este servidor.
 - El botón de reclamar juez lo pulsa quien tiene `judge_role`; el de recorder, quien tiene `recorder_role`. Un puesto ocupado no se reclama.
 
 ### `/schedule resign`
@@ -610,30 +614,30 @@ El capitán no ejecuta ningún `/schedule`. Tener un rol no abre los subcomandos
 
 - [x] Admin
 - [x] Organiser
-- [ ] Helper
+- [x] Helper
 - [x] Staff
 - [x] Juez
 - [x] Grabador
 - [ ] Público
 
 - Cualquier canal.
-- La ficha propia: Staff, Juez, Grabador, Admin u Organiser.
-- La ficha de otra persona: solo Admin u Organiser. Helper no entra por ese rol.
+- La ficha propia: Staff, Juez, Grabador, Helper, Admin u Organiser.
+- La ficha de otra persona: solo Admin u Organiser. Helper no abre la ficha de otra persona.
 - Sin `user`, la ficha es la de quien ejecuta.
 
 ### `/get attendance`
 
 - [x] Admin
 - [x] Organiser
-- [ ] Helper
+- [x] Helper
 - [x] Staff
 - [x] Juez
 - [x] Grabador
 - [ ] Público
 
 - Cualquier canal.
-- Staff, Juez, Grabador, Admin u Organiser pueden consultar a cualquier usuario.
-- Helper y el admin del torneo no entran por ese rol.
+- Staff, Juez, Grabador, Helper, Admin u Organiser pueden consultar a cualquier usuario.
+- El admin del torneo no entra por ese rol.
 
 ### `/get sheet`
 
@@ -749,28 +753,28 @@ El capitán no ejecuta ningún `/schedule`. Tener un rol no abre los subcomandos
 
 ### `/role add all`
 
-- [ ] Admin
-- [x] Organiser
+- [x] Admin
+- [ ] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
 - [ ] Grabador
 - [ ] Público
 
-- Solo Organiser. `admin_role` no entra.
+- Solo Admin (`admin_role` o Administrator). `manager_role` no entra.
 - No toca `@everyone`, un rol de integración, ni un rol igual o superior al actor o al bot.
 
 ### `/role remove all`
 
-- [ ] Admin
-- [x] Organiser
+- [x] Admin
+- [ ] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
 - [ ] Grabador
 - [ ] Público
 
-- Solo Organiser. `admin_role` no entra.
+- Solo Admin (`admin_role` o Administrator). `manager_role` no entra.
 - No toca `@everyone`, un rol de integración, ni un rol igual o superior al actor o al bot.
 
 ### `/role list`
@@ -792,11 +796,11 @@ El capitán no ejecuta ningún `/schedule`. Tener un rol no abre los subcomandos
 
 - [x] Admin
 - [x] Organiser
-- [x] Helper
-- [x] Staff
-- [x] Juez
-- [x] Grabador
-- [x] Público
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
 
 Ninguna.
 
@@ -866,7 +870,7 @@ Ninguna.
 
 ### `/utility clear_category`
 
-- [ ] Admin
+- [x] Admin
 - [ ] Organiser
 - [ ] Helper
 - [ ] Staff
@@ -874,13 +878,12 @@ Ninguna.
 - [ ] Grabador
 - [ ] Público
 
-- Ningún rol marcado. Solo el permiso **Administrator** de Discord.
-- `admin_role` y Organiser no bastan.
+- Admin (`admin_role` o Administrator). `manager_role` no entra.
 - Sin la confirmación no se borra nada.
 
 ### `/utility clear`
 
-- [ ] Admin
+- [x] Admin
 - [ ] Organiser
 - [ ] Helper
 - [ ] Staff
@@ -888,13 +891,12 @@ Ninguna.
 - [ ] Grabador
 - [ ] Público
 
-- Ningún rol marcado. Solo el permiso **Manage Messages**.
-- Un Administrator de Discord lo tiene implícito. `admin_role` no lo otorga.
+- Admin (`admin_role` o Administrator). `manager_role` no entra.
 - Solo el canal donde se ejecuta.
 
 ### `/utility emoji_steal`
 
-- [ ] Admin
+- [x] Admin
 - [ ] Organiser
 - [ ] Helper
 - [ ] Staff
@@ -902,8 +904,7 @@ Ninguna.
 - [ ] Grabador
 - [ ] Público
 
-- Ningún rol marcado. Solo el permiso **Manage Emojis** (Manage Expressions).
-- `admin_role` no lo otorga. Un Administrator de Discord lo tiene implícito.
+- Admin (`admin_role` o Administrator). `manager_role` no entra.
 - El emoji tiene que ser custom de **este** servidor.
 
 ### `/utility random`
@@ -934,11 +935,11 @@ Ninguna.
 
 - [x] Admin
 - [x] Organiser
-- [x] Helper
-- [x] Staff
-- [x] Juez
-- [x] Grabador
-- [x] Público
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
 
 Ninguna.
 
@@ -980,56 +981,52 @@ Ninguna.
 
 ### `/utility embed`
 
-- [ ] Admin
-- [ ] Organiser
+- [x] Admin
+- [x] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
 - [ ] Grabador
 - [ ] Público
 
-- Ningún rol marcado. Solo el permiso **Manage Messages**.
-- Un Administrator de Discord lo tiene implícito. `admin_role` no lo otorga.
+- Admin u Organiser.
 - Solo publica o edita mensajes de este bot.
 
 ### `/utility edit_embed`
 
-- [ ] Admin
-- [ ] Organiser
+- [x] Admin
+- [x] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
 - [ ] Grabador
 - [ ] Público
 
-- Ningún rol marcado. Solo el permiso **Manage Messages**.
-- Un Administrator de Discord lo tiene implícito. `admin_role` no lo otorga.
+- Admin u Organiser.
 - Solo reescribe un embed de este bot.
 
 ### `/utility v2`
 
-- [ ] Admin
-- [ ] Organiser
+- [x] Admin
+- [x] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
 - [ ] Grabador
 - [ ] Público
 
-- Ningún rol marcado. Solo el permiso **Manage Messages**.
-- Un Administrator de Discord lo tiene implícito. `admin_role` no lo otorga.
+- Admin u Organiser.
 - Solo publica mensajes de este bot.
 
 ### `/utility edit_v2`
 
-- [ ] Admin
-- [ ] Organiser
+- [x] Admin
+- [x] Organiser
 - [ ] Helper
 - [ ] Staff
 - [ ] Juez
 - [ ] Grabador
 - [ ] Público
 
-- Ningún rol marcado. Solo el permiso **Manage Messages**.
-- Un Administrator de Discord lo tiene implícito. `admin_role` no lo otorga.
+- Admin u Organiser.
 - Solo reescribe un mensaje V2 de este bot.

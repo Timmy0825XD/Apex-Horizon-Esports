@@ -6,19 +6,19 @@ Slash: comando `utility`. Las respuestas de lectura y mutación son **Components
 
 | Comando | Permiso típico | Campos | Para qué |
 |---|---|---|---|
-| `/utility clear_category` | Discord Administrator | `category` CHANNEL (categoría) **sí** | Borra **todos** los canales hijos (confirmación). Relación: limpieza post-torneo. Audita. |
-| `/utility clear` | Manage Messages | `number` INTEGER 1–1000 **o** `days` INTEGER 1–14 (no ambos) | Purga el canal actual. Mensajes de más de 14 días no se pueden borrar en lote. Audita. |
-| `/utility emoji_steal` | Manage Emojis | `emoji_id` STRING **sí** | Quita un emoji custom **de este servidor** y adjunta la imagen. Audita. |
+| `/utility clear_category` | Admin | `category` CHANNEL (categoría) **sí** | Borra **todos** los canales hijos (confirmación). Relación: limpieza post-torneo. Audita. |
+| `/utility clear` | Admin | `number` INTEGER 1–1000 **o** `days` INTEGER 1–14 (no ambos) | Purga el canal actual. Mensajes de más de 14 días no se pueden borrar en lote. Audita. |
+| `/utility emoji_steal` | Admin | `emoji_id` STRING **sí** | Quita un emoji custom **de este servidor** y adjunta la imagen. Audita. |
 | `/utility random` | Público | `options` STRING **sí**; `number` INTEGER **no** | Sorteo (coma, pipe o salto de línea). |
 | `/utility utc` | Público | `hour` `minute` `day` `month` `year` INTEGER **sí** | Misma idea de reloj UTC que schedules. |
-| `/utility discord_tag` | Público | `ids` STRING **sí** | Puente a la hoja: IDs → usernames en el mismo orden. Efímero. |
+| `/utility discord_tag` | Admin u Organiser | `ids` STRING **sí** | Puente a la hoja: IDs → usernames en el mismo orden. Efímero. |
 | `/utility avatar` | Público | `user` USER **no** | Avatar (por defecto tú). |
 | `/utility toss` | Público | — | Cara o cruz. |
 | `/utility enlarge` | Público | `emoji` STRING **sí** | Emoji a tamaño grande (custom o unicode). |
-| `/utility embed` | Manage Messages | `channel` CHANNEL **sí** | Constructor interactivo de embed clásico; publica en ese canal. Audita al publicar. |
-| `/utility edit_embed` | Manage Messages | `message_id` STRING **sí**; `message_channel` CHANNEL **no** | Reescribe un embed **del bot**. Audita. |
-| `/utility v2` | Manage Messages | `channel` CHANNEL **sí** | Constructor interactivo de **Components V2**; publica en ese canal. Audita al publicar. |
-| `/utility edit_v2` | Manage Messages | `message_id` STRING **sí**; `message_channel` CHANNEL **no** | Reescribe un mensaje V2 **del bot**. Audita. |
+| `/utility embed` | Admin u Organiser | `channel` CHANNEL **sí** | Constructor interactivo de embed clásico; publica en ese canal. Audita al publicar. |
+| `/utility edit_embed` | Admin u Organiser | `message_id` STRING **sí**; `message_channel` CHANNEL **no** | Reescribe un embed **del bot**. Audita. |
+| `/utility v2` | Admin u Organiser | `channel` CHANNEL **sí** | Constructor interactivo de **Components V2**; publica en ese canal. Audita al publicar. |
+| `/utility edit_v2` | Admin u Organiser | `message_id` STRING **sí**; `message_channel` CHANNEL **no** | Reescribe un mensaje V2 **del bot**. Audita. |
 
 ## Builders (embed y V2)
 

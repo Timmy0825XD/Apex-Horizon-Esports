@@ -6,7 +6,7 @@ import {
 } from "discord.js";
 import type { StaffInput } from "./fields.js";
 import { formatHelpEntry, formatMember, formatRole, formatUser } from "../../lib/formatters.js";
-import { isDiscordAdministrator } from "../../lib/permissions.js";
+import { actorMatches } from "../../lib/command-access.js";
 import { auditStaffMembership } from "./audit.js";
 import {
   actorCanManageMember,
@@ -52,12 +52,12 @@ export async function handleStaffRecruit(
     return;
   }
 
-  if (!isDiscordAdministrator(interaction)) {
+  if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
     await respondStaff(
       interaction,
       staffErrorMessage(
-        "Administrator required",
-        "Only a Discord **Administrator** can recruit staff.",
+        "Admin or organiser required",
+        "You need **Admin** or **Organiser** to recruit staff.",
       ),
     );
     return;
