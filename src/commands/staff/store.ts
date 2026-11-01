@@ -1,4 +1,5 @@
 import type { GuildSettings } from "@prisma/client";
+import { forgetGuildConfig, loadGuildConfig } from "../../lib/guild-config.js";
 import { prisma } from "../../lib/prisma.js";
 import type { StaffInput } from "./fields.js";
 
@@ -8,6 +9,7 @@ export type GuildStaffState = {
 };
 
 type RawGuild = {
+  guildId?: string;
   staff?: Record<string, unknown>;
 };
 
@@ -21,50 +23,37 @@ function asRawGuilds(raw: unknown): RawGuild[] {
   return [];
 }
 
-async function repairLegacyStaffRulesChannel(guildId: string): Promise<void> {
+/** Moves the old staffInstructionsChannelId into staffRulesChannelId. Runs once at startup. */
+export async function repairLegacyStaffRulesChannels(): Promise<void> {
   const raw = asRawGuilds(
     await prisma.guild.findRaw({
-      filter: { guildId },
+      filter: { "staff.staffInstructionsChannelId": { $exists: true } },
     }),
   );
-  const staff = raw[0]?.staff;
-  if (!staff) {
-    return;
-  }
-
-  const rules = staff.staffRulesChannelId;
-  const legacy = staff.staffInstructionsChannelId;
-  if (typeof rules === "string" && rules.length > 0) {
-    if (legacy != null) {
-      await prisma.$runCommandRaw({
-        update: "guilds",
-        updates: [
-          {
-            q: { guildId },
-            u: { $unset: { "staff.staffInstructionsChannelId": true } },
-          },
-        ],
-      });
+  for (const { guildId, staff } of raw) {
+    if (!guildId || !staff) {
+      continue;
     }
-    return;
-  }
-
-  if (typeof legacy !== "string" || legacy.length === 0) {
-    return;
-  }
-
-  await prisma.$runCommandRaw({
-    update: "guilds",
-    updates: [
-      {
-        q: { guildId },
-        u: {
-          $set: { "staff.staffRulesChannelId": legacy },
-          $unset: { "staff.staffInstructionsChannelId": true },
+    const rules = staff.staffRulesChannelId;
+    const legacy = staff.staffInstructionsChannelId;
+    const keepRules = typeof rules === "string" && rules.length > 0;
+    const moveLegacy = !keepRules && typeof legacy === "string" && legacy.length > 0;
+    await prisma.$runCommandRaw({
+      update: "guilds",
+      updates: [
+        {
+          q: { guildId },
+          u: {
+            ...(moveLegacy ? { $set: { "staff.staffRulesChannelId": legacy } } : {}),
+            $unset: { "staff.staffInstructionsChannelId": true },
+          },
         },
-      },
-    ],
-  });
+      ],
+    });
+  }
+  if (raw.length > 0) {
+    forgetGuildConfig();
+  }
 }
 
 function toStaffInput(staff: object): StaffInput {
@@ -87,16 +76,8 @@ function toStaffInput(staff: object): StaffInput {
 }
 
 export async function loadGuildStaffState(guildId: string): Promise<GuildStaffState> {
-  await repairLegacyStaffRulesChannel(guildId);
-
-  const guild = await prisma.guild.findUnique({
-    where: { guildId },
-    select: { settings: true, staff: true },
-  });
-  return {
-    settings: guild?.settings ?? null,
-    staff: guild?.staff ? toStaffInput(guild.staff) : null,
-  };
+  const { settings, staff } = await loadGuildConfig(guildId);
+  return { settings, staff: staff ? toStaffInput(staff) : null };
 }
 
 export async function saveStaffConfig(guildId: string, staff: StaffInput): Promise<StaffInput> {
@@ -106,6 +87,7 @@ export async function saveStaffConfig(guildId: string, staff: StaffInput): Promi
     update: { staff: staff as never },
     select: { staff: true },
   });
+  forgetGuildConfig(guildId);
 
   if (!guild.staff) {
     throw new Error("Staff config was not persisted");

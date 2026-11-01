@@ -61,17 +61,26 @@ export async function loadThumbnailFace(
   };
 }
 
+// Keyed by icon URL, so a new server icon downloads once and the old entry is dropped.
+const guildIcons = new Map<string, { url: string; icon: Buffer }>();
+
 async function fetchGuildIcon(guild: Guild): Promise<Buffer | null> {
   const url = guild.iconURL({ extension: "png", size: 256, forceStatic: true });
   if (!url) {
     return null;
+  }
+  const cached = guildIcons.get(guild.id);
+  if (cached?.url === url) {
+    return cached.icon;
   }
   try {
     const response = await fetch(url);
     if (!response.ok) {
       return null;
     }
-    return Buffer.from(await response.arrayBuffer());
+    const icon = Buffer.from(await response.arrayBuffer());
+    guildIcons.set(guild.id, { url, icon });
+    return icon;
   } catch {
     return null;
   }
@@ -334,6 +343,6 @@ export async function renderScheduleThumbnail(face: ScheduleThumbnailFace, backg
     .resize(WIDTH, HEIGHT, { fit: "cover", position: "centre" })
     .modulate({ saturation: 0.85, brightness: 0.8 })
     .composite(layers)
-    .png({ compressionLevel: 9 })
+    .png({ compressionLevel: 6 })
     .toBuffer();
 }

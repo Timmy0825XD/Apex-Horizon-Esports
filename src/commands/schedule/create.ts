@@ -1,22 +1,22 @@
-import type { ChatInputCommandInteraction } from "discord.js";
-import { formatRole } from "../../lib/formatters.js";
+import { MessageFlags, type ChatInputCommandInteraction, type Guild, type Message } from "discord.js";
+import { formatRole, formatUser } from "../../lib/formatters.js";
 import { prisma } from "../../lib/prisma.js";
 import { memberIsOrganiser } from "../../lib/organiser.js";
+import type { StaffInput } from "../staff/fields.js";
 import { isTournamentAdminOrHelper, memberHasRole } from "./access.js";
 import { auditSchedule, peopleLine, ticketLine } from "./audit.js";
 import { takeNextBackground } from "./backgrounds.js";
 import { isAtLeastTenMinutesAhead, utcFromParts } from "./clock.js";
-import { grantTicket, markTicket, revokeTicket, unmarkTicket } from "./channel.js";
+import { grantTicket, markTicket, revokeTicket, textChannel } from "./channel.js";
 import { within } from "./deadline.js";
-import { attachmentUrl, clearScheduleMessages, publishThumbnail, syncPosts } from "./messages.js";
-import { textChannel } from "./channel.js";
-import { loadGuildStaffState } from "../staff/store.js";
+import { attachmentUrl, deleteTracked, postBoardSchedule, postTicketSchedule, publishThumbnail } from "./messages.js";
 import { replySchedule, scheduleNotice } from "./respond.js";
-import { createScheduleEvent, deleteScheduleEvent, syncScheduleEvent } from "./event.js";
-import { postSeatLine, seatAssignedLine } from "./seat.js";
+import { createScheduleEvent } from "./event.js";
+import { bothSeatsAssignedLine, postSeatLine, seatAssignedLine } from "./seat.js";
 import { presentFace } from "./store.js";
 import { loadThumbnailFace, renderScheduleThumbnail } from "./thumbnail.js";
 import type { TicketBundle } from "./ticket.js";
+import type { ScheduleFace } from "./view.js";
 
 export async function runCreate(interaction: ChatInputCommandInteraction, bundle: TicketBundle): Promise<void> {
   const { guild } = interaction;
@@ -61,130 +61,240 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
     await replySchedule(interaction, scheduleNotice("error", "Staff not configured", "Staff roles are not configured yet."));
     return;
   }
-  if (judge && bundle.staff && !(await memberHasRole(guild, judge.id, bundle.staff.judgeRoleId))) {
+  const [judgeOk, recorderOk] = await Promise.all([
+    judge && bundle.staff ? memberHasRole(guild, judge.id, bundle.staff.judgeRoleId) : true,
+    recorder && bundle.staff ? memberHasRole(guild, recorder.id, bundle.staff.recorderRoleId) : true,
+  ]);
+  if (!judgeOk) {
     await replySchedule(interaction, scheduleNotice("error", "Judge role required", "That user does not have the **judge** role."));
     return;
   }
-  if (recorder && bundle.staff && !(await memberHasRole(guild, recorder.id, bundle.staff.recorderRoleId))) {
+  if (!recorderOk) {
     await replySchedule(interaction, scheduleNotice("error", "Recorder role required", "That user does not have the **recorder** role."));
     return;
   }
-  const backgroundIndex = await takeNextBackground(guild.id);
-  const thumbnailFace = await loadThumbnailFace(guild, bundle.tournament, bundle.match, when);
-  const image = await renderScheduleThumbnail(thumbnailFace, backgroundIndex);
-  const thumbnail = await publishThumbnail(guild, bundle.settings.thumbnailChannelId, backgroundIndex, image);
-  const imageUrl = attachmentUrl(thumbnail);
-  const created = await prisma.schedule.create({
-    data: {
-      guildId: guild.id,
-      tournamentId: bundle.room.tournamentId,
-      challongeMatchId: bundle.room.challongeMatchId,
-      channelId: bundle.channel.id,
-      scheduledAt: when,
-      backgroundIndex,
-      judgeId: null,
-      recorderId: null,
-      remark,
-      createdBy: interaction.user.id,
-      reminderPhase: "pending",
-      confirmations: { judge: false, recorder: false },
-      claimsOpenUntil: new Date(Date.now() + 10 * 60 * 1000),
-      messages: {
-        ticketMessageId: "pending",
-        scheduleChannelMessageId: "pending",
-        thumbnailMessageId: thumbnail.id,
-      },
-    },
-  });
-  let posted = created;
-  let eventId: string | null = null;
-  let marked = false;
-  const granted: string[] = [];
-  const announced: string[] = [];
+  const judgeId = judge?.id ?? null;
+  const recorderId = recorder?.id ?? null;
+  const staffIds = [...new Set([judgeId, recorderId].filter((id): id is string => Boolean(id)))];
+  const createdAt = new Date();
+  const draft = {
+    scheduledAt: when,
+    judgeId,
+    recorderId,
+    remark,
+    channelId: bundle.channel.id,
+    createdBy: interaction.user.id,
+    createdAt,
+    alert: null,
+  };
+
+  // Blocking steps: thumbnail, staff access, ticket post and schedules post.
+  // Any failure here undoes everything already published.
+  const published: Published = { thumbnailId: null, ticketMessageId: null, boardMessageId: null, scheduleId: null, granted: [], announced: [] };
+  const warnings: string[] = [];
+  let face: ScheduleFace;
+  let image: Buffer;
+  let scheduleId: string;
+  let boardMessageId: string;
   try {
-    let face = await within(8_000, presentFace(guild, bundle.tournament, bundle.match, { ...created, judgeId: null, recorderId: null }, imageUrl), "Schedule details");
-    let messages = await within(15_000, syncPosts(guild, bundle.channel, bundle.settings.schedulesChannelId, created, face, "captains"), "Schedule posts");
-    if (judge) {
-      await grantTicket(bundle.channel, judge.id);
-      granted.push(judge.id);
+    const backgroundIndex = await takeNextBackground(guild.id);
+    const [thumbnailFace, details] = await Promise.all([
+      loadThumbnailFace(guild, bundle.tournament, bundle.match, when),
+      within(8_000, presentFace(guild, bundle.tournament, bundle.match, draft), "Schedule details"),
+    ]);
+    image = await renderScheduleThumbnail(thumbnailFace, backgroundIndex);
+    const thumbnail = await within(15_000, publishThumbnail(guild, bundle.settings.thumbnailChannelId, backgroundIndex, image), "Thumbnail", deleteLate);
+    published.thumbnailId = thumbnail.id;
+    face = { ...details, imageUrl: attachmentUrl(thumbnail) };
+
+    const grants = await Promise.allSettled(
+      staffIds.map(async (userId) => {
+        await within(8_000, grantTicket(bundle.channel, userId), "Staff access", () => revokeTicket(bundle.channel, userId, false));
+        published.granted.push(userId);
+      }),
+    );
+    const refused = grants.find((grant): grant is PromiseRejectedResult => grant.status === "rejected");
+    if (refused) {
+      throw refused.reason;
     }
-    if (recorder && recorder.id !== judge?.id) {
-      await grantTicket(bundle.channel, recorder.id);
-      granted.push(recorder.id);
-    }
-    const seated = await prisma.schedule.update({
-      where: { id: created.id },
+
+    const created = await prisma.schedule.create({
       data: {
-        judgeId: judge?.id ?? null,
-        recorderId: recorder?.id ?? null,
-        messages,
+        guildId: guild.id,
+        tournamentId: bundle.room.tournamentId,
+        challongeMatchId: bundle.room.challongeMatchId,
+        channelId: bundle.channel.id,
+        scheduledAt: when,
+        backgroundIndex,
+        judgeId,
+        recorderId,
+        remark,
+        createdBy: interaction.user.id,
+        createdAt,
+        reminderPhase: "pending",
+        confirmations: { judge: false, recorder: false },
+        claimsOpenUntil: new Date(Date.now() + 10 * 60 * 1000),
+        messages: {
+          ticketMessageId: "pending",
+          scheduleChannelMessageId: "pending",
+          thumbnailMessageId: thumbnail.id,
+        },
       },
     });
-    face = await within(8_000, presentFace(guild, bundle.tournament, bundle.match, seated, imageUrl), "Schedule details");
-    messages = await within(15_000, syncPosts(guild, bundle.channel, bundle.settings.schedulesChannelId, { ...seated, messages }, face), "Schedule posts");
-    posted = { ...seated, messages };
-    await prisma.schedule.update({ where: { id: seated.id }, data: { messages } });
-    await within(8_000, markTicket(bundle.channel), "Channel mark");
-    marked = true;
-    eventId = await within(10_000, createScheduleEvent(guild, face), "Server event");
-    await within(20_000, syncScheduleEvent(guild, eventId, face, image), "Event image");
-    await prisma.schedule.update({ where: { id: seated.id }, data: { eventId } });
-    if (judge) {
-      announced.push(await within(8_000, postSeatLine(bundle.channel, seatAssignedLine("judge", judge.id), judge.id), "Judge notice"));
+    scheduleId = created.id;
+    published.scheduleId = created.id;
+
+    const ticketMessageId = await within(15_000, postTicketSchedule(bundle.channel, face), "Ticket post", deleteLate);
+    published.ticketMessageId = ticketMessageId;
+
+    for (const line of seatLines(judgeId, recorderId)) {
+      try {
+        published.announced.push(await within(8_000, postSeatLine(bundle.channel, line.text, line.userId), "Seat notice"));
+      } catch {
+        warnings.push(`The assignment notice for ${formatUser(line.userId)} was not posted in this ticket.`);
+      }
     }
-    if (recorder) {
-      announced.push(await within(8_000, postSeatLine(bundle.channel, seatAssignedLine("recorder", recorder.id), recorder.id), "Recorder notice"));
-    }
-    await replySchedule(interaction, scheduleNotice("success", "Schedule created", "Match scheduled successfully. Thumbnail generated."));
-    if (notify) {
-      await pingStaffChat(guild, bundle.settings.schedulesChannelId, messages.scheduleChannelMessageId, when, Boolean(judge), Boolean(recorder)).catch((error) => {
-        console.error("Schedule staff ping failed", error);
-      });
-    }
-    await auditSchedule({
+
+    boardMessageId = await within(
+      15_000,
+      postBoardSchedule(guild, bundle.settings.schedulesChannelId, created.id, face),
+      "Schedules channel post",
+      deleteLate,
+    );
+    published.boardMessageId = boardMessageId;
+
+    await prisma.schedule.update({
+      where: { id: created.id },
+      data: {
+        messages: {
+          ticketMessageId,
+          scheduleChannelMessageId: boardMessageId,
+          thumbnailMessageId: thumbnail.id,
+        },
+      },
+    });
+  } catch (error) {
+    await rollback(guild, bundle, published);
+    throw error;
+  }
+
+  // Non-blocking steps: the schedule stands, and failures only reach the creator.
+  const [marked, eventId] = await Promise.all([
+    within(8_000, markTicket(bundle.channel), "Channel mark").then(
+      () => true,
+      () => false,
+    ),
+    within(20_000, createScheduleEvent(guild, face, image), "Server event", (lateId) =>
+      prisma.schedule.update({ where: { id: scheduleId }, data: { eventId: lateId } }),
+    ).catch(() => null),
+  ]);
+  if (!marked) {
+    warnings.push("The 🔴 mark could not be added to this channel's name. Add it manually.");
+  }
+  if (eventId) {
+    await prisma.schedule.update({ where: { id: scheduleId }, data: { eventId } }).catch(() => {
+      warnings.push("The server event was created but could not be linked to this schedule.");
+    });
+  } else {
+    warnings.push("The server event could not be created.");
+  }
+
+  const staff = bundle.staff;
+  const [pinged, audited] = await Promise.all([
+    notify && staff
+      ? pingStaffChat(guild, staff, bundle.settings.schedulesChannelId, boardMessageId, when, Boolean(judgeId), Boolean(recorderId)).then(
+          () => true,
+          (error: unknown) => {
+            console.error("Schedule staff ping failed", error);
+            return false;
+          },
+        )
+      : true,
+    auditSchedule({
       guild,
       settings: bundle.settings,
       actor: interaction.user,
       description: `A schedule was created for **${bundle.tournament.name}**.`,
-      details: [`**Match:** \`${bundle.match.challongeMatchId}\``, ticketLine(guild, bundle.channel.id), peopleLine(judge?.id ?? null, recorder?.id ?? null)],
-    });
-  } catch (error) {
-    await deleteScheduleEvent(guild, eventId);
-    if (marked) {
-      await unmarkTicket(bundle.channel).catch(() => undefined);
-    }
-    for (const userId of granted) {
-      await revokeTicket(bundle.channel, userId, false);
-    }
-    for (const messageId of announced) {
-      await bundle.channel.messages.delete(messageId).catch(() => undefined);
-    }
-    await clearScheduleMessages(guild, posted, bundle.settings.schedulesChannelId, bundle.settings.thumbnailChannelId);
-    await prisma.schedule.delete({ where: { id: created.id } }).catch(() => undefined);
-    throw error;
+      details: [`**Match:** \`${bundle.match.challongeMatchId}\``, ticketLine(guild, bundle.channel.id), peopleLine(judgeId, recorderId)],
+    }).catch(() => false),
+  ]);
+  if (!pinged) {
+    warnings.push("The **New Schedule** notice could not be posted in the staff chat.");
+  }
+  if (!audited) {
+    warnings.push("The audit log could not be written.");
+  }
+
+  await replySchedule(interaction, scheduleNotice("success", "Schedule created", "Match scheduled successfully. Thumbnail generated."));
+  if (warnings.length) {
+    await interaction
+      .followUp({
+        ...scheduleNotice("info", "Finish manually", warnings.map((line) => `- ${line}`).join("\n")),
+        flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral],
+      })
+      .catch(() => undefined);
+  }
+}
+
+type SeatLine = { text: string; userId: string };
+
+function seatLines(judgeId: string | null, recorderId: string | null): SeatLine[] {
+  if (judgeId && judgeId === recorderId) {
+    return [{ text: bothSeatsAssignedLine(judgeId), userId: judgeId }];
+  }
+  const lines: SeatLine[] = [];
+  if (judgeId) {
+    lines.push({ text: seatAssignedLine("judge", judgeId), userId: judgeId });
+  }
+  if (recorderId) {
+    lines.push({ text: seatAssignedLine("recorder", recorderId), userId: recorderId });
+  }
+  return lines;
+}
+
+type Published = {
+  thumbnailId: string | null;
+  ticketMessageId: string | null;
+  boardMessageId: string | null;
+  scheduleId: string | null;
+  granted: string[];
+  announced: string[];
+};
+
+/** Undoes a late post that arrived after its timeout already rolled the create back. */
+function deleteLate(posted: Message | string): unknown {
+  return typeof posted === "string" ? undefined : posted.delete();
+}
+
+async function rollback(guild: Guild, bundle: TicketBundle, published: Published): Promise<void> {
+  await Promise.all([
+    ...published.granted.map((userId) => revokeTicket(bundle.channel, userId, false)),
+    ...[published.ticketMessageId, ...published.announced].map((id) => deleteTracked(guild, bundle.channel.id, id)),
+    deleteTracked(guild, bundle.settings.schedulesChannelId, published.boardMessageId),
+    deleteTracked(guild, bundle.settings.thumbnailChannelId, published.thumbnailId),
+  ]);
+  if (published.scheduleId) {
+    await prisma.schedule.delete({ where: { id: published.scheduleId } }).catch(() => undefined);
   }
 }
 
 const NEW_SCHEDULE_GIF = "https://tenor.com/view/check-schedule-f1livegp-gif-25992214";
 
 async function pingStaffChat(
-  guild: NonNullable<ChatInputCommandInteraction["guild"]>,
+  guild: Guild,
+  staff: StaffInput,
   schedulesChannelId: string,
   messageId: string,
   when: Date,
   judgeAssigned: boolean,
   recorderAssigned: boolean,
 ): Promise<void> {
-  if (judgeAssigned && recorderAssigned) {
-    return;
-  }
-  const { staff } = await loadGuildStaffState(guild.id);
-  if (!staff?.staffchatChannelId) {
+  if ((judgeAssigned && recorderAssigned) || !staff.staffchatChannelId) {
     return;
   }
   const chat = await textChannel(guild, staff.staffchatChannelId);
   if (!chat) {
-    return;
+    throw new Error("The staff chat channel is missing or is not a text channel.");
   }
   const roles = [
     judgeAssigned ? null : staff.judgeRoleId,

@@ -10,9 +10,13 @@ export const closedSeatTitle = "Match concluded";
 export const closedSeatBody =
   "This match already has results or the ticket is closed, so no one can take the **judge** or **recorder** seat.";
 
-export async function seatsAreClosed(schedule: { results: unknown; channelId: string }): Promise<boolean> {
+/** Pass roomStatus when the caller already loaded the ticket's room. */
+export async function seatsAreClosed(schedule: { results: unknown; channelId: string }, roomStatus?: string): Promise<boolean> {
   if (schedule.results) {
     return true;
+  }
+  if (roomStatus !== undefined) {
+    return roomStatus === "closed";
   }
   const room = await prisma.room.findUnique({
     where: { channelId: schedule.channelId },
@@ -25,6 +29,11 @@ export function seatAssignedLine(seat: Seat, userId: string): string {
   const label = seat === "judge" ? "Judge" : "Recorder";
   const emoji = seat === "judge" ? emojis.judge : emojis.recorder;
   return `${emoji} ${formatUser(userId)} is set as **${label}** for this match ${emojis.arrive}`;
+}
+
+/** One line when the same member takes both seats. */
+export function bothSeatsAssignedLine(userId: string): string {
+  return `${emojis.judge_recorder} ${formatUser(userId)} is set as **Judge** and **Recorder** for this match ${emojis.arrive}`;
 }
 
 export function seatResignedLine(seat: Seat, userId: string): string {

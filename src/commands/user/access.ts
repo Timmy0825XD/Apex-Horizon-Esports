@@ -1,16 +1,12 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 import { isOrganiser } from "../../lib/permissions.js";
-import { prisma } from "../../lib/prisma.js";
 import { respondUser } from "./respond.js";
 import { userErrorMessage } from "./view.js";
+import { loadGuildConfig } from "../../lib/guild-config.js";
 
 async function loadStaff(guildId: string) {
   try {
-    const guild = await prisma.guild.findUnique({
-      where: { guildId },
-      select: { staff: true },
-    });
-    return guild?.staff ?? null;
+    return (await loadGuildConfig(guildId)).staff;
   } catch {
     return null;
   }

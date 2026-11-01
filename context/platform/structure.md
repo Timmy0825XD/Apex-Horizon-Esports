@@ -67,6 +67,10 @@ Dentro de `commands/schedule/` pueden existir varios archivos (`create`, `update
 
 El slash y sus interacciones viven en **esa** carpeta. El router en `index.ts` solo despacha.
 
+## Config del servidor en memoria
+
+`settings` y `staff` se leen con `loadGuildConfig` (`lib/guild-config.ts`), que guarda el documento del servidor 60 s. Quien escribe `settings` o `staff` llama `forgetGuildConfig` en el mismo cambio. No leas `prisma.guild` directo para config. La migración del campo viejo `staffInstructionsChannelId` corre una vez al arrancar, no en cada lectura.
+
 ## SOLID y GRASP (sin sobreingeniería)
 
 - Una responsabilidad por módulo; nombres que digan el contexto.

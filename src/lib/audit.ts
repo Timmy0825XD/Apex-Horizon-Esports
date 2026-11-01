@@ -5,6 +5,7 @@ import {
   type NewsChannel,
   type TextChannel,
   type User,
+  type Webhook,
 } from "discord.js";
 import { embedColors } from "./embeds.js";
 import { formatUserFromUser } from "./formatters.js";
@@ -81,9 +82,16 @@ async function resolveLogChannel(guild: Guild, channelId: string): Promise<LogCh
   return channel;
 }
 
-async function sendViaWebhook(channel: LogChannel, title: string, embed: EmbedBuilder): Promise<boolean> {
+// Webhook lookups cost an API call; keep the one we found per channel and title.
+const webhooks = new Map<string, Webhook>();
+
+async function auditWebhook(channel: LogChannel, title: string): Promise<Webhook> {
+  const key = `${channel.id}:${title}`;
+  const cached = webhooks.get(key);
+  if (cached) {
+    return cached;
+  }
   const bot = channel.client.user;
-  const avatarURL = bot?.displayAvatarURL({ size: 256 });
   const existing = (await channel.fetchWebhooks()).find(
     (webhook) => webhook.name === title && webhook.owner?.id === bot?.id,
   );
@@ -91,39 +99,50 @@ async function sendViaWebhook(channel: LogChannel, title: string, embed: EmbedBu
     existing ??
     (await channel.createWebhook({
       name: title,
-      avatar: avatarURL,
+      avatar: bot?.displayAvatarURL({ size: 256 }),
       reason: `Audit log identity: ${title}`,
     }));
-
-  await webhook.send({
-    username: title,
-    avatarURL,
-    embeds: [embed],
-    allowedMentions: { parse: [] },
-  });
-  return true;
+  webhooks.set(key, webhook);
+  return webhook;
 }
 
-export async function publishAudit(payload: AuditPayload): Promise<void> {
+async function sendViaWebhook(channel: LogChannel, title: string, embed: EmbedBuilder): Promise<void> {
+  const webhook = await auditWebhook(channel, title);
+  try {
+    await webhook.send({
+      username: title,
+      avatarURL: channel.client.user?.displayAvatarURL({ size: 256 }),
+      embeds: [embed],
+      allowedMentions: { parse: [] },
+    });
+  } catch (error) {
+    webhooks.delete(`${channel.id}:${title}`);
+    throw error;
+  }
+}
+
+/** Returns false when the log could not be written anywhere. */
+export async function publishAudit(payload: AuditPayload): Promise<boolean> {
   const channel = await resolveLogChannel(payload.guild, payload.channelId).catch(() => null);
   if (!channel) {
-    return;
+    return false;
   }
 
   const embed = auditEmbed(payload);
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       await sendViaWebhook(channel, payload.title, embed);
-      return;
+      return true;
     } catch {
       // retry once, then fall back to the bot account
     }
   }
 
-  await channel
+  return channel
     .send({
       embeds: [embed],
       allowedMentions: { parse: [] },
     })
-    .catch(() => undefined);
+    .then(() => true)
+    .catch(() => false);
 }

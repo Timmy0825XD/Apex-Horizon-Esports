@@ -89,6 +89,20 @@ async function upsertTicket(channel: PostChannel, messageId: string | null, face
   return sent.id;
 }
 
+/** First ticket post of a new schedule: pings only the two captains. */
+export async function postTicketSchedule(ticket: TextChannel, face: ScheduleFace): Promise<string> {
+  return upsertTicket(ticket, null, face, "captains");
+}
+
+/** First schedules-channel post of a new schedule: names the captains without pinging them. */
+export async function postBoardSchedule(guild: Guild, schedulesChannelId: string, scheduleId: string, face: ScheduleFace): Promise<string> {
+  const board = await textChannel(guild, schedulesChannelId);
+  if (!board) {
+    throw new Error("The schedules channel is missing or is not a text channel.");
+  }
+  return upsertBoard(board, null, face, scheduleId, true, mentionLine(pingUsers(face, false)));
+}
+
 export async function publishThumbnail(
   guild: Guild,
   thumbnailChannelId: string,
@@ -128,12 +142,13 @@ export async function syncPosts(
   schedule: Schedule,
   face: ScheduleFace,
   ping: SchedulePing = "keep",
+  roomStatus?: string,
 ): Promise<ScheduleMessages> {
   const board = await textChannel(guild, schedulesChannelId);
   if (!board) {
     throw new Error("The schedules channel is missing or is not a text channel.");
   }
-  const unlocked = claimsAreOpen(schedule.claimsOpenUntil) && !(await seatsAreClosed(schedule));
+  const unlocked = claimsAreOpen(schedule.claimsOpenUntil) && !(await seatsAreClosed(schedule, roomStatus));
   const line = ping === "keep" ? undefined : mentionLine(pingUsers(face, ping === "staff"));
   const ticketMessageId = await upsertTicket(ticket, schedule.messages.ticketMessageId, face, ping);
   const scheduleChannelMessageId = await upsertBoard(board, schedule.messages.scheduleChannelMessageId, face, schedule.id, unlocked, line);

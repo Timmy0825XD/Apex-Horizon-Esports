@@ -1,12 +1,12 @@
 import type { ChatInputCommandInteraction, Guild, GuildMember } from "discord.js";
 import { formatRole, formatUser } from "../../lib/formatters.js";
-import { prisma } from "../../lib/prisma.js";
 import { playerSlotLabel, type ParsedSheet, type SheetPlayer, type SheetTeam } from "../../lib/sheet.js";
 import { findBannedPlayers, type BannedPlayerHit } from "../tournament/banned-ids.js";
 import { SheetError, loadParsedSheet } from "../tournament/sheet.js";
 import { isSheetAdmin, requireSheetAdmin } from "./access.js";
 import { deferSheet, respondSheet } from "./respond.js";
 import { sheetErrorMessage, sheetValidateMessage, type SheetIssueKind, type SheetValidateReport } from "./view.js";
+import { loadGuildConfig } from "../../lib/guild-config.js";
 
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 const DISCORD_EPOCH = 1420070400000n;
@@ -140,14 +140,11 @@ function bannedLine(hit: BannedPlayerHit): string {
 }
 
 async function staffRoleIds(guildId: string): Promise<string[] | null> {
-  const row = await prisma.guild.findUnique({
-    where: { guildId },
-    select: { staff: true },
-  });
-  if (!row?.staff) {
+  const { staff } = await loadGuildConfig(guildId);
+  if (!staff) {
     return null;
   }
-  return [row.staff.staffRoleId, row.staff.judgeRoleId, row.staff.recorderRoleId];
+  return [staff.staffRoleId, staff.judgeRoleId, staff.recorderRoleId];
 }
 
 function collectReport(

@@ -84,7 +84,7 @@ export async function runUpdate(interaction: ChatInputCommandInteraction, bundle
   }
   const assigningJudge = Boolean(judge && judge.id !== schedule.judgeId);
   const assigningRecorder = Boolean(recorder && recorder.id !== schedule.recorderId);
-  if ((assigningJudge || assigningRecorder) && (await seatsAreClosed(schedule))) {
+  if ((assigningJudge || assigningRecorder) && (await seatsAreClosed(schedule, bundle.room.status))) {
     await replySchedule(interaction, scheduleNotice("error", closedSeatTitle, closedSeatBody));
     return;
   }
