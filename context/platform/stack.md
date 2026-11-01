@@ -28,7 +28,7 @@ En cada apagado/encendido, con `AUTO_UPDATE=1` (el defecto):
 3. `npm run build` (`prisma generate` y `tsc`).
 4. `node apex-horizon/dist/index.js`.
 
-Si el binario de `sharp` no corresponde a la plataforma del host, borra `node_modules` y reinstala.
+Si el binario de `sharp` no corresponde a la plataforma del host, borra `node_modules` y reinstala. Las miniaturas de schedule se dibujan con `@napi-rs/canvas` (Skia). Si falta su binario de la plataforma, `startup.js` instala la misma versión.
 
 HiddenCloud no tiene panel de variables. Los secretos van en `apex-horizon/.env` (el mismo archivo que en local). `startup.js` lo lee antes de instalar y de arrancar, y lo guarda fuera de la carpeta antes de un clone destructivo para volver a dejarlo en su sitio. Un `git checkout` no lo toca: está en `.gitignore`.
 

@@ -8,3 +8,6 @@ dist/
 # Clone local si startup.js se ejecuta dentro de este repo
 apex-horizon/
 .env.apex-horizon
+
+# Vista previa local de /schedule thumbnails
+thumbnail-preview*.jpg

@@ -114,7 +114,7 @@ export async function publishThumbnail(
     throw new Error("The thumbnail channel is missing or is not a text channel.");
   }
   return channel.send({
-    files: [new AttachmentBuilder(image, { name: `schedule-${backgroundIndex}.png` })],
+    files: [new AttachmentBuilder(image, { name: `schedule-${backgroundIndex}.jpg` })],
     allowedMentions: { parse: [] },
   });
 }
