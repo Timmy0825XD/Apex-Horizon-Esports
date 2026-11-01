@@ -12,4 +12,4 @@ Las reglas del proyecto viven en `.claude/rules/` y se cargan siempre:
 - `bot-audit-logs.md` — las mutaciones se auditan por webhook; las lecturas no
 - `git-flow.md` — ramas, commits, PR contra `develop` y limpieza de ramas mergeadas
 
-Son una copia de `.cursor/rules/`. Si cambias una regla, cambia las dos copias. Única diferencia: en `git-flow.md` Claude borra él mismo la rama mergeada (local y remota) antes de cambiar de rama.
+Son la única copia de las reglas del proyecto.
