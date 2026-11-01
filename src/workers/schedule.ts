@@ -8,7 +8,7 @@ import { revokeTicket, ticketChannel } from "../commands/schedule/channel.js";
 import { paintSchedule } from "../commands/schedule/live.js";
 import { publishUrgent, thumbnailImageUrl } from "../commands/schedule/messages.js";
 import { presentFace } from "../commands/schedule/store.js";
-import { postSeatLine, seatResignedLine } from "../commands/schedule/seat.js";
+import { postSeatLine, seatResignedLine, seatsAreClosed } from "../commands/schedule/seat.js";
 import { confirmRow, reminderScheduleEmbed } from "../commands/schedule/view.js";
 
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -112,6 +112,7 @@ async function startTime(guild: Guild, schedule: Schedule): Promise<void> {
     await prisma.schedule.update({ where: { id: schedule.id }, data: { reminderPhase: "t0" } });
     return;
   }
+  const closed = await seatsAreClosed(schedule);
   const alert = alertFrom(schedule);
   let judgeId = schedule.judgeId;
   let recorderId = schedule.recorderId;
@@ -125,8 +126,8 @@ async function startTime(guild: Guild, schedule: Schedule): Promise<void> {
     await postSeatLine(ticket, seatResignedLine("recorder", recorderId), recorderId);
     recorderId = null;
   }
-  const needsUrgent = !judgeId || !recorderId;
-  const claimsOpenUntil = needsUrgent ? new Date(Date.now() + 10 * 60 * 1000) : schedule.claimsOpenUntil;
+  const needsUrgent = !closed && (!judgeId || !recorderId);
+  const claimsOpenUntil = needsUrgent ? new Date(Date.now() + 10 * 60 * 1000) : closed ? null : schedule.claimsOpenUntil;
   const next = await prisma.schedule.update({
     where: { id: schedule.id },
     data: {
@@ -152,6 +153,9 @@ async function startTime(guild: Guild, schedule: Schedule): Promise<void> {
 }
 
 async function raiseStaffAlert(guild: Guild, schedule: Schedule): Promise<void> {
+  if (await seatsAreClosed(schedule)) {
+    return;
+  }
   const alert = alertFrom(schedule);
   if (!alert) {
     return;

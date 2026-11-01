@@ -49,18 +49,35 @@ export async function createScheduleEvent(guild: Guild, face: ScheduleFace, imag
   return event.id;
 }
 
-export async function syncScheduleEvent(guild: Guild, eventId: string, face: ScheduleFace, image?: Buffer): Promise<void> {
+export type ScheduleEventSync = "synced" | "finished" | "missing";
+
+function finishedEventError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code: unknown }).code === 180000;
+}
+
+export async function syncScheduleEvent(guild: Guild, eventId: string, face: ScheduleFace, image?: Buffer): Promise<ScheduleEventSync> {
   const event = await guild.scheduledEvents.fetch(eventId).catch(() => null);
   if (!event) {
-    return;
+    return "missing";
   }
-  await event.edit({
-    name: eventName(face),
-    ...eventTimes(face.when),
-    entityMetadata: { location: guild.name.slice(0, 100) },
-    description: eventDescription(face),
-    ...(image ? { image } : {}),
-  });
+  if (event.isCompleted() || event.isCanceled()) {
+    return "finished";
+  }
+  try {
+    await event.edit({
+      name: eventName(face),
+      ...eventTimes(face.when),
+      entityMetadata: { location: guild.name.slice(0, 100) },
+      description: eventDescription(face),
+      ...(image ? { image } : {}),
+    });
+  } catch (error) {
+    if (finishedEventError(error)) {
+      return "finished";
+    }
+    throw error;
+  }
+  return "synced";
 }
 
 export async function deleteScheduleEvent(guild: Guild, eventId: string | null | undefined): Promise<void> {

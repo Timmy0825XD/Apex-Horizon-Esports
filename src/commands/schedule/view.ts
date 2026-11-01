@@ -222,9 +222,6 @@ export function resultsEmbed(input: {
   if (links) {
     lines.push("", "**Links:**", links);
   }
-  if (input.transcriptUrl) {
-    lines.push("", `${emojis.transcript} **Transcript:** ${emojis.link} [Click here](${input.transcriptUrl})`);
-  }
   const embed = card
     .setColor(embedColors.success)
     .setDescription(lines.join("\n"))

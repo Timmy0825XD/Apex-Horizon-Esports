@@ -26,12 +26,13 @@ Las respuestas del comando (éxito, error e info) son **Components V2** en el ca
 | judge | USER | No | Preasignar. Tiene que tener el rol **judge** |
 | recorder | USER | No | Preasignar. Tiene que tener el rol **recorder** |
 | remark | STRING | No | Máx. 130 |
+| notify | BOOLEAN | No | Si es `false`, no se manda **New Schedule** al staff chat. Si se omite o es `true`, se manda cuando queda un puesto libre |
 
 Mínimo +10 minutos. Marca `🔴`. Admin o helper del torneo, u Organiser. Posts, punto rojo y evento son una sola operación: si uno falla, se borran el resto y el comando responde el error. Si el create trae juez o recorder, el ticket publica el mismo texto plano que el botón Assign. Encima del embed, el ticket y el canal de schedules mencionan a los dos capitanes. El ping sale en el ticket. La respuesta al crear es un Components V2: **Schedule created** y `Match scheduled successfully. Thumbnail generated.` El thumbnail se compone sobre el fondo rotativo con icono del servidor, torneo, etapa (`ROUND n`, `SEMIFINAL`, `FINAL`, `3RD PLACE`…), equipos, fecha y hora UTC y nombre del servidor; los nombres demasiado anchos reducen fuente y luego terminan en elipsis. Relación: attendance, results, worker T-10/T-0, thumbnails de settings.
 
 ## `/schedule update`
 
-**Solo ticket.** Admin o helper del torneo, u Organiser. La respuesta del comando, tanto si se actualizó como si falló, es **efímera**. El ticket vuelve a publicar el schedule: el texto menciona a los capitanes y, si hay juez o grabador asignado, también a ellos, y ese mensaje hace ping. El canal de schedules muestra las mismas menciones y no vuelve a notificar. `hour`, `minute`, `day`, `month` y `year` son opcionales y se pueden mandar de uno en uno: el trozo que falta se conserva. La fecha resultante no puede estar en el pasado ni a menos de 10 minutos en el momento del comando. También `judge`, `recorder`, `note`, `remove_judge`, `remove_recorder`, `reason`, `regenerate_image`. Al menos un campo. `judge` y `recorder` solo se aceptan si ese usuario tiene el rol correspondiente; si no, no se actualiza nada. Asignar publica en el ticket el texto del botón Assign. Quitar o reemplazar publica el texto de resign del puesto anterior y, si entra alguien nuevo, el de Assign. Recalendarizar resetea recordatorios y reconstruye el thumbnail con la fecha/hora actualizada. `regenerate_image` reconstruye la composición con el fondo ya asignado y los datos actuales sobre el embed, el post del canal de thumbnails y el evento. No avanza la rotación.
+**Solo ticket.** Admin o helper del torneo, u Organiser. La respuesta del comando, tanto si se actualizó como si falló, es **efímera**. El ticket vuelve a publicar el schedule: el texto menciona a los capitanes y, si hay juez o grabador asignado, también a ellos, y ese mensaje hace ping. El canal de schedules muestra las mismas menciones y no vuelve a notificar. `hour`, `minute`, `day`, `month` y `year` son opcionales y se pueden mandar de uno en uno: el trozo que falta se conserva. La fecha resultante no puede estar en el pasado ni a menos de 10 minutos en el momento del comando. También `judge`, `recorder`, `note`, `remove_judge`, `remove_recorder`, `reason`, `regenerate_image`. Al menos un campo. `judge` y `recorder` solo se aceptan si ese usuario tiene el rol correspondiente; si no, no se actualiza nada. Si el schedule ya tiene resultados o el ticket está cerrado, asignar juez o recorder no cambia nada: el partido ya concluyó. Quitar un puesto, la hora, la nota y regenerar la imagen siguen permitidos. Asignar publica en el ticket el texto del botón Assign. Quitar o reemplazar publica el texto de resign del puesto anterior y, si entra alguien nuevo, el de Assign. Recalendarizar resetea recordatorios y reconstruye el thumbnail con la fecha/hora actualizada. `regenerate_image` reconstruye la composición con el fondo ya asignado y los datos actuales sobre el embed, el post del canal de thumbnails y el evento. No avanza la rotación.
 
 ## `/schedule show`
 
@@ -67,19 +68,19 @@ La ficha de `match` repite la tarjeta del schedule. Con declaración muestra la 
 
 ## `/schedule unassigned`
 
-| Campo | Tipo | Obligatorio |
-|---|---|---|
-| filter | STRING (Choice) | Depende de implementación | `all` · `missing_judge` · `missing_recorder` · `any` |
+| Campo | Tipo | Obligatorio | Uso |
+|---|---|---|---|
+| filter | STRING (Choice) | No | `any` · `all` · `missing_judge` · `missing_recorder`. Por defecto `any` |
 
-Consulta. Admin, Organiser, helper de un torneo o rol staff. Alimenta reclutamiento de staff de mesa.
+Cualquier canal. Admin, Organiser, helper de un torneo o rol staff. No audita. Components V2 en el canal, sin ping, 5 por página. Solo schedules cuyo torneo sigue registrado, sin `/schedule results` y con el ticket abierto. Un resultado o un ticket cerrado deja ese schedule fuera de la lista. Cada fila lleva enfrentamiento, hora relativa y UTC, estado, torneo, canal, id de Challonge, y las dos líneas de **Judge** y **Recorder** (*Open* si el puesto está vacío). Con `any`, las filas se agrupan en **Both seats open**, **Judge open** y **Recorder open**, y dentro de cada grupo van por hora. El encabezado cuenta cuántos hay de cada hueco. Las flechas las pulsa quien puede usar el comando.
 
 ## `/schedule refresh`
 
-**Cualquier canal.** Organiser, helper de un torneo, staff, judge o recorder. `admin_role` no entra. Abre otra vez los botones de reclamar durante 10 minutos. Un puesto ya ocupado sigue apagado. No cambia la hora. La respuesta incluye el **Link** al post del schedule en el canal de schedules.
+**Cualquier canal.** Organiser, helper de un torneo, staff, judge o recorder. `admin_role` no entra. Abre otra vez los botones de reclamar durante 10 minutos. Un puesto ya ocupado sigue apagado. No cambia la hora. La respuesta incluye el **Link** al post del schedule en el canal de schedules. El autocomplete solo lista schedules cuya hora UTC aún no pasó, sin resultado y con el ticket abierto. Si la hora ya pasó, no abre la ventana. Si el schedule ya tiene resultados o el ticket está cerrado, tampoco: responde que el partido concluyó y deja los Assign apagados.
 
 | Campo | Tipo | Obligatorio |
 |---|---|---|
-| match | STRING (Autocomplete) | Sí | Schedules del servidor (`lado vs lado | torneo | fecha UTC`) |
+| match | STRING (Autocomplete) | Sí | Solo schedules refrescables: hora UTC futura, sin resultado y ticket abierto (`lado vs lado | torneo | fecha UTC`) |
 
 ## `/schedule resign`
 

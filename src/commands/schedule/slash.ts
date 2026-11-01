@@ -17,7 +17,8 @@ export const scheduleSlash = new SlashCommandBuilder()
     addClock(subcommand.setName("create").setDescription("UTC time"), true)
       .addUserOption((option) => option.setName("judge").setDescription("Judge"))
       .addUserOption((option) => option.setName("recorder").setDescription("Recorder"))
-      .addStringOption((option) => option.setName("remark").setDescription("Note").setMaxLength(130)),
+      .addStringOption((option) => option.setName("remark").setDescription("Note").setMaxLength(130))
+      .addBooleanOption((option) => option.setName("notify").setDescription("Ping staff chat about open seats")),
   )
   .addSubcommand((subcommand) =>
     addClock(subcommand.setName("update").setDescription("Edit"), false)
@@ -64,12 +65,12 @@ export const scheduleSlash = new SlashCommandBuilder()
       .addStringOption((option) =>
         option
           .setName("filter")
-          .setDescription("Filter")
+          .setDescription("Which empty seat to list")
           .addChoices(
+            { name: "Either seat", value: "any" },
             { name: "Both empty", value: "all" },
             { name: "No judge", value: "missing_judge" },
             { name: "No recorder", value: "missing_recorder" },
-            { name: "Either seat", value: "any" },
           ),
       ),
   )

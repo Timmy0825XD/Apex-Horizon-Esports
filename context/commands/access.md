@@ -474,6 +474,7 @@ El capitán no ejecuta ningún `/schedule`. Tener un rol no abre los subcomandos
 - Admin aquí es el `admin_role` de **ese** torneo. El de `/settings` no cuenta.
 - Helper es el `helper_role` de **ese** torneo.
 - Organiser (`manager_role` o Administrator) también entra.
+- Si el schedule ya tiene resultados o el ticket está cerrado, no se asigna juez ni recorder. Quitar el puesto, la hora, la nota y regenerar la imagen siguen permitidos.
 
 ### `/schedule show`
 
@@ -521,6 +522,8 @@ El capitán no ejecuta ningún `/schedule`. Tener un rol no abre los subcomandos
 - Admin (`admin_role` de `/settings` o Administrator), Organiser, Helper o `staff_role`.
 - Helper es el `helper_role` de un torneo de este servidor.
 - Juez y Grabador no entran por ese rol.
+- Las flechas de página exigen el mismo acceso.
+- No lista un schedule que ya tiene resultados o cuyo ticket está cerrado.
 
 ### `/schedule refresh`
 
@@ -536,6 +539,8 @@ El capitán no ejecuta ningún `/schedule`. Tener un rol no abre los subcomandos
 - Organiser, Helper, `staff_role`, Juez o Grabador. `admin_role` no entra. Administrator entra por Organiser.
 - Helper es el `helper_role` de un torneo de este servidor.
 - El botón de reclamar juez lo pulsa quien tiene `judge_role`; el de recorder, quien tiene `recorder_role`. Un puesto ocupado no se reclama.
+- Si el schedule ya tiene resultados o el ticket del partido está cerrado, nadie toma juez ni recorder. El botón y este subcomando no abren el puesto.
+- La lista solo muestra schedules con hora UTC todavía futura, sin resultado y con el ticket abierto. Si la hora ya pasó, el subcomando no abre el puesto.
 
 ### `/schedule resign`
 
