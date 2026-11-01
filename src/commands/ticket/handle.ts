@@ -10,6 +10,7 @@ import { categoryMention, roomPanel } from "../room/view.js";
 import { loadGuildSettings } from "../settings/store.js";
 import { findTournamentById } from "../tournament/store.js";
 import { auditTicket } from "./audit.js";
+import { repaintScheduleChannel } from "../schedule/live.js";
 import { closeTicket, deleteTicket, reopenTicket } from "./lifecycle.js";
 import { closeValidationTicket } from "./validation.js";
 
@@ -149,6 +150,9 @@ async function closeCurrent(
     return;
   }
   const categoryId = await closeTicket(channel, guild, tournament);
+  await repaintScheduleChannel(guild, channel, settings, tournament).catch((error) => {
+    console.error("Schedule seat lock failed", error);
+  });
   await respondRoom(
     interaction,
     roomPanel("success", "Ticket closed", [
@@ -177,6 +181,9 @@ async function reopenCurrent(
     return;
   }
   const categoryId = await reopenTicket(channel, guild, tournament, homeCategoryId);
+  await repaintScheduleChannel(guild, channel, settings, tournament).catch((error) => {
+    console.error("Schedule seat lock failed", error);
+  });
   await respondRoom(
     interaction,
     roomPanel("success", "Ticket reopened", [

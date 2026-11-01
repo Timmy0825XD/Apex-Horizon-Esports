@@ -88,7 +88,7 @@ export const helpCatalog: HelpCategory[] = [
       { slash: "schedule update", summary: "Change time, judge, recorder, or note.", access: "Tournament admin, helper, or Organiser" },
       { slash: "schedule show", summary: "List schedules or open one match card. Any status, while the tournament still exists.", access: "Admin, Organiser, Helper, or Staff" },
       { slash: "schedule delete", summary: "Remove the active schedule. Not recoverable.", access: "Tournament admin, helper, or Organiser" },
-      { slash: "schedule unassigned", summary: "List matches missing judge or recorder.", access: "Admin, Organiser, Helper, or Staff" },
+      { slash: "schedule unassigned", summary: "List matches that are still missing a judge, a recorder, or both.", access: "Admin, Organiser, Helper, or Staff" },
       { slash: "schedule refresh", summary: "Renew claim buttons on a schedule from any channel.", access: "Organiser, Helper, Staff, Judge, or Recorder" },
       { slash: "schedule resign", summary: "Leave judge, recorder, or both.", access: "Assigned staff" },
       { slash: "schedule results", summary: "Public result in the ticket and the result channel. Does not advance the bracket.", access: "Judge" },

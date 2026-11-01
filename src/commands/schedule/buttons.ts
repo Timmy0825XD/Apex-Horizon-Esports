@@ -9,7 +9,8 @@ import { grantTicket, ticketChannel } from "./channel.js";
 import { paintSchedule } from "./live.js";
 import { formatUser } from "../../lib/formatters.js";
 import { schedulePlain } from "./respond.js";
-import { postSeatLine, seatAssignedLine } from "./seat.js";
+import { closedSeatBody, closedSeatTitle, postSeatLine, seatAssignedLine, seatsAreClosed } from "./seat.js";
+import { handleOpenButton } from "./query.js";
 import { handleShowButton } from "./show.js";
 import { claimsAreOpen, confirmRow, parseScheduleButton } from "./view.js";
 
@@ -27,6 +28,10 @@ function privateReply(interaction: ButtonInteraction, kind: "error" | "success" 
 export async function handleScheduleButton(interaction: ButtonInteraction): Promise<void> {
   if (interaction.customId.startsWith("schedule:show:")) {
     await handleShowButton(interaction);
+    return;
+  }
+  if (interaction.customId.startsWith("schedule:open:")) {
+    await handleOpenButton(interaction);
     return;
   }
   const parsed = parseScheduleButton(interaction.customId);
@@ -62,6 +67,20 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
       seat === "judge" ? "Judge role required" : "Recorder role required",
       "That seat is only for members who hold the matching role.",
     );
+    return;
+  }
+  if (await seatsAreClosed(schedule)) {
+    await privateReply(interaction, "error", closedSeatTitle, closedSeatBody);
+    const tournament = await findTournamentById(guild.id, schedule.tournamentId);
+    const match = await prisma.match.findUnique({
+      where: { tournamentId_challongeMatchId: { tournamentId: schedule.tournamentId, challongeMatchId: schedule.challongeMatchId } },
+    });
+    const ticket = await ticketChannel(guild, schedule.channelId);
+    if (tournament && match && ticket) {
+      await paintSchedule(guild, ticket, settings, tournament, match, schedule, false).catch((error) => {
+        console.error("Schedule seat lock failed", error);
+      });
+    }
     return;
   }
   if (!claimsAreOpen(schedule.claimsOpenUntil)) {

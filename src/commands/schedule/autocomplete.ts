@@ -44,7 +44,7 @@ export async function handleScheduleAuto(interaction: AutocompleteInteraction): 
   }
   const focused = interaction.options.getFocused(true);
   const sub = interaction.options.getSubcommand(false);
-  if ((sub === "show" || sub === "unassigned") && !(await actorMatches(interaction, { admin: true, organiser: true, helper: true, staff: true }))) {
+  if (sub === "show" && !(await actorMatches(interaction, { admin: true, organiser: true, helper: true, staff: true }))) {
     await interaction.respond([]);
     return;
   }
@@ -55,8 +55,22 @@ export async function handleScheduleAuto(interaction: AutocompleteInteraction): 
 
   if (sub === "refresh" && focused.name === "match") {
     const query = focused.value.trim().toLowerCase();
-    const schedules = await prisma.schedule.findMany({ where: { guildId }, orderBy: { scheduledAt: "asc" } });
+    const now = new Date();
+    const upcoming = await prisma.schedule.findMany({
+      where: { guildId, scheduledAt: { gt: now } },
+      orderBy: { scheduledAt: "asc" },
+    });
+    const channelIds = [...new Set(upcoming.map((row) => row.channelId))];
+    const rooms = channelIds.length
+      ? await prisma.room.findMany({ where: { channelId: { in: channelIds } }, select: { channelId: true, status: true } })
+      : [];
+    const closed = new Set(rooms.filter((room) => room.status === "closed").map((room) => room.channelId));
+    const schedules = upcoming.filter((row) => !row.results && !closed.has(row.channelId));
     const tournamentIds = [...new Set(schedules.map((row) => row.tournamentId))];
+    if (tournamentIds.length === 0) {
+      await interaction.respond([]);
+      return;
+    }
     const [tournaments, matches] = await Promise.all([
       prisma.tournament.findMany({ where: { id: { in: tournamentIds } }, select: { id: true, name: true } }),
       prisma.match.findMany({ where: { tournamentId: { in: tournamentIds } } }),
@@ -67,11 +81,14 @@ export async function handleScheduleAuto(interaction: AutocompleteInteraction): 
         const match = matches.find(
           (item) => item.tournamentId === schedule.tournamentId && item.challongeMatchId === schedule.challongeMatchId,
         );
-        const names = match ? `${match.player1Name} vs ${match.player2Name}` : `Match ${schedule.challongeMatchId}`;
-        const event = tournament?.name ?? "Tournament";
-        const label = `${names} | ${event} | ${utcStamp(schedule.scheduledAt)}`;
+        if (!tournament || !match) {
+          return null;
+        }
+        const names = `${match.player1Name} vs ${match.player2Name}`;
+        const label = `${names} | ${tournament.name} | ${utcStamp(schedule.scheduledAt)}`;
         return { name: label.slice(0, 100), value: schedule.id, haystack: label.toLowerCase() };
       })
+      .filter((choice): choice is { name: string; value: string; haystack: string } => choice !== null)
       .filter((choice) => !query || choice.haystack.includes(query))
       .slice(0, 25)
       .map(({ name, value }) => ({ name, value }));

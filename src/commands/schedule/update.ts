@@ -11,7 +11,7 @@ import { grantTicket, revokeTicket, ticketChannel } from "./channel.js";
 import { deleteTracked } from "./messages.js";
 import { paintSchedule } from "./live.js";
 import { replySchedule, scheduleNotice } from "./respond.js";
-import { postSeatLine, seatAssignedLine, seatResignedLine } from "./seat.js";
+import { closedSeatBody, closedSeatTitle, postSeatLine, seatAssignedLine, seatResignedLine, seatsAreClosed } from "./seat.js";
 import type { TicketBundle } from "./ticket.js";
 
 function readClock(interaction: ChatInputCommandInteraction, current: Date): ClockParts | null {
@@ -80,6 +80,12 @@ export async function runUpdate(interaction: ChatInputCommandInteraction, bundle
   }
   if (recorder && bundle.staff && !(await memberHasRole(guild, recorder.id, bundle.staff.recorderRoleId))) {
     await replySchedule(interaction, scheduleNotice("error", "Recorder role required", "That user does not have the **recorder** role."));
+    return;
+  }
+  const assigningJudge = Boolean(judge && judge.id !== schedule.judgeId);
+  const assigningRecorder = Boolean(recorder && recorder.id !== schedule.recorderId);
+  if ((assigningJudge || assigningRecorder) && (await seatsAreClosed(schedule))) {
+    await replySchedule(interaction, scheduleNotice("error", closedSeatTitle, closedSeatBody));
     return;
   }
   let scheduledAt = schedule.scheduledAt;
@@ -221,6 +227,20 @@ export async function runRefresh(interaction: ChatInputCommandInteraction): Prom
   const ticket = await ticketChannel(guild, schedule.channelId);
   if (!tournament || !match || !ticket) {
     await replySchedule(interaction, scheduleNotice("error", "Schedule not found", "That match does not have a usable schedule in this server."));
+    return;
+  }
+  if (schedule.scheduledAt.getTime() <= Date.now()) {
+    await replySchedule(
+      interaction,
+      scheduleNotice("error", "Match already started", "Claim buttons stay closed once the scheduled time has passed."),
+    );
+    return;
+  }
+  if (await seatsAreClosed(schedule)) {
+    await paintSchedule(guild, ticket, settings, tournament, match, schedule, false).catch((error) => {
+      console.error("Schedule seat lock failed", error);
+    });
+    await replySchedule(interaction, scheduleNotice("error", closedSeatTitle, closedSeatBody));
     return;
   }
   const opened = await prisma.schedule.update({

@@ -4,6 +4,7 @@ import { emojis } from "../../emojis.js";
 import { formatRole, formatUser } from "../../lib/formatters.js";
 import { loadGuildStaffState } from "../staff/store.js";
 import { textChannel } from "./channel.js";
+import { seatsAreClosed } from "./seat.js";
 import { claimRow, claimsAreOpen, scheduleEmbed, urgentScheduleEmbed, type ScheduleFace } from "./view.js";
 
 type PostChannel = TextChannel | NewsChannel;
@@ -132,7 +133,7 @@ export async function syncPosts(
   if (!board) {
     throw new Error("The schedules channel is missing or is not a text channel.");
   }
-  const unlocked = claimsAreOpen(schedule.claimsOpenUntil);
+  const unlocked = claimsAreOpen(schedule.claimsOpenUntil) && !(await seatsAreClosed(schedule));
   const line = ping === "keep" ? undefined : mentionLine(pingUsers(face, ping === "staff"));
   const ticketMessageId = await upsertTicket(ticket, schedule.messages.ticketMessageId, face, ping);
   const scheduleChannelMessageId = await upsertBoard(board, schedule.messages.scheduleChannelMessageId, face, schedule.id, unlocked, line);

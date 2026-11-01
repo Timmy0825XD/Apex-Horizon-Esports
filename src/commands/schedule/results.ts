@@ -8,6 +8,7 @@ import { findTournamentById } from "../tournament/store.js";
 import { isJudge } from "./access.js";
 import { auditSchedule, ticketLine } from "./audit.js";
 import { textChannel } from "./channel.js";
+import { paintSchedule } from "./live.js";
 import { deleteTracked, thumbnailImageUrl } from "./messages.js";
 import { replySchedule, scheduleNotice } from "./respond.js";
 import { findMatch, findScheduleForMatch, presentFace } from "./store.js";
@@ -164,7 +165,7 @@ export async function runResults(interaction: ChatInputCommandInteraction, bundl
       allowedMentions: { parse: [] },
     });
     const imageUrls = [...channelPost.attachments.values()].map((file) => file.url);
-    await prisma.schedule.update({
+    const next = await prisma.schedule.update({
       where: { id: schedule.id },
       data: {
         results: {
@@ -182,6 +183,9 @@ export async function runResults(interaction: ChatInputCommandInteraction, bundl
           },
         },
       },
+    });
+    await paintSchedule(guild, bundle.channel, bundle.settings, bundle.tournament, bundle.match, next, false).catch((error) => {
+      console.error("Schedule seat lock failed", error);
     });
   } catch (error) {
     await ticketPost?.delete().catch(() => undefined);
@@ -223,7 +227,10 @@ export async function runResultsDelete(interaction: ChatInputCommandInteraction,
   const reason = interaction.options.getString("reason")?.trim() || null;
   await deleteTracked(guild, schedule.channelId, schedule.results.ticketMessageId);
   await deleteTracked(guild, bundle.tournament.resultChannelId, schedule.results.messageId);
-  await prisma.schedule.update({ where: { id: schedule.id }, data: { results: { set: null } } });
+  const next = await prisma.schedule.update({ where: { id: schedule.id }, data: { results: { set: null } } });
+  await paintSchedule(guild, bundle.channel, bundle.settings, bundle.tournament, bundle.match, next, false).catch((error) => {
+    console.error("Schedule seat lock failed", error);
+  });
   await replySchedule(interaction, scheduleNotice("success", "Result removed", "The declaration is gone from the ticket and the result channel. The schedule itself is still active."));
   const details = [ticketLine(guild, bundle.channel.id)];
   if (reason) {

@@ -33,19 +33,49 @@ export async function paintSchedule(
   const face = await presentFace(guild, tournament, match, schedule, imageUrl);
   void markTicket(ticket).catch((error) => console.error("Schedule channel mark failed", error));
   let eventId = schedule.eventId;
+  const cover = regenerate ? image : undefined;
   if (!eventId) {
     eventId = await createScheduleEvent(guild, face, image).catch((error) => {
       console.error("Schedule event create failed", error);
       return null;
     });
   } else {
-    await syncScheduleEvent(guild, eventId, face, regenerate ? image : undefined).catch((error) => {
+    const outcome = await syncScheduleEvent(guild, eventId, face, cover).catch((error) => {
       console.error("Schedule event update failed", error);
+      return "synced" as const;
     });
+    if ((outcome === "finished" || outcome === "missing") && face.when.getTime() > Date.now()) {
+      const created = await createScheduleEvent(guild, face, image).catch((error) => {
+        console.error("Schedule event create failed", error);
+        return null;
+      });
+      if (created) {
+        eventId = created;
+      }
+    }
   }
   const messages = await syncPosts(guild, ticket, settings.schedulesChannelId, { ...schedule, messages: { ...schedule.messages, thumbnailMessageId } }, face, ping);
   return prisma.schedule.update({
     where: { id: schedule.id },
     data: { messages, ...(eventId && eventId !== schedule.eventId ? { eventId } : {}) },
   });
+}
+
+export async function repaintScheduleChannel(
+  guild: Guild,
+  ticket: TextChannel,
+  settings: GuildSettings,
+  tournament: TournamentRecord,
+): Promise<void> {
+  const schedule = await prisma.schedule.findFirst({ where: { guildId: guild.id, channelId: ticket.id } });
+  if (!schedule) {
+    return;
+  }
+  const match = await prisma.match.findUnique({
+    where: { tournamentId_challongeMatchId: { tournamentId: schedule.tournamentId, challongeMatchId: schedule.challongeMatchId } },
+  });
+  if (!match) {
+    return;
+  }
+  await paintSchedule(guild, ticket, settings, tournament, match, schedule, false);
 }

@@ -54,6 +54,7 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
     return;
   }
   const remark = interaction.options.getString("remark")?.trim() || null;
+  const notify = interaction.options.getBoolean("notify") ?? true;
   const judge = interaction.options.getUser("judge");
   const recorder = interaction.options.getUser("recorder");
   if ((judge || recorder) && !bundle.staff) {
@@ -135,9 +136,11 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
       announced.push(await within(8_000, postSeatLine(bundle.channel, seatAssignedLine("recorder", recorder.id), recorder.id), "Recorder notice"));
     }
     await replySchedule(interaction, scheduleNotice("success", "Schedule created", "Match scheduled successfully. Thumbnail generated."));
-    await pingStaffChat(guild, bundle.settings.schedulesChannelId, messages.scheduleChannelMessageId, when, Boolean(judge), Boolean(recorder)).catch((error) => {
-      console.error("Schedule staff ping failed", error);
-    });
+    if (notify) {
+      await pingStaffChat(guild, bundle.settings.schedulesChannelId, messages.scheduleChannelMessageId, when, Boolean(judge), Boolean(recorder)).catch((error) => {
+        console.error("Schedule staff ping failed", error);
+      });
+    }
     await auditSchedule({
       guild,
       settings: bundle.settings,

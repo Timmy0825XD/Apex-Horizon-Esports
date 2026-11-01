@@ -26,12 +26,17 @@ El capitán no ejecuta ningún subcomando.
 
 `filter` puede ser todos, solo pendientes, pasados (completados y resultado atrasado) o solo resultado atrasado. `tour` y `user` (juez o recorder) se combinan con ese filtro. `match` abre una sola ficha. La respuesta es Components V2 en el canal, 5 por página. No audita.
 
+## Sin asignar
+
+`/schedule unassigned` lista los schedules cuyo torneo sigue registrado, no tienen resultado, el ticket sigue abierto, y les falta juez, recorder o ambos. Un resultado o un ticket cerrado los deja fuera. No audita. Components V2, 5 por página, sin ping. Cada fila muestra enfrentamiento, hora, estado, torneo, canal y las dos líneas de staff; el puesto vacío dice *Open*. `filter` elige cualquier hueco, ambos vacíos, solo sin juez o solo sin recorder. Con cualquier hueco, agrupa ambos vacíos, solo juez y solo recorder, y dentro de cada grupo ordena por hora.
+
 ## Al crear
 
 - Crear es atómico: posts, punto rojo y evento quedan juntos. Si un paso falla o tarda demasiado, se deshace todo y el comando responde con el error. No se queda en “pensando”.
 - Se publican dos embeds (ticket + canal de schedules). Encima, los dos mencionan a los capitanes. El ping sale en el ticket.
 - `judge` y `recorder` solo se asignan si ese usuario tiene el rol de juez o de grabador. Si no lo tiene, no se crea ni se actualiza el schedule.
-- Se crea un evento externo del servidor: nombre `lado vs lado`, portada del thumbnail, inicio a la hora UTC y fin 30 minutos después, ubicación el nombre del servidor, y la descripción con torneo, grupo, ronda, hora local, canal, capitanes y staff.
+- `notify` es opcional. En `false` no se publica **New Schedule** en el staff chat. Omitido o `true` lo publica cuando queda al menos un puesto libre.
+- Se crea un evento externo del servidor: nombre `lado vs lado`, portada del thumbnail, inicio a la hora UTC y fin 30 minutos después, ubicación el nombre del servidor, y la descripción con torneo, grupo, ronda, hora local, canal, capitanes y staff. Si ese evento ya está terminado o cancelado, el bot no lo edita. Si la hora del schedule pasa a ser futura, crea uno nuevo y guarda ese id. Si la hora ya pasó, deja el evento terminado y no lo registra como error.
 - Si hay Judge/Recorder en el comando, se asignan *después* de publicar (el anuncio no espera a la hoja).
 - El canal del partido lleva prefijo `🔴` mientras el schedule vive.
 - Miniatura en el canal de thumbnails de `/settings`, con el fondo que le toca en la rotación.
@@ -56,11 +61,13 @@ Basta un trozo (`hour`, `minute`, `day`, `month` o `year`). El resto se conserva
 
 ## Botones
 
-Los botones verdes **Assign** viven solo en el post del canal de schedules. El ticket no los lleva. Al crear, el staff chat recibe **New Schedule** solo por los puestos que quedaron libres: si ya hay juez, menciona solo grabador, y al revés. Si ambos vienen asignados, no se envía. Quien tiene el rol pulsa, el bot guarda el puesto, abre el ticket, actualiza el embed, escribe en el ticket, en texto plano, que quedó asignado y cierra con el emoji de arrive. La renuncia usa el mismo texto y cierra con el emoji de resign. Ese mismo aviso sale siempre que un juez o recorder se vincula o se suelta: al preasignarlo en `/schedule create`, al asignarlo, reemplazarlo o quitarlo en `/schedule update`, al pulsarlo, al hacer `/schedule resign` y cuando el worker lo saca a las T-0. Le responde en privado. El mismo botón se apaga. Siguen activos **10 minutos** tras crear, tras `/schedule refresh`, o tras el post urgente. Después se bloquean. Un puesto lleno sigue apagado aunque se refresque.
+Los botones verdes **Assign** viven solo en el post del canal de schedules. El ticket no los lleva. Al crear, el staff chat recibe **New Schedule** solo por los puestos que quedaron libres: si ya hay juez, menciona solo grabador, y al revés. Si ambos vienen asignados, no se envía. `notify=false` en `/schedule create` tampoco lo envía; si el campo se omite o es `true`, el aviso sale igual que antes. Quien tiene el rol pulsa, el bot guarda el puesto, abre el ticket, actualiza el embed, escribe en el ticket, en texto plano, que quedó asignado y cierra con el emoji de arrive. La renuncia usa el mismo texto y cierra con el emoji de resign. Ese mismo aviso sale siempre que un juez o recorder se vincula o se suelta: al preasignarlo en `/schedule create`, al asignarlo, reemplazarlo o quitarlo en `/schedule update`, al pulsarlo, al hacer `/schedule resign` y cuando el worker lo saca a las T-0. Le responde en privado. El mismo botón se apaga. Siguen activos **10 minutos** tras crear, tras `/schedule refresh`, o tras el post urgente. Después se bloquean. Un puesto lleno sigue apagado aunque se refresque.
+
+Si el schedule ya tiene `/schedule results`, o el ticket del partido está cerrado, el partido concluyó: nadie toma juez ni recorder. El botón responde que el partido concluyó y el post queda con los Assign apagados. `/schedule update` no asigna esos puestos; quitarlos, cambiar la hora, la nota o regenerar la imagen sigue permitido. `/schedule refresh` no vuelve a abrir la ventana. Su lista solo ofrece schedules con hora UTC todavía futura, sin resultado y con el ticket abierto; si la hora ya pasó, el comando no abre los puestos. El worker no reactiva los botones ni publica el reemplazo urgente. Al declarar o borrar el resultado, y al cerrar o reabrir el ticket, el post se vuelve a pintar: apagado mientras siga concluido, o según la ventana de 10 minutos si el ticket está abierto y no hay resultado.
 
 El recordatorio T-10 va en el ticket: menciona capitanes y staff, pide leer las reglas del torneo, y repite el embed del schedule con el pie **Staff Confirmation Required**. Cada puesto ocupado tiene un botón **Present** (azul) que pasa a **Confirmed** (verde, apagado). Solo el asignado puede pulsarlo, y solo antes de la hora. El ticket anuncia la confirmación.
 
-Dos minutos antes, si falta un puesto o alguien asignado no confirmó, el canal de schedules recibe un **mensaje rojo nuevo** que menciona solo ese rol y reactiva los botones 10 minutos en ese mensaje y en el post original. Si ambos confirmaron, no hay urgencia. A las T-0, quien estaba asignado y no confirmó queda como renuncia, pierde el ticket y el ticket lo dice.
+Dos minutos antes, si falta un puesto o alguien asignado no confirmó, el canal de schedules recibe un **mensaje rojo nuevo** que menciona solo ese rol y reactiva los botones 10 minutos en ese mensaje y en el post original. Si ambos confirmaron, no hay urgencia. A las T-0, quien estaba asignado y no confirmó queda como renuncia, pierde el ticket y el ticket lo dice. Si ya hay resultado o el ticket está cerrado, ni T-2 ni T-0 abren puestos ni publican esa urgencia.
 
 ## Salidas y borrado
 
