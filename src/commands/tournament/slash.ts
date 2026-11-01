@@ -89,18 +89,18 @@ function addEditOptions(subcommand: SlashCommandSubcommandBuilder) {
 
 export const tournamentSlash = new SlashCommandBuilder()
   .setName("tournament")
-  .setDescription("Register and maintain tournament worlds")
+  .setDescription("Register and manage tournaments")
   .setDMPermission(false)
   .addSubcommand((subcommand) =>
-    addCreateOptions(subcommand.setName("add").setDescription("Register a tournament (bracket, sheet, rooms, channels)")),
+    addCreateOptions(subcommand.setName("add").setDescription("Register a tournament")),
   )
   .addSubcommand((subcommand) =>
-    addEditOptions(subcommand.setName("edit").setDescription("Patch a registered tournament world")),
+    addEditOptions(subcommand.setName("edit").setDescription("Change a tournament's setup")),
   )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("delete")
-      .setDescription("Forget the tournament and its bot records; keep the stored sheet")
+      .setDescription("Remove a tournament from the bot")
       .addStringOption((option) =>
         option.setName("id").setDescription("Tournament to delete").setRequired(true).setAutocomplete(true),
       ),
@@ -108,18 +108,18 @@ export const tournamentSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("info")
-      .setDescription("Show one tournament world")
+      .setDescription("Show a tournament's setup")
       .addStringOption((option) =>
         option.setName("id").setDescription("Tournament to show").setRequired(true).setAutocomplete(true),
       ),
   )
   .addSubcommand((subcommand) =>
-    subcommand.setName("list").setDescription("List tournaments registered in this server"),
+    subcommand.setName("list").setDescription("List this server's tournaments"),
   )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("role")
-      .setDescription("Give a Discord role to tournament participants")
+      .setDescription("Give a role to tournament players")
       .addStringOption((option) =>
         option.setName("tournament").setDescription("Tournament whose players to role").setRequired(true).setAutocomplete(true),
       )
@@ -137,7 +137,7 @@ export const tournamentSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) => {
     subcommand
       .setName("validate")
-      .setDescription("Open a ticket for each team that is not fully verified")
+      .setDescription("Open tickets for unverified teams")
       .addStringOption((option) =>
         option
           .setName("tournament")
@@ -153,7 +153,7 @@ export const tournamentSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("report")
-      .setDescription("Export attendance, work, results, and setup as a workbook")
+      .setDescription("Export the tournament workbook")
       .addStringOption((option) =>
         option
           .setName("tournament")

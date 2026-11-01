@@ -65,17 +65,17 @@ function addSettingsOptions(subcommand: SlashCommandSubcommandBuilder, required:
 
 export const settingsSlash = new SlashCommandBuilder()
   .setName("settings")
-  .setDescription("Configure server roles and audit channels")
+  .setDescription("Configure server roles and log channels")
   .setDMPermission(false)
   .addSubcommand((subcommand) =>
-    addSettingsOptions(subcommand.setName("set").setDescription("First-time server roles and log channels"), true),
+    addSettingsOptions(subcommand.setName("set").setDescription("Set up roles and log channels"), true),
   )
   .addSubcommand((subcommand) =>
     addSettingsOptions(
-      subcommand.setName("edit").setDescription("Change a configured role or channel"),
+      subcommand.setName("edit").setDescription("Change a role or channel"),
       false,
     ),
   )
   .addSubcommand((subcommand) =>
-    subcommand.setName("show").setDescription("Review whether roles and channels still exist"),
+    subcommand.setName("show").setDescription("Check configured roles and channels"),
   );

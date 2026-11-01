@@ -2,12 +2,12 @@ import { SlashCommandBuilder } from "discord.js";
 
 export const roleSlash = new SlashCommandBuilder()
   .setName("role")
-  .setDescription("Toggle, bulk-assign, or list Discord roles")
+  .setDescription("Give, remove, or list roles")
   .setDMPermission(false)
   .addSubcommand((subcommand) =>
     subcommand
       .setName("user")
-      .setDescription("Toggle one role on one member")
+      .setDescription("Give or remove a role from a member")
       .addUserOption((option) =>
         option.setName("target").setDescription("Member to update").setRequired(true),
       )
@@ -22,7 +22,7 @@ export const roleSlash = new SlashCommandBuilder()
       .addSubcommand((subcommand) =>
         subcommand
           .setName("all")
-          .setDescription("Add a role to every eligible member")
+          .setDescription("Give a role to every eligible member")
           .addRoleOption((option) =>
             option.setName("role").setDescription("Role to grant").setRequired(true),
           ),
@@ -35,7 +35,7 @@ export const roleSlash = new SlashCommandBuilder()
       .addSubcommand((subcommand) =>
         subcommand
           .setName("all")
-          .setDescription("Remove a role from every member who has it")
+          .setDescription("Remove a role from everyone who has it")
           .addRoleOption((option) =>
             option.setName("role").setDescription("Role to remove").setRequired(true),
           ),
@@ -44,7 +44,7 @@ export const roleSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("list")
-      .setDescription("List or export members of a role")
+      .setDescription("List or export a role's members")
       .addRoleOption((option) =>
         option.setName("role").setDescription("Role to list").setRequired(true),
       ),

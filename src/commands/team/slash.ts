@@ -2,12 +2,12 @@ import { SlashCommandBuilder } from "discord.js";
 
 export const teamSlash = new SlashCommandBuilder()
   .setName("team")
-  .setDescription("Look up tournament participants")
+  .setDescription("Look up tournament teams")
   .setDMPermission(false)
   .addSubcommand((subcommand) =>
     subcommand
       .setName("info")
-      .setDescription("Get information about a specific team/player")
+      .setDescription("Show a team or player's details")
       .addStringOption((option) =>
         option.setName("tournament").setDescription("Tournament to search").setRequired(true).setAutocomplete(true),
       )
@@ -19,7 +19,7 @@ export const teamSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("list")
-      .setDescription("Publish every team in this tournament")
+      .setDescription("Post every team in a tournament")
       .addStringOption((option) =>
         option
           .setName("tournament")

@@ -11,19 +11,19 @@ function addExcelOption(subcommand: SlashCommandSubcommandBuilder): SlashCommand
 
 export const serverSlash = new SlashCommandBuilder()
   .setName("server")
-  .setDescription("Server snapshot, bans, channel tree, and invites")
+  .setDescription("Server stats, bans, channels, and invites")
   .setDMPermission(false)
-  .addSubcommand((subcommand) => subcommand.setName("info").setDescription("Live server statistics"))
+  .addSubcommand((subcommand) => subcommand.setName("info").setDescription("Show live server stats"))
   .addSubcommand((subcommand) =>
     addExcelOption(
-      subcommand.setName("banlist").setDescription("Export the server ban list as a text file or Excel workbook"),
+      subcommand.setName("banlist").setDescription("Export the ban list"),
     ),
   )
   .addSubcommand((subcommand) =>
-    addExcelOption(subcommand.setName("tree").setDescription("Export the category and channel tree")),
+    addExcelOption(subcommand.setName("tree").setDescription("Export the channel tree")),
   )
   .addSubcommand((subcommand) =>
     addExcelOption(
-      subcommand.setName("invites").setDescription("Export active invites, including vanity if set"),
+      subcommand.setName("invites").setDescription("Export active invites"),
     ),
   );

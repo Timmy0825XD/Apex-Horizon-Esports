@@ -69,26 +69,26 @@ function addEditOptions(subcommand: SlashCommandSubcommandBuilder) {
 
 export const staffSlash = new SlashCommandBuilder()
   .setName("staff")
-  .setDescription("Staff hierarchy, recruiting, and payroll")
+  .setDescription("Staff roles, recruiting, and payroll")
   .setDMPermission(false)
   .addSubcommandGroup((group) =>
     group
       .setName("config")
-      .setDescription("Staff roles and coordination channels")
+      .setDescription("Staff roles and channels")
       .addSubcommand((subcommand) =>
-        addSetOptions(subcommand.setName("set").setDescription("First-time staff roles and coordination channels")),
+        addSetOptions(subcommand.setName("set").setDescription("Set up staff roles and channels")),
       )
       .addSubcommand((subcommand) =>
-        addEditOptions(subcommand.setName("edit").setDescription("Change a configured staff role or channel")),
+        addEditOptions(subcommand.setName("edit").setDescription("Change a staff role or channel")),
       )
       .addSubcommand((subcommand) =>
-        subcommand.setName("view").setDescription("Read the configured staff roles and channels"),
+        subcommand.setName("view").setDescription("Show staff roles and channels"),
       ),
   )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("recruit")
-      .setDescription("Grant a staff role package and welcome the member")
+      .setDescription("Give staff roles and welcome a member")
       .addUserOption((option) =>
         option.setName("user").setDescription("Member to recruit").setRequired(true),
       )
@@ -103,7 +103,7 @@ export const staffSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("fire")
-      .setDescription("Remove a staff post or every configured staff role")
+      .setDescription("Remove staff roles from a member")
       .addUserOption((option) =>
         option.setName("user").setDescription("Member to fire").setRequired(true),
       )
@@ -118,7 +118,7 @@ export const staffSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("work")
-      .setDescription("Tournament payroll board from attendance")
+      .setDescription("Post the tournament payroll board")
       .addStringOption((option) =>
         option
           .setName("tournament")

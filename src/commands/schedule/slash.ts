@@ -11,17 +11,17 @@ function addClock(subcommand: SlashCommandSubcommandBuilder, required: boolean):
 
 export const scheduleSlash = new SlashCommandBuilder()
   .setName("schedule")
-  .setDescription("Schedules")
+  .setDescription("Schedule matches and their staff")
   .setDMPermission(false)
   .addSubcommand((subcommand) =>
-    addClock(subcommand.setName("create").setDescription("UTC time"), true)
+    addClock(subcommand.setName("create").setDescription("Schedule this match"), true)
       .addUserOption((option) => option.setName("judge").setDescription("Judge"))
       .addUserOption((option) => option.setName("recorder").setDescription("Recorder"))
       .addStringOption((option) => option.setName("remark").setDescription("Note").setMaxLength(130))
       .addBooleanOption((option) => option.setName("notify").setDescription("Ping staff chat about open seats")),
   )
   .addSubcommand((subcommand) =>
-    addClock(subcommand.setName("update").setDescription("Edit"), false)
+    addClock(subcommand.setName("update").setDescription("Change this match's schedule"), false)
       .addUserOption((option) => option.setName("judge").setDescription("Judge"))
       .addUserOption((option) => option.setName("recorder").setDescription("Recorder"))
       .addStringOption((option) => option.setName("note").setDescription("Remark").setMaxLength(130))
@@ -54,14 +54,14 @@ export const scheduleSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("delete")
-      .setDescription("Delete")
+      .setDescription("Delete this match's schedule")
       .addBooleanOption((option) => option.setName("confirm").setDescription("Confirm").setRequired(true))
       .addStringOption((option) => option.setName("reason").setDescription("Reason").setMaxLength(300)),
   )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("unassigned")
-      .setDescription("Open seats")
+      .setDescription("List schedules with open staff seats")
       .addStringOption((option) =>
         option
           .setName("filter")
@@ -77,7 +77,7 @@ export const scheduleSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("refresh")
-      .setDescription("Refresh claim buttons")
+      .setDescription("Reopen the judge and recorder buttons")
       .addStringOption((option) =>
         option.setName("match").setDescription("Select the match to refresh").setRequired(true).setAutocomplete(true),
       ),
@@ -85,7 +85,7 @@ export const scheduleSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("resign")
-      .setDescription("Resign")
+      .setDescription("Leave your judge or recorder seat")
       .addStringOption((option) =>
         option
           .setName("role")
@@ -102,7 +102,7 @@ export const scheduleSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("results")
-      .setDescription("Result")
+      .setDescription("Post this match's result")
       .addIntegerOption((option) =>
         option.setName("team_1").setDescription("Team 1").setRequired(true).setMinValue(0).setMaxValue(99),
       )
@@ -124,7 +124,7 @@ export const scheduleSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("results_delete")
-      .setDescription("Undo result")
+      .setDescription("Remove this match's posted result")
       .addBooleanOption((option) => option.setName("confirm").setDescription("Confirm").setRequired(true))
       .addStringOption((option) => option.setName("reason").setDescription("Reason").setMaxLength(300)),
   );

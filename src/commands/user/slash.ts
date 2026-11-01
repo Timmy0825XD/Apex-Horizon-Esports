@@ -3,12 +3,12 @@ import { banDurationChoices } from "./durations.js";
 
 export const userSlash = new SlashCommandBuilder()
   .setName("user")
-  .setDescription("Ban or unban a Discord user by ID")
+  .setDescription("Ban or unban users by ID")
   .setDMPermission(false)
   .addSubcommand((subcommand) =>
     subcommand
       .setName("ban")
-      .setDescription("Ban a Discord ID for a set duration")
+      .setDescription("Ban a user ID for a set time")
       .addStringOption((option) =>
         option.setName("discord_id").setDescription("Discord user ID to ban").setRequired(true).setMaxLength(20),
       )
@@ -26,7 +26,7 @@ export const userSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("unban")
-      .setDescription("Remove a tracked Discord ban")
+      .setDescription("Remove a user's ban")
       .addStringOption((option) =>
         option.setName("discord_id").setDescription("Discord user ID to unban").setRequired(true).setMaxLength(20),
       ),
