@@ -2,6 +2,7 @@ import type { GuildSettings } from "@prisma/client";
 import { loadStaffConfig } from "./organiser.js";
 import { isGuildAdmin, isOrganiser, memberHasRole, type PermissionInteraction } from "./permissions.js";
 import { prisma } from "./prisma.js";
+import { loadGuildConfig } from "./guild-config.js";
 
 export type AccessRoles = {
   admin?: boolean;
@@ -14,11 +15,8 @@ export type AccessRoles = {
 
 async function loadSettings(guildId: string): Promise<GuildSettings | null> {
   try {
-    const guild = await prisma.guild.findUnique({
-      where: { guildId },
-      select: { settings: true },
-    });
-    return guild?.settings ?? null;
+    const guild = await loadGuildConfig(guildId);
+    return guild.settings ?? null;
   } catch {
     return null;
   }

@@ -27,6 +27,7 @@ import { handleUtilityButton, handleUtilityModal, handleUtilitySlash } from "./c
 import { isAllowedGuild } from "./lib/allowed-guilds.js";
 import { env } from "./lib/env.js";
 import { prisma } from "./lib/prisma.js";
+import { repairLegacyStaffRulesChannels } from "./commands/staff/store.js";
 import { registerSlashCommands } from "./lib/register-slash.js";
 import { startAutoRoomWorker, stopAutoRoomWorker } from "./workers/auto-room.js";
 import { startScheduleWorker, stopScheduleWorker } from "./workers/schedule.js";
@@ -58,6 +59,9 @@ client.once(Events.ClientReady, async (readyClient) => {
   }
 
   await registerSlashCommands();
+  await repairLegacyStaffRulesChannels().catch((error) => {
+    console.error("Legacy staff rules repair failed", error);
+  });
   startAutoRoomWorker(readyClient);
   startScheduleWorker(readyClient);
   console.log(`Ready as ${readyClient.user.tag}`);

@@ -11,8 +11,8 @@ type AuditInput = {
   details: string[];
 };
 
-export async function auditSchedule(input: AuditInput): Promise<void> {
-  await publishAudit({
+export async function auditSchedule(input: AuditInput): Promise<boolean> {
+  return publishAudit({
     guild: input.guild,
     channelId: input.settings.botLogsChannelId,
     title: auditLogTitles.botLogs,

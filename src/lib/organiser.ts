@@ -1,15 +1,11 @@
 import type { StaffConfig } from "@prisma/client";
 import type { AutocompleteInteraction, ButtonInteraction, ChatInputCommandInteraction } from "discord.js";
 import { isOrganiser } from "./permissions.js";
-import { prisma } from "./prisma.js";
+import { loadGuildConfig } from "./guild-config.js";
 
 export async function loadStaffConfig(guildId: string): Promise<StaffConfig | null> {
   try {
-    const guild = await prisma.guild.findUnique({
-      where: { guildId },
-      select: { staff: true },
-    });
-    return guild?.staff ?? null;
+    return (await loadGuildConfig(guildId)).staff;
   } catch {
     return null;
   }

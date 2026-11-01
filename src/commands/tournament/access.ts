@@ -2,11 +2,11 @@ import type { GuildSettings, StaffConfig } from "@prisma/client";
 import type { AutocompleteInteraction, ButtonInteraction, ChatInputCommandInteraction, Guild, InteractionReplyOptions } from "discord.js";
 import { formatHelpEntry } from "../../lib/formatters.js";
 import { isGuildAdmin, isOrganiser } from "../../lib/permissions.js";
-import { prisma } from "../../lib/prisma.js";
 import { settingsCommandIdFor } from "../../lib/register-slash.js";
 import { loadGuildSettings } from "../settings/store.js";
 import { respondTournament } from "./respond.js";
 import { tournamentErrorMessage } from "./view.js";
+import { loadGuildConfig } from "../../lib/guild-config.js";
 
 export type AdminContext = {
   guild: Guild;
@@ -53,11 +53,7 @@ export function isAdminContext(value: AdminContext | { error: InteractionReplyOp
 
 async function loadStaff(guildId: string): Promise<StaffConfig | null> {
   try {
-    const guild = await prisma.guild.findUnique({
-      where: { guildId },
-      select: { staff: true },
-    });
-    return guild?.staff ?? null;
+    return (await loadGuildConfig(guildId)).staff;
   } catch {
     return null;
   }

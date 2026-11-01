@@ -1,7 +1,7 @@
 import { PermissionFlagsBits, type Guild, type GuildMember } from "discord.js";
-import { prisma } from "../../lib/prisma.js";
 import type { SheetTeam } from "../../lib/sheet.js";
 import type { PlayerPresence } from "./view.js";
+import { loadGuildConfig } from "../../lib/guild-config.js";
 
 const MEMBER_FETCH_CHUNK = 100;
 
@@ -20,11 +20,8 @@ function fromMember(member: GuildMember, verifiedRoleId: string | undefined): Pl
 }
 
 async function loadVerifiedRoleId(guildId: string): Promise<string | undefined> {
-  const guild = await prisma.guild.findUnique({
-    where: { guildId },
-    select: { settings: true },
-  });
-  return guild?.settings?.verifiedRoleId || undefined;
+  const guild = await loadGuildConfig(guildId);
+  return guild.settings?.verifiedRoleId || undefined;
 }
 
 function collectIds(teams: SheetTeam[]): string[] {

@@ -8,9 +8,9 @@ import {
 import { emojis } from "../../emojis.js";
 import { embedColors } from "../../lib/embeds.js";
 import { isOrganiser } from "../../lib/permissions.js";
-import { prisma } from "../../lib/prisma.js";
 import { attachedFile, divider, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
 import { serverErrorMessage } from "./view.js";
+import { loadGuildConfig } from "../../lib/guild-config.js";
 
 export function fileSlug(guild: Guild): string {
   const slug = guild.name
@@ -53,11 +53,7 @@ export async function xlsxBuffer(
 
 export async function loadStaff(guildId: string) {
   try {
-    const guild = await prisma.guild.findUnique({
-      where: { guildId },
-      select: { staff: true },
-    });
-    return guild?.staff ?? null;
+    return (await loadGuildConfig(guildId)).staff;
   } catch {
     return null;
   }

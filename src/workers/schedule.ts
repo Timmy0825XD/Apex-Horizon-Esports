@@ -43,26 +43,39 @@ async function sweep(client: Client): Promise<void> {
     const due = await prisma.schedule.findMany({
       where: { reminderPhase: { in: ["pending", "t10"] }, scheduledAt: { lte: horizon } },
     });
-    for (const schedule of due) {
-      const guild = await client.guilds.fetch(schedule.guildId).catch(() => null);
-      if (!guild) {
-        continue;
+    // A few schedules at a time; each one keeps its own steps in order.
+    const queue = [...due];
+    const lanes = Array.from({ length: Math.min(SWEEP_LANES, queue.length) }, async () => {
+      for (let schedule = queue.shift(); schedule; schedule = queue.shift()) {
+        await tickSchedule(client, now, schedule).catch((error) => {
+          console.error(`Schedule reminder failed for ${schedule.id}`, error);
+        });
       }
-      if (schedule.reminderPhase === "pending" && now < schedule.scheduledAt) {
-        await sendReminder(guild, schedule);
-      }
-      const alertAt = schedule.scheduledAt.getTime() - 2 * 60 * 1000;
-      if (now.getTime() >= alertAt && now < schedule.scheduledAt && !schedule.messages.t0MessageId) {
-        await raiseStaffAlert(guild, schedule);
-      }
-      if (now >= schedule.scheduledAt && schedule.reminderPhase !== "t0") {
-        await startTime(guild, schedule);
-      }
-    }
+    });
+    await Promise.all(lanes);
   } catch (error) {
     console.error("Schedule reminder sweep failed", error);
   } finally {
     running = false;
+  }
+}
+
+const SWEEP_LANES = 4;
+
+async function tickSchedule(client: Client, now: Date, schedule: Schedule): Promise<void> {
+  const guild = await client.guilds.fetch(schedule.guildId).catch(() => null);
+  if (!guild) {
+    return;
+  }
+  if (schedule.reminderPhase === "pending" && now < schedule.scheduledAt) {
+    await sendReminder(guild, schedule);
+  }
+  const alertAt = schedule.scheduledAt.getTime() - 2 * 60 * 1000;
+  if (now.getTime() >= alertAt && now < schedule.scheduledAt && !schedule.messages.t0MessageId) {
+    await raiseStaffAlert(guild, schedule);
+  }
+  if (now >= schedule.scheduledAt && schedule.reminderPhase !== "t0") {
+    await startTime(guild, schedule);
   }
 }
 
@@ -74,14 +87,10 @@ async function sendReminder(guild: Guild, schedule: Schedule): Promise<void> {
   if (!ticket || schedule.messages.t10MessageId) {
     return;
   }
-  const tournament = await findTournamentById(guild.id, schedule.tournamentId);
-  const match = await prisma.match.findUnique({
-    where: { tournamentId_challongeMatchId: { tournamentId: schedule.tournamentId, challongeMatchId: schedule.challongeMatchId } },
-  });
+  const { settings, tournament, match } = await loadScheduleContext(guild, schedule);
   if (!tournament || !match) {
     return;
   }
-  const settings = await loadGuildSettings(guild.id);
   const imageUrl = settings
     ? await thumbnailImageUrl(guild, settings.thumbnailChannelId, schedule.messages.thumbnailMessageId)
     : undefined;
@@ -102,12 +111,7 @@ async function sendReminder(guild: Guild, schedule: Schedule): Promise<void> {
 }
 
 async function startTime(guild: Guild, schedule: Schedule): Promise<void> {
-  const settings = await loadGuildSettings(guild.id);
-  const tournament = await findTournamentById(guild.id, schedule.tournamentId);
-  const match = await prisma.match.findUnique({
-    where: { tournamentId_challongeMatchId: { tournamentId: schedule.tournamentId, challongeMatchId: schedule.challongeMatchId } },
-  });
-  const ticket = await ticketChannel(guild, schedule.channelId);
+  const { settings, tournament, match, ticket } = await loadScheduleContext(guild, schedule);
   if (!settings || !tournament || !match || !ticket) {
     await prisma.schedule.update({ where: { id: schedule.id }, data: { reminderPhase: "t0" } });
     return;
@@ -160,12 +164,7 @@ async function raiseStaffAlert(guild: Guild, schedule: Schedule): Promise<void> 
   if (!alert) {
     return;
   }
-  const settings = await loadGuildSettings(guild.id);
-  const tournament = await findTournamentById(guild.id, schedule.tournamentId);
-  const match = await prisma.match.findUnique({
-    where: { tournamentId_challongeMatchId: { tournamentId: schedule.tournamentId, challongeMatchId: schedule.challongeMatchId } },
-  });
-  const ticket = await ticketChannel(guild, schedule.channelId);
+  const { settings, tournament, match, ticket } = await loadScheduleContext(guild, schedule);
   if (!settings || !tournament || !match || !ticket) {
     return;
   }
@@ -181,6 +180,18 @@ async function raiseStaffAlert(guild: Guild, schedule: Schedule): Promise<void> 
     where: { id: painted.id },
     data: { messages: { ...painted.messages, t0MessageId } },
   });
+}
+
+async function loadScheduleContext(guild: Guild, schedule: Schedule) {
+  const [settings, tournament, match, ticket] = await Promise.all([
+    loadGuildSettings(guild.id),
+    findTournamentById(guild.id, schedule.tournamentId),
+    prisma.match.findUnique({
+      where: { tournamentId_challongeMatchId: { tournamentId: schedule.tournamentId, challongeMatchId: schedule.challongeMatchId } },
+    }),
+    ticketChannel(guild, schedule.channelId),
+  ]);
+  return { settings, tournament, match, ticket };
 }
 
 function alertFrom(schedule: Schedule): Schedule["alert"] {

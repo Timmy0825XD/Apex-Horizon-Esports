@@ -19,13 +19,16 @@ export async function resolveStage(tournamentId: string, match: StageMatch): Pro
   if (match.round < 0) {
     return `LOSERS ROUND ${Math.abs(match.round)}`;
   }
-  const rows = await prisma.match.findMany({
-    where: { tournamentId, group: null },
-    select: { round: true },
-  });
-  const winners = rows.map((row) => row.round).filter((round) => round > 0);
-  const lastRound = winners.length > 0 ? Math.max(...winners) : null;
-  const hasLosers = rows.some((row) => row.round < 0);
+  const [last, losers] = await Promise.all([
+    prisma.match.findFirst({
+      where: { tournamentId, group: null, round: { gt: 0 } },
+      orderBy: { round: "desc" },
+      select: { round: true },
+    }),
+    prisma.match.findFirst({ where: { tournamentId, group: null, round: { lt: 0 } }, select: { id: true } }),
+  ]);
+  const lastRound = last?.round ?? null;
+  const hasLosers = Boolean(losers);
   if (lastRound != null && match.round === lastRound) {
     return hasLosers ? "GRAND FINAL" : "FINAL";
   }

@@ -32,13 +32,22 @@ El capitán no ejecuta ningún subcomando.
 
 ## Al crear
 
-- Crear es atómico: posts, punto rojo y evento quedan juntos. Si un paso falla o tarda demasiado, se deshace todo y el comando responde con el error. No se queda en “pensando”.
-- Se publican dos embeds (ticket + canal de schedules). Encima, los dos mencionan a los capitanes. El ping sale en el ticket.
+- Orden visible en Discord:
+  1. El ticket muestra "pensando…" (público).
+  2. El canal de thumbnails recibe la imagen.
+  3. Si vienen juez o recorder, reciben acceso al ticket (no se ve en el chat).
+  4. El ticket recibe el embed, ya con el staff, y hace ping **solo** a los dos capitanes.
+  5. El ticket publica el aviso de asignación: uno por puesto si son dos personas, uno solo si la misma persona toma ambos.
+  6. El canal de schedules recibe el post con los botones Assign. Menciona a los capitanes sin ping.
+  7. El ticket se marca con `🔴`.
+  8. Se crea el evento del servidor, ya con portada.
+  9. El staff chat recibe **New Schedule** y el canal de logs, la auditoría.
+  10. "pensando…" pasa a **Schedule created**. Sale solo cuando todo lo anterior terminó.
+- Bloquean: thumbnail, acceso del staff al ticket, embed del ticket y post del canal de schedules. Si uno falla o tarda demasiado, se deshace todo lo publicado (acceso, mensajes, schedule) y el comando responde con el error. Si un paso que agotó su tiempo termina después, el bot también lo deshace.
+- No bloquean: aviso de asignación, `🔴`, evento, **New Schedule** y auditoría. El schedule queda creado y quien lo creó recibe un solo efímero, **Finish manually**, con lo que falló (por ejemplo, añadir el `🔴` a mano).
 - `judge` y `recorder` solo se asignan si ese usuario tiene el rol de juez o de grabador. Si no lo tiene, no se crea ni se actualiza el schedule.
 - `notify` es opcional. En `false` no se publica **New Schedule** en el staff chat. Omitido o `true` lo publica cuando queda al menos un puesto libre.
-- Se crea un evento externo del servidor: nombre `lado vs lado`, portada del thumbnail, inicio a la hora UTC y fin 30 minutos después, ubicación el nombre del servidor, y la descripción con torneo, grupo, ronda, hora local, canal, capitanes y staff. Si ese evento ya está terminado o cancelado, el bot no lo edita. Si la hora del schedule pasa a ser futura, crea uno nuevo y guarda ese id. Si la hora ya pasó, deja el evento terminado y no lo registra como error.
-- Si hay Judge/Recorder en el comando, se asignan *después* de publicar (el anuncio no espera a la hoja).
-- El canal del partido lleva prefijo `🔴` mientras el schedule vive.
+- Se crea un evento externo del servidor: nombre `lado vs lado`, portada del thumbnail, inicio a la hora UTC y fin 30 minutos después, ubicación el nombre del servidor, y la descripción con torneo, grupo, ronda, hora local, canal, capitanes y staff. Si ese evento ya está terminado o cancelado, el bot no lo edita. Si la hora del schedule pasa a ser futura, crea uno nuevo y guarda ese id. Si la hora ya pasó, deja el evento terminado y no lo registra como error.- El canal del partido lleva prefijo `🔴` mientras el schedule vive.
 - Miniatura en el canal de thumbnails de `/settings`, con el fondo que le toca en la rotación.
 
 ## Fondos de thumbnail
