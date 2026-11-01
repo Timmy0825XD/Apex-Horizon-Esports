@@ -1,8 +1,3 @@
----
-description: Menciones con helpers, markdown, emojis.ts. Componentes reutilizables sin copy redundante.
-alwaysApply: true
----
-
 # UI de Discord (mensajes al usuario)
 
 Detalle: [context/platform/discord-ui.md](context/platform/discord-ui.md).

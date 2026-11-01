@@ -1,8 +1,3 @@
----
-description: Git Flow y ramas. Cambiar de rama antes de editar. Add/commit/push/PR solo con _GIT; luego dejar solo el bloque de limpieza.
-alwaysApply: true
----
-
 # Git Flow
 
 No trabajes directo en `main` ni `develop` (salvo el commit inicial del repo).
@@ -45,18 +40,30 @@ Flujo normal: rama de soporte → merge a `develop` → `release/*` cuando toque
 
 Por defecto: **no** ejecutes ni muestres add, commit, push, PR ni el bloque de limpieza. El trabajo termina en la rama de soporte. No pegues comandos de git al final de cada respuesta.
 
-Solo cuando el usuario escriba `_GIT` (token exacto, en cualquier mensaje):
+Solo cuando el usuario escriba `_GIT` (token exacto, en cualquier mensaje) o pida explícitamente encargarse de git / hacer el PR:
 
 1. Ejecuta tú, en este orden: `git add` → `git commit` → `git push -u origin HEAD` → `gh pr create`.
-2. En la respuesta deja **solo** el bloque de limpieza, para que el usuario lo corra **después de aprobar/mergear el PR**.
+2. Responde con el enlace del PR y los commits creados. No pegues el bloque de limpieza: la limpieza la haces tú (ver abajo).
+
+## Limpieza tras el merge (la hace Claude)
+
+Cada vez que vayas a cambiar de rama, o el usuario diga que el PR está listo, comprueba con `gh pr view <rama> --json state` si el PR de la rama actual ya está **MERGED**. Si lo está, y `git status` está limpio, ejecuta tú:
 
 ```
-# despues de aprobar el PR (borrar local + GitHub y volver a develop)
 git checkout develop
 git pull origin develop
 git branch -d <rama>
 git push origin --delete <rama>
+git fetch --prune
 ```
+
+- Usa `git branch -d` (nunca `-D`). Si falla porque la rama no está mergeada, detente y avisa.
+- Si la rama remota ya no existe (GitHub la borró al mergear), no es error: sigue.
+- Si el PR no está mergeado o hay cambios sin commit, no borres nada; avisa.
+- `hotfix/*` o `release/*`: haz `checkout`/`pull` de `main` y de `develop` antes de borrar.
+- Después crea la rama nueva desde `develop` (o `main` para `hotfix/*`).
+
+## Reglas del commit y del PR
 
 - Sustituye `<rama>` por el nombre real (`feature/auth-api`, etc.).
 - Base del PR: `develop`. `hotfix/*` y merge de `release/*` a producción: `--base main` (y luego también merge a `develop`).
@@ -64,7 +71,6 @@ git push origin --delete <rama>
 - Cuerpo solo si hace falta el **por qué** (1 línea).
 - Relación rama ↔ commit: `feature`→`feat`, `bugfix`/`hotfix`→`fix`, y el resto el mismo tipo que el prefijo.
 - Tag al mergear `release`→`main`: `fix` patch, `feat` minor, `BREAKING CHANGE` major.
-- `hotfix/*` o post-release: el bloque de limpieza hace `checkout`/`pull` de `main` y de `develop`, luego borra la rama local y `origin`.
 - Sin cambios: no crees commit vacío ni PR.
 
 ## Commits

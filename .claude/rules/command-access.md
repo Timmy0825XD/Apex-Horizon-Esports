@@ -1,8 +1,3 @@
----
-description: El acceso de cada comando lo manda context/commands/access.md. Al crear o cambiar un comando, actualizar ese archivo y aplicar sus celdas al código.
-alwaysApply: true
----
-
 # Acceso a comandos
 
 [context/commands/access.md](context/commands/access.md) es la única fuente de quién puede usar cada comando y de sus restricciones de acceso. Manda sobre el código.

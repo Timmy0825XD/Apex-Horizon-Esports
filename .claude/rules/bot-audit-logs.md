@@ -1,8 +1,3 @@
----
-description: Mutaciones del bot (crear, editar, borrar) se auditan por webhook de Discord. Lecturas no. No es log del repo.
-alwaysApply: true
----
-
 # Auditoría de acciones del bot
 
 Estos logs son **acciones que el bot ejecuta en runtime** (comandos, botones, workers). **No** son logs de git, PRs ni de lo que cambiamos en el repositorio.

@@ -1,8 +1,3 @@
----
-description: Node + npm + MongoDB. Agrupar por contexto de comando. SOLID/GRASP sin sobreingeniería.
-alwaysApply: true
----
-
 # Estructura y calidad del bot
 
 Stack: **Node.js + TypeScript + npm + MongoDB**. Deploy: **HiddenCloud**. Detalle: [context/platform/stack.md](context/platform/stack.md) y [context/platform/structure.md](context/platform/structure.md).

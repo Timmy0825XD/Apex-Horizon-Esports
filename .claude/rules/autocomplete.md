@@ -1,8 +1,3 @@
----
-description: Campos de opciones almacenadas por el bot usan autocomplete (nombre visible), no texto libre.
-alwaysApply: true
----
-
 # Autocomplete de opciones del bot
 
 Detalle: [context/platform/autocomplete.md](context/platform/autocomplete.md).

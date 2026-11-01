@@ -1,8 +1,3 @@
----
-description: context/ es la fuente de verdad. Actualizarla al tocar core, reglas o comandos. No implementar sin indicación del usuario.
-alwaysApply: true
----
-
 # Fuente de verdad y ritmo de desarrollo
 
 `context/` es la **única** fuente de verdad del producto, reglas de negocio y catálogo de comandos. Empieza por [context/README.md](context/README.md). `LOGIC.md` es un puntero histórico: no lo uses ni lo edites como spec.
