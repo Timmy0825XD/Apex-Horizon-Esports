@@ -185,6 +185,29 @@ function sharpNativePackage() {
   return null;
 }
 
+function canvasNativePackage() {
+  const { platform, arch } = process;
+  if (platform === 'linux') {
+    return `@napi-rs/canvas-linux-${arch}-${isMusl() ? 'musl' : 'gnu'}`;
+  }
+  if (platform === 'win32') {
+    return `@napi-rs/canvas-win32-${arch}-msvc`;
+  }
+  if (platform === 'darwin') {
+    return `@napi-rs/canvas-darwin-${arch}`;
+  }
+  return null;
+}
+
+function installedVersion(pkg) {
+  try {
+    const manifest = path.join(APP_DIR, 'node_modules', ...pkg.split('/'), 'package.json');
+    return JSON.parse(fs.readFileSync(manifest, 'utf8')).version;
+  } catch {
+    return null;
+  }
+}
+
 function isInstalled(pkg) {
   return fs.existsSync(path.join(APP_DIR, 'node_modules', ...pkg.split('/')));
 }
@@ -208,6 +231,14 @@ function installDeps() {
   if (native && !isInstalled(native)) {
     console.log(`Installing ${native}...`);
     run('npm', ['install', native, '--include=optional', '--foreground-scripts'], APP_DIR);
+  }
+
+  // Schedule thumbnails render with @napi-rs/canvas; its binary is an optional per-platform package.
+  const canvas = canvasNativePackage();
+  const canvasVersion = installedVersion('@napi-rs/canvas');
+  if (canvas && canvasVersion && !isInstalled(canvas)) {
+    console.log(`Installing ${canvas}@${canvasVersion}...`);
+    run('npm', ['install', `${canvas}@${canvasVersion}`, '--no-save', '--foreground-scripts'], APP_DIR);
   }
 }
 
