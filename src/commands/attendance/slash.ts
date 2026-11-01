@@ -2,11 +2,11 @@ import { SlashCommandBuilder } from "discord.js";
 
 export const attendanceSlash = new SlashCommandBuilder()
   .setName("attendance")
-  .setDescription("Match attendance and one person's salary")
+  .setDescription("Match attendance and staff salary")
   .addSubcommand((subcommand) =>
     subcommand
       .setName("mark")
-      .setDescription("Record judge, recorder, score, and optional YouTube links")
+      .setDescription("Record staff, score, and video links")
       .addUserOption((option) => option.setName("judge").setDescription("Member with the Judge role").setRequired(true))
       .addUserOption((option) => option.setName("recorder").setDescription("Member with the Recorder role").setRequired(true))
       .addIntegerOption((option) =>
@@ -25,14 +25,14 @@ export const attendanceSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("delete")
-      .setDescription("Soft-delete the attendance in this ticket")
+      .setDescription("Remove this ticket's attendance")
       .addBooleanOption((option) => option.setName("confirm").setDescription("Confirm the delete").setRequired(true))
       .addStringOption((option) => option.setName("reason").setDescription("Why this attendance is being removed").setMaxLength(500)),
   )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("report")
-      .setDescription("Salary report for one person in a tournament")
+      .setDescription("Salary report for one staff member")
       .addStringOption((option) =>
         option.setName("tournament").setDescription("Tournament").setRequired(true).setAutocomplete(true),
       )

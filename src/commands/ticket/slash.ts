@@ -2,14 +2,14 @@ import { SlashCommandBuilder } from "discord.js";
 
 export const ticketSlash = new SlashCommandBuilder()
   .setName("ticket")
-  .setDescription("Close, reopen, or delete the current battle ticket")
+  .setDescription("Close, reopen, or delete this ticket")
   .setDMPermission(false)
   .addSubcommand((subcommand) =>
-    subcommand.setName("close").setDescription("Silence this ticket and move it to the closed category"),
+    subcommand.setName("close").setDescription("Close this ticket"),
   )
   .addSubcommand((subcommand) =>
-    subcommand.setName("reopen").setDescription("Restore chat access and move this ticket back to open"),
+    subcommand.setName("reopen").setDescription("Reopen this ticket"),
   )
   .addSubcommand((subcommand) =>
-    subcommand.setName("delete").setDescription("Delete this ticket channel and forget the match link"),
+    subcommand.setName("delete").setDescription("Delete this ticket"),
   );

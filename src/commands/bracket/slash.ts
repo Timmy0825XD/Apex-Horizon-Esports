@@ -2,12 +2,12 @@ import { SlashCommandBuilder } from "discord.js";
 
 export const bracketSlash = new SlashCommandBuilder()
   .setName("bracket")
-  .setDescription("Report, disqualify, or correct official bracket scores")
+  .setDescription("Report or fix official bracket scores")
   .setDMPermission(false)
   .addSubcommand((subcommand) =>
     subcommand
       .setName("upload")
-      .setDescription("Report the official score inside a battle ticket")
+      .setDescription("Report this match's official score")
       .addIntegerOption((option) =>
         option.setName("score1").setDescription("Score for side 1 (left / player 1)").setRequired(true).setMinValue(0),
       )
@@ -19,12 +19,12 @@ export const bracketSlash = new SlashCommandBuilder()
       ),
   )
   .addSubcommand((subcommand) =>
-    subcommand.setName("dq_both").setDescription("Disqualify both sides of this battle ticket"),
+    subcommand.setName("dq_both").setDescription("Disqualify both teams in this match"),
   )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("correct")
-      .setDescription("Amend a posted bracket score and rebuild lying rooms")
+      .setDescription("Fix a reported score and redo later tickets")
       .addStringOption((option) =>
         option
           .setName("tournament")

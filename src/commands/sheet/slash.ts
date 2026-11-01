@@ -2,12 +2,12 @@ import { SlashCommandBuilder } from "discord.js";
 
 export const sheetSlash = new SlashCommandBuilder()
   .setName("sheet")
-  .setDescription("Archive, look up, and quality-check participant sheets")
+  .setDescription("Store, search, and check player sheets")
   .setDMPermission(false)
   .addSubcommand((subcommand) =>
     subcommand
       .setName("add")
-      .setDescription("Archive participant sheets into the global player search")
+      .setDescription("Store a player sheet for searches")
       .addStringOption((option) =>
         option.setName("link").setDescription("Google Sheet URL (required with name)").setRequired(false),
       )
@@ -28,7 +28,7 @@ export const sheetSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("get")
-      .setDescription("Get a stored sheet link by tournament name, or export every sheet as CSV")
+      .setDescription("Get a sheet link or export all as CSV")
       .addStringOption((option) =>
         option
           .setName("name")
@@ -43,7 +43,7 @@ export const sheetSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("find_player")
-      .setDescription("Search every stored sheet across all servers")
+      .setDescription("Find a player in every stored sheet")
       .addStringOption((option) => option.setName("game_id").setDescription("In-game ID").setRequired(false))
       .addStringOption((option) =>
         option.setName("discord_id").setDescription("Discord user ID").setRequired(false),
@@ -58,7 +58,7 @@ export const sheetSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("validate")
-      .setDescription("Quality-check a participant sheet before creating a tournament")
+      .setDescription("Check a player sheet for problems")
       .addStringOption((option) =>
         option.setName("sheet_link").setDescription("Google Sheet of participants").setRequired(true),
       ),

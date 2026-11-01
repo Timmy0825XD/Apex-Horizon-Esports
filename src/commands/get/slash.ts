@@ -2,11 +2,11 @@ import { SlashCommandBuilder } from "discord.js";
 
 export const getSlash = new SlashCommandBuilder()
   .setName("get")
-  .setDescription("Read attendance history or export the workbook")
+  .setDescription("Attendance history and workbook")
   .addSubcommand((subcommand) =>
     subcommand
       .setName("attendance")
-      .setDescription("Paged attendance history for one member")
+      .setDescription("Show a member's attendance history")
       .addStringOption((option) =>
         option.setName("tournament").setDescription("Tournament").setRequired(true).setAutocomplete(true),
       )
@@ -15,7 +15,7 @@ export const getSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("sheet")
-      .setDescription("Ephemeral Excel of attendance, work, and salary")
+      .setDescription("Export attendance, work, and salary to Excel")
       .addStringOption((option) =>
         option.setName("tournament").setDescription("Tournament").setRequired(true).setAutocomplete(true),
       )

@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from "discord.js";
 
 export const linkSlash = new SlashCommandBuilder()
   .setName("link")
-  .setDescription("Recording links for an attendance")
+  .setDescription("Recording links for attendances")
   .addSubcommand((subcommand) =>
     subcommand
       .setName("add")
@@ -20,7 +20,7 @@ export const linkSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("delete")
-      .setDescription("Remove every recording link from an attendance")
+      .setDescription("Remove all links from an attendance")
       .addStringOption((option) =>
         option.setName("tournament").setDescription("Tournament").setRequired(true).setAutocomplete(true),
       )
@@ -31,7 +31,7 @@ export const linkSlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("missing")
-      .setDescription("List attendances that still need a recording link")
+      .setDescription("List attendances missing a recording")
       .addStringOption((option) =>
         option.setName("tournament").setDescription("Tournament").setRequired(true).setAutocomplete(true),
       )
