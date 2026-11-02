@@ -63,8 +63,14 @@ async function sweep(client: Client): Promise<void> {
 const SWEEP_LANES = 4;
 
 async function tickSchedule(client: Client, now: Date, schedule: Schedule): Promise<void> {
-  const guild = await client.guilds.fetch(schedule.guildId).catch(() => null);
+  // With the Guilds intent the cache lists every server the bot is in (outages stay cached as unavailable).
+  // A miss means the bot left: retire the schedule instead of asking the API again every minute.
+  const guild = client.guilds.cache.get(schedule.guildId);
   if (!guild) {
+    await prisma.schedule.update({ where: { id: schedule.id }, data: { reminderPhase: "t0" } });
+    return;
+  }
+  if (!guild.available) {
     return;
   }
   if (schedule.reminderPhase === "pending" && now < schedule.scheduledAt) {
