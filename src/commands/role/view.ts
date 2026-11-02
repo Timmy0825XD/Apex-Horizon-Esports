@@ -58,106 +58,117 @@ export function roleToggleMessage(input: {
   };
 }
 
-export type MassBuckets = {
-  changed: GuildMember[];
-  skipped: GuildMember[];
-  failed: GuildMember[];
+export type MassAction = "add" | "remove";
+
+export type MassProgress = {
+  total: number;
+  done: number;
+  changed: number;
+  failed: number;
 };
 
-const MAX_SHOWN = 15;
+const BAR_SLOTS = 20;
 
-function listedMembers(members: GuildMember[]): string {
-  const shown = members.slice(0, MAX_SHOWN);
-  const extra = members.length - shown.length;
-  const more = extra > 0 ? `\n*And **${extra}** more.*` : "";
-  return `${shown.map((member) => `> ${formatMember(member)}`).join("\n")}${more}`;
+function progressBar(done: number, total: number): string {
+  const ratio = total > 0 ? Math.min(done / total, 1) : 0;
+  const filled = Math.round(ratio * BAR_SLOTS);
+  return `\`${"▰".repeat(filled)}${"▱".repeat(BAR_SLOTS - filled)}\` **${Math.floor(ratio * 100)}%**`;
 }
 
-export function roleMassMessage(
-  action: "add" | "remove",
+function duration(ms: number): string {
+  const seconds = Math.max(0, Math.round(ms / 1000));
+  const minutes = Math.floor(seconds / 60);
+  return minutes > 0 ? `${minutes}m ${String(seconds % 60).padStart(2, "0")}s` : `${seconds}s`;
+}
+
+function plural(count: number, word: string): string {
+  return `**${count}** ${count === 1 ? word : `${word}s`}`;
+}
+
+/** Live status while the bulk update runs. `progress` null means the member list is still loading. */
+export function roleMassProgressMessage(
+  action: MassAction,
   role: Role,
-  buckets: MassBuckets,
-  actorId: string,
+  progress: MassProgress | null,
+  startedAt: number,
 ): InteractionReplyOptions {
   const mention = formatRoleFromRole(role);
-  const containers: ContainerBuilder[] = [];
+  const title = action === "add" ? "Giving role in bulk" : "Removing role in bulk";
+  const container = new ContainerBuilder()
+    .setAccentColor(embedColors.info)
+    .addTextDisplayComponents(textBlock(`# ${emojis.uptime} ${title}`));
 
-  if (buckets.changed.length > 0) {
-    const count = buckets.changed.length;
-    const title = action === "add" ? `${emojis.success} Role granted in bulk` : `${emojis.success} Role removed in bulk`;
-    const summary =
+  if (!progress) {
+    container.addTextDisplayComponents(
+      textBlock(`Loading the member list to find who needs ${mention}. Large servers take a few seconds.`),
+    );
+  } else {
+    const target =
       action === "add"
-        ? count === 1
-          ? `Gave ${mention} to **1** member who did not have it.`
-          : `Gave ${mention} to **${count}** members who did not have it.`
-        : count === 1
-          ? `Removed ${mention} from **1** member who had it.`
-          : `Removed ${mention} from **${count}** members who had it.`;
+        ? `Giving ${mention} to ${plural(progress.total, "member")} who do not have it.`
+        : `Removing ${mention} from ${plural(progress.total, "member")} who have it.`;
+    container
+      .addTextDisplayComponents(textBlock(target))
+      .addSeparatorComponents(divider())
+      .addTextDisplayComponents(
+        textBlock(progressBar(progress.done, progress.total)),
+        textBlock(
+          `-# ${progress.done} of ${progress.total} · ${progress.changed} updated · ${progress.failed} failed · ${duration(Date.now() - startedAt)} elapsed`,
+        ),
+      );
+  }
 
-    containers.push(
-      new ContainerBuilder()
-        .setAccentColor(embedColors.success)
-        .addTextDisplayComponents(textBlock(`# ${title}`), textBlock(summary))
-        .addSeparatorComponents(divider())
-        .addTextDisplayComponents(textBlock(listedMembers(buckets.changed))),
+  return { components: [container], allowedMentions: { parse: [] } };
+}
+
+export function roleMassResultMessage(input: {
+  action: MassAction;
+  role: Role;
+  changed: number;
+  skipped: number;
+  failed: number;
+  elapsedMs: number;
+  actorId: string;
+}): InteractionReplyOptions {
+  const mention = formatRoleFromRole(input.role);
+  const add = input.action === "add";
+  const allFailed = input.changed === 0 && input.failed > 0;
+  const title = allFailed
+    ? `${emojis.error} Could not update roles`
+    : add
+      ? `${emojis.success} Role granted in bulk`
+      : `${emojis.success} Role removed in bulk`;
+  const summary = allFailed
+    ? `Discord rejected every update for ${mention}.`
+    : add
+      ? `${mention} was given to ${plural(input.changed, "member")}.`
+      : `${mention} was removed from ${plural(input.changed, "member")}.`;
+
+  const facts = [
+    `> **${add ? "Given" : "Removed"}:** \`${input.changed}\``,
+    `> **${add ? "Already had it" : "Did not have it"}:** \`${input.skipped}\``,
+    `> **Failed:** \`${input.failed}\``,
+  ].join("\n");
+
+  const container = new ContainerBuilder()
+    .setAccentColor(allFailed ? embedColors.error : embedColors.success)
+    .addTextDisplayComponents(textBlock(`# ${title}`), textBlock(summary))
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(facts));
+
+  if (input.failed > 0) {
+    container.addTextDisplayComponents(
+      textBlock(`*Discord refused ${plural(input.failed, "member")}. Check that my highest role is above ${mention}.*`),
     );
   }
 
-  if (buckets.skipped.length > 0) {
-    const count = buckets.skipped.length;
-    const title = action === "add" ? `${emojis.info} Already held the role` : `${emojis.info} Did not have the role`;
-    const summary =
-      action === "add"
-        ? count === 1
-          ? `**1** member already had ${mention}.`
-          : `**${count}** members already had ${mention}.`
-        : count === 1
-          ? `**1** member already did not have ${mention}.`
-          : `**${count}** members already did not have ${mention}.`;
-
-    containers.push(
-      new ContainerBuilder()
-        .setAccentColor(embedColors.info)
-        .addTextDisplayComponents(textBlock(`# ${title}`), textBlock(summary)),
+  container
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(
+      textBlock(`-# Took ${duration(input.elapsedMs)} · Triggered by ${formatUser(input.actorId)}`),
     );
-  }
 
-  if (buckets.failed.length > 0) {
-    const count = buckets.failed.length;
-    containers.push(
-      new ContainerBuilder()
-        .setAccentColor(embedColors.error)
-        .addTextDisplayComponents(
-          textBlock(`# ${emojis.error} Could not update roles`),
-          textBlock(
-            count === 1
-              ? `Discord rejected the update for **1** member.`
-              : `Discord rejected the update for **${count}** members.`,
-          ),
-        )
-        .addSeparatorComponents(divider())
-        .addTextDisplayComponents(textBlock(listedMembers(buckets.failed))),
-    );
-  }
-
-  if (containers.length === 0) {
-    return roleInfoMessage(
-      "Nothing to change",
-      action === "add"
-        ? `Every member already has ${mention}, or none could be updated.`
-        : `No member currently has ${mention}.`,
-      false,
-    );
-  }
-
-  containers[containers.length - 1]
-    ?.addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(`-# Triggered by ${formatUser(actorId)}`));
-
-  return {
-    components: containers,
-    allowedMentions: { parse: [] },
-  };
+  return { components: [container], allowedMentions: { parse: [] } };
 }
 
 const LIST_CHAR_LIMIT = 3500;
