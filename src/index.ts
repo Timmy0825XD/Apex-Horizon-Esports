@@ -47,11 +47,17 @@ async function leaveIfUnauthorized(guildId: string, leave: () => Promise<unknown
   }
 }
 
-client.on(Events.ClientReady, () => {
+// ClientReady fires once per process; reconnects surface as ShardReady/ShardResume.
+// A healthy gateway again means earlier blips should not count toward the stop limit.
+function resetNetworkAttempts(): void {
   if (!networkStopped) {
     networkAttempts = 0;
   }
-});
+}
+
+client.on(Events.ClientReady, resetNetworkAttempts);
+client.on(Events.ShardReady, resetNetworkAttempts);
+client.on(Events.ShardResume, resetNetworkAttempts);
 
 client.once(Events.ClientReady, async (readyClient) => {
   for (const guild of readyClient.guilds.cache.values()) {
