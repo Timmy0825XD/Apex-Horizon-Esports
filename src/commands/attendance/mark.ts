@@ -187,14 +187,16 @@ async function markLocked(
     guild,
     settings,
     actor: interaction.user,
-    description: "Attendance Marked",
+    action: "created",
+    title: "Attendance marked",
+    summary: `The judge and recorder were marked present for **${bundle.tournament.name}**.`,
     details: attendanceAuditDetails({
       tournamentName: bundle.tournament.name,
       channelId: bundle.channel.id,
       judgeId: judge.id,
       recorderId: recorder.id,
       score: `\`${team1Score}\` - \`${team2Score}\``,
-      extra: [`**Links:** \`${parsedLinks.links.length}\``],
+      extra: [`**Links** \`${parsedLinks.links.length}\``],
     }),
   });
   await interaction.deleteReply().catch(() => undefined);

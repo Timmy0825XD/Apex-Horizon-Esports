@@ -68,11 +68,13 @@ export async function handleLinkDelete(interaction: ChatInputCommandInteraction)
     guild,
     settings: loaded.settings,
     actor: interaction.user,
-    description: "Recording Links Deleted",
+    action: "deleted",
+    title: "Recording links removed",
+    summary: `Recording links were removed from an attendance in **${loaded.tournament.name}**.`,
     details: attendanceAuditDetails({
       tournamentName: loaded.tournament.name,
       recorderId: loaded.attendance.recorderId,
-      extra: [`**Removed:** \`${removed}\``],
+      extra: [`**Removed** \`${removed}\``],
     }),
   });
   const removedCard = linksRemovedMessage({

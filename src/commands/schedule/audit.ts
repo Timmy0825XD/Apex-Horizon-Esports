@@ -1,13 +1,15 @@
 import type { GuildSettings } from "@prisma/client";
 import type { ChatInputCommandInteraction, Guild, User } from "discord.js";
-import { auditLogTitles, publishAudit } from "../../lib/audit.js";
+import { fact, publishAudit, type AuditAction } from "../../lib/audit.js";
 import { formatChannel, formatUser } from "../../lib/formatters.js";
 
 type AuditInput = {
   guild: Guild;
   settings: GuildSettings;
   actor: User;
-  description: string;
+  action: AuditAction;
+  title: string;
+  summary: string;
   details: string[];
 };
 
@@ -15,9 +17,11 @@ export async function auditSchedule(input: AuditInput): Promise<boolean> {
   return publishAudit({
     guild: input.guild,
     channelId: input.settings.botLogsChannelId,
-    title: auditLogTitles.botLogs,
-    description: input.description,
-    details: input.details,
+    module: "schedules",
+    action: input.action,
+    title: input.title,
+    summary: input.summary,
+    groups: [{ lines: input.details }],
     actor: input.actor,
   });
 }
@@ -29,9 +33,9 @@ export function actorOf(interaction: ChatInputCommandInteraction): User {
 export function peopleLine(judgeId: string | null, recorderId: string | null): string {
   const judge = judgeId ? formatUser(judgeId) : "*Unassigned*";
   const recorder = recorderId ? formatUser(recorderId) : "*Unassigned*";
-  return `**Judge:** ${judge}\n**Recorder:** ${recorder}`;
+  return `${fact("Judge", judge)} · ${fact("Recorder", recorder)}`;
 }
 
 export function ticketLine(guild: Guild, channelId: string): string {
-  return `**Ticket:** ${formatChannel(guild, channelId)}`;
+  return fact("Ticket", formatChannel(guild, channelId));
 }

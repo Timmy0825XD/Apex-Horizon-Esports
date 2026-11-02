@@ -1,6 +1,6 @@
 import type { GuildSettings } from "@prisma/client";
 import type { ChatInputCommandInteraction, Guild } from "discord.js";
-import { auditLogTitles, publishAudit } from "../../lib/audit.js";
+import { fact, publishAudit } from "../../lib/audit.js";
 import { formatChannel, formatRole, formatUser } from "../../lib/formatters.js";
 import { staffFields, type StaffInput } from "./fields.js";
 
@@ -11,10 +11,10 @@ function fieldDetail(guild: Guild, staff: StaffInput, key: keyof StaffInput): st
   }
   const value = staff[key];
   if (!value) {
-    return `**${field.label}:** *Not configured*`;
+    return fact(field.label, "*Not configured*");
   }
   const mention = field.key.endsWith("RoleId") ? formatRole(guild, value) : formatChannel(guild, value);
-  return `**${field.label}:** ${mention}`;
+  return fact(field.label, mention);
 }
 
 export async function auditStaffConfigMutation(
@@ -33,12 +33,14 @@ export async function auditStaffConfigMutation(
   await publishAudit({
     guild,
     channelId: settings.botLogsChannelId,
-    title: auditLogTitles.botLogs,
-    description:
+    module: "serverConfig",
+    action: action === "set" ? "created" : "updated",
+    title: action === "set" ? "Staff setup configured" : "Staff setup edited",
+    summary:
       action === "set"
-        ? "Staff hierarchy and coordination channels were configured for the first time."
-        : "Staff hierarchy or coordination channels were edited.",
-    details,
+        ? "Staff roles and coordination channels were set for the first time."
+        : `**${details.length}** staff ${details.length === 1 ? "setting was" : "settings were"} changed.`,
+    groups: [{ label: action === "set" ? "Staff setup" : "New values", lines: details }],
     actor: interaction.user,
   });
 }
@@ -57,12 +59,14 @@ export async function auditStaffMembership(
   await publishAudit({
     guild,
     channelId: settings.botLogsChannelId,
-    title: auditLogTitles.botLogs,
-    description:
+    module: "staff",
+    action: action === "recruit" ? "created" : "deleted",
+    title: action === "recruit" ? "Staff recruited" : "Staff fired",
+    summary:
       action === "recruit"
-        ? "A member was recruited to a staff post."
-        : "A staff post was removed from a member.",
-    details: [`**Member:** ${formatUser(targetId)}`, `**Post:** ${post}`, `**Roles:** ${roleLines.join(", ")}`],
+        ? `${formatUser(targetId)} joined the staff as **${post}**.`
+        : `${formatUser(targetId)} was removed from **${post}**.`,
+    groups: [{ label: action === "recruit" ? "Roles given" : "Roles removed", lines: roleLines, inline: true }],
     actor: interaction.user,
   });
 }

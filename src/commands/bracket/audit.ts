@@ -1,6 +1,6 @@
 import type { ChatInputCommandInteraction, Guild, User } from "discord.js";
 import type { GuildSettings } from "@prisma/client";
-import { auditLogTitles, publishAudit } from "../../lib/audit.js";
+import { fact, publishAudit, type AuditAction, type AuditGroup } from "../../lib/audit.js";
 import { formatChannel } from "../../lib/formatters.js";
 
 export async function auditScoreUpload(
@@ -23,39 +23,39 @@ export async function auditScoreUpload(
     rebuilt?: number;
   },
 ): Promise<void> {
-  const details = [
-    `**Tournament:** **${input.tournamentName}**`,
-    `**Match ID:** \`${input.matchId}\``,
-    `**Match:** ${input.leftName} vs ${input.rightName}`,
-    `**Score:** \`${input.score1} - ${input.score2}\``,
-    `**Winner:** ${input.winnerName}`,
-  ];
-  if (input.action === "corrected" && input.oldScore1 != null && input.oldScore2 != null) {
-    details.splice(3, 0, `**Previous score:** \`${input.oldScore1} - ${input.oldScore2}\``);
-  }
+  const score = `\`${input.score1} - ${input.score2}\``;
+  const corrected = input.action === "corrected" && input.oldScore1 != null && input.oldScore2 != null;
+  const match: string[] = [`**${input.leftName} vs ${input.rightName}** · ID \`${input.matchId}\``];
   if (input.channelId) {
-    details.push(`**Ticket:** ${formatChannel(guild, input.channelId)}`);
+    match.push(fact("Ticket", formatChannel(guild, input.channelId)));
   }
-  if (input.note?.trim()) {
-    details.push(`**Note:** ${input.note.trim()}`);
-  }
+  const result: string[] = [
+    corrected ? fact("Score", `\`${input.oldScore1} - ${input.oldScore2}\` → ${score}`) : fact("Score", score),
+    fact("Winner", `**${input.winnerName}**`),
+  ];
   if (input.rebuilt != null && input.rebuilt > 0) {
-    details.push(`**Rooms rebuilt:** **${input.rebuilt}**`);
+    result.push(fact("Rooms rebuilt", `\`${input.rebuilt}\``));
   }
+  const groups: AuditGroup[] = [
+    { label: "Match", lines: match },
+    { label: corrected ? "Changes" : "Result", lines: result },
+  ];
+  if (input.note?.trim()) {
+    groups.push({ lines: [fact("Note", `*${input.note.trim()}*`)] });
+  }
+  const view: Record<typeof input.action, { action: AuditAction; title: string; summary: string }> = {
+    uploaded: { action: "created", title: "Score uploaded", summary: `The official score was posted to the bracket of **${input.tournamentName}**.` },
+    corrected: { action: "updated", title: "Score corrected", summary: `The bracket score changed in **${input.tournamentName}**.` },
+    disqualified: { action: "deleted", title: "Both sides disqualified", summary: `Side 2 was eliminated and side 1 will forfeit its next match in **${input.tournamentName}**.` },
+    forfeited: { action: "deleted", title: "Forfeit applied", summary: `A marked side lost its match without a ticket in **${input.tournamentName}**.` },
+  };
 
   await publishAudit({
     guild,
     channelId: settings.challongeLogsChannelId,
-    title: auditLogTitles.scoreUpload,
-    description:
-      input.action === "uploaded"
-        ? `Official score uploaded for **${input.tournamentName}**.`
-        : input.action === "corrected"
-          ? `Bracket score corrected for **${input.tournamentName}**.`
-          : input.action === "disqualified"
-            ? `Both sides disqualified for **${input.tournamentName}**.`
-            : `Advancing side forfeited for **${input.tournamentName}**.`,
-    details,
+    module: "scoreUpload",
+    ...view[input.action],
+    groups,
     actor: actor.user,
   });
 }

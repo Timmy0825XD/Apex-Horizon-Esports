@@ -74,15 +74,17 @@ export async function runResign(interaction: ChatInputCommandInteraction, bundle
   });
   const details = [ticketLine(guild, bundle.channel.id), peopleLine(judgeId, recorderId)];
   if (privateReason) {
-    details.push("**Reason:** *private*");
+    details.push("**Reason** *private*");
   } else if (rawReason) {
-    details.push(`**Reason:** ${rawReason}`);
+    details.push(`**Reason** ${rawReason}`);
   }
   await auditSchedule({
     guild,
     settings: bundle.settings,
     actor: interaction.user,
-    description: `Staff resigned from a schedule in **${bundle.tournament.name}**.`,
+    action: "updated",
+    title: "Seat released",
+    summary: `Staff resigned from a schedule in **${bundle.tournament.name}**.`,
     details,
   });
 }

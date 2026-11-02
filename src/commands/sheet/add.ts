@@ -170,9 +170,9 @@ export async function handleSheetAdd(interaction: ChatInputCommandInteraction, c
   }
 
   await respondSheet(interaction, sheetArchiveResultMessage(guild.name, [result.ok], [], [], commandId));
-  await auditAddSheet(interaction, guild, settings, [
+  await auditAddSheet(interaction, guild, settings, 1, [
     `**${result.ok.name}** · \`${result.ok.format}\` · **${result.ok.teams}** teams`,
-    `**Sheet:** ${formatSheetLink(result.ok.sheetLink)}`,
+    `**Sheet** ${formatSheetLink(result.ok.sheetLink)}`,
   ]);
 }
 
@@ -261,6 +261,7 @@ async function archiveFromCsv(
       interaction,
       guild,
       settings,
+      archived.length,
       archived.map((row) => `**${row.name}** · \`${row.format}\` · **${row.teams}** teams · ${formatSheetLink(row.sheetLink)}`),
     );
   }

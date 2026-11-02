@@ -27,7 +27,7 @@ Mientras sigue **on**:
 
 - Completar una llave **no** abre el siguiente ticket al instante.
 - A las **00:00 UTC** y a las **12:00 UTC** se abre, de golpe, toda la cola que siga esperando.
-- Si el bot estaba caído en esa hora, al volver recupera **la franja más reciente** que se perdió y abre la cola en ese momento (una sola vez, no una por cada franja perdida). El log **Bot Logs** lo indica como franja recuperada.
+- Si el bot estaba caído en esa hora, al volver recupera **la franja más reciente** que se perdió y abre la cola en ese momento (una sola vez, no una por cada franja perdida). El log **Rooms** lo indica como franja recuperada.
 - `/room create` abre esa misma cola en el momento, sin esperar al reloj. También sirve con auto-room apagado y no lo enciende. `group` y `round` son opcionales: si van, solo se abren los partidos de ese grupo y/o esa ronda.
 
 Apagarlo no cierra tickets ya abiertos. No abre salas nuevas hasta el próximo off → on, un `/room create`, o las 00:00 / 12:00 si se vuelve a encender antes.

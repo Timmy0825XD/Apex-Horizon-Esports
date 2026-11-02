@@ -214,8 +214,10 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
       guild,
       settings: bundle.settings,
       actor: interaction.user,
-      description: `A schedule was created for **${bundle.tournament.name}**.`,
-      details: [`**Match:** \`${bundle.match.challongeMatchId}\``, ticketLine(guild, bundle.channel.id), peopleLine(judgeId, recorderId)],
+      action: "created",
+    title: "Schedule created",
+    summary: `A schedule was created for **${bundle.tournament.name}**.`,
+      details: [`**Match** \`${bundle.match.challongeMatchId}\``, ticketLine(guild, bundle.channel.id), peopleLine(judgeId, recorderId)],
     }).catch(() => false),
   ]);
   if (!pinged) {

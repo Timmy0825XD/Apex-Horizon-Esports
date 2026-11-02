@@ -1,12 +1,11 @@
 import type { ChatInputCommandInteraction, Guild, User } from "discord.js";
-import { auditLogTitles, publishAudit } from "../../lib/audit.js";
+import { publishAudit, type AuditAction, type AuditGroup } from "../../lib/audit.js";
 import { prisma } from "../../lib/prisma.js";
 
 export async function auditUtility(
   actor: ChatInputCommandInteraction | { user: User },
   guild: Guild,
-  description: string,
-  details: string[],
+  log: { action: AuditAction; title: string; summary: string; groups?: AuditGroup[] },
 ): Promise<void> {
   const row = await prisma.guild
     .findUnique({
@@ -22,9 +21,8 @@ export async function auditUtility(
   await publishAudit({
     guild,
     channelId,
-    title: auditLogTitles.botLogs,
-    description,
-    details,
+    module: "utility",
+    ...log,
     actor: actor.user,
   }).catch(() => undefined);
 }

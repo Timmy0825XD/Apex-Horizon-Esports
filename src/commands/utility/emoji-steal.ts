@@ -98,8 +98,10 @@ export async function handleEmojiSteal(interaction: ChatInputCommandInteraction,
     components: [container],
   });
 
-  await auditUtility(interaction, guild, "A custom emoji was removed from the server.", [
-    `**Emoji:** \`${name}\``,
-    `**ID:** \`${emoji.id}\``,
-  ]);
+  await auditUtility(interaction, guild, {
+    action: "deleted",
+    title: "Emoji removed",
+    summary: `The custom emoji \`${name}\` was removed from the server.`,
+    groups: [{ lines: [`**ID** \`${emoji.id}\``] }],
+  });
 }

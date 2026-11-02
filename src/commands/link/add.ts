@@ -68,11 +68,13 @@ export async function handleLinkAdd(interaction: ChatInputCommandInteraction): P
     guild,
     settings: loaded.settings,
     actor: interaction.user,
-    description: "Recording Links Added",
+    action: "created",
+    title: "Recording links added",
+    summary: `Recording links were added to an attendance in **${loaded.tournament.name}**.`,
     details: attendanceAuditDetails({
       tournamentName: loaded.tournament.name,
       recorderId: loaded.attendance.recorderId,
-      extra: [`**Added:** \`${merged.added.length}\``, `**Total:** \`${merged.links.length}\``],
+      extra: [`**Added** \`${merged.added.length}\` · **Total** \`${merged.links.length}\``],
     }),
   });
   const noun = merged.added.length === 1 ? "link was" : "links were";

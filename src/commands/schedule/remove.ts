@@ -50,15 +50,17 @@ export async function runDelete(interaction: ChatInputCommandInteraction, bundle
   }
   await prisma.schedule.delete({ where: { id: schedule.id } });
   await replySchedule(interaction, scheduleNotice("success", "Schedule deleted", "The posts, reminders, and the live mark were removed. This cannot be undone."));
-  const details = [ticketLine(guild, schedule.channelId), `**Match:** \`${schedule.challongeMatchId}\``];
+  const details = [ticketLine(guild, schedule.channelId), `**Match** \`${schedule.challongeMatchId}\``];
   if (reason) {
-    details.push(`**Reason:** ${reason}`);
+    details.push(`**Reason** ${reason}`);
   }
   await auditSchedule({
     guild,
     settings: bundle.settings,
     actor: interaction.user,
-    description: `A schedule was deleted for **${bundle.tournament.name}**.`,
+    action: "deleted",
+    title: "Schedule deleted",
+    summary: `A schedule was deleted for **${bundle.tournament.name}**.`,
     details,
   });
 }

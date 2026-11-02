@@ -1,6 +1,6 @@
 import type { GuildSettings } from "@prisma/client";
 import type { Guild, User } from "discord.js";
-import { auditLogTitles, publishAudit } from "../../lib/audit.js";
+import { fact, publishAudit, type AuditAction } from "../../lib/audit.js";
 import { formatChannel, formatUser } from "../../lib/formatters.js";
 import { escapeDiscord } from "../room/labels.js";
 
@@ -8,7 +8,9 @@ type AuditInput = {
   guild: Guild;
   settings: GuildSettings | null;
   actor: User;
-  description: string;
+  action: AuditAction;
+  title: string;
+  summary: string;
   details: string[];
 };
 
@@ -19,9 +21,11 @@ export async function auditAttendance(input: AuditInput): Promise<void> {
   await publishAudit({
     guild: input.guild,
     channelId: input.settings.botLogsChannelId,
-    title: auditLogTitles.botLogs,
-    description: input.description,
-    details: input.details,
+    module: "attendance",
+    action: input.action,
+    title: input.title,
+    summary: input.summary,
+    groups: [{ lines: input.details }],
     actor: input.actor,
   });
 }
@@ -34,18 +38,19 @@ export function attendanceAuditDetails(input: {
   score?: string;
   extra?: string[];
 }): string[] {
-  const lines = [`**Tournament:** ${escapeDiscord(input.tournamentName)}`];
+  const lines = [fact("Tournament", escapeDiscord(input.tournamentName))];
   if (input.channelId) {
-    lines.push(`**Channel:** ${formatChannel(null, input.channelId)}`);
+    lines.push(fact("Ticket", formatChannel(null, input.channelId)));
   }
-  if (input.judgeId) {
-    lines.push(`**Judge:** ${formatUser(input.judgeId)}`);
-  }
-  if (input.recorderId) {
-    lines.push(`**Recorder:** ${formatUser(input.recorderId)}`);
+  const people = [
+    input.judgeId ? fact("Judge", formatUser(input.judgeId)) : null,
+    input.recorderId ? fact("Recorder", formatUser(input.recorderId)) : null,
+  ].filter((line): line is string => Boolean(line));
+  if (people.length > 0) {
+    lines.push(people.join(" · "));
   }
   if (input.score) {
-    lines.push(`**Score:** ${input.score}`);
+    lines.push(fact("Score", input.score));
   }
   if (input.extra) {
     lines.push(...input.extra);

@@ -56,7 +56,7 @@ Organiser. Respuesta efímera. No audita. El bot necesita **Manage Server** o **
 | time | STRING (Choice) | Sí | `7 days` · `1 month` · `2 months` · `6 months` · `Permanent` |
 | reason | STRING | No | Máx. 512. |
 
-Organiser (`manager_role` o Administrator). No se banea a uno mismo, al owner, al bot ni a otros bots. Si el objetivo está en el servidor, la jerarquía Discord gana. El bot necesita **Ban Members**. Si ya está baneado, no reescribe la duración. Audita en **Bot Logs**.
+Organiser (`manager_role` o Administrator). No se banea a uno mismo, al owner, al bot ni a otros bots. Si el objetivo está en el servidor, la jerarquía Discord gana. El bot necesita **Ban Members**. Si ya está baneado, no reescribe la duración. Audita en **Moderation**.
 
 ## `/user unban`
 
