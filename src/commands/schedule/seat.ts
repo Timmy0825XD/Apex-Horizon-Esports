@@ -1,9 +1,27 @@
+import type { Prisma } from "@prisma/client";
 import type { TextChannel } from "discord.js";
 import { prisma } from "../../lib/prisma.js";
 import { emojis } from "../../emojis.js";
 import { formatUser } from "../../lib/formatters.js";
 
 export type Seat = "judge" | "recorder";
+
+/** Filter: the seat is held by `userId`, or is vacant when `userId` is null (null or never set). */
+export function seatHeldBy(seat: Seat, userId: string | null): Prisma.ScheduleWhereInput {
+  if (userId) {
+    return seat === "judge" ? { judgeId: userId } : { recorderId: userId };
+  }
+  return seat === "judge"
+    ? { OR: [{ judgeId: null }, { judgeId: { isSet: false } }] }
+    : { OR: [{ recorderId: null }, { recorderId: { isSet: false } }] };
+}
+
+/** Write one seat and its own confirmation flag without touching the other seat. */
+export function seatWrite(seat: Seat, userId: string | null, confirmed: boolean): Prisma.ScheduleUpdateManyMutationInput {
+  return seat === "judge"
+    ? { judgeId: userId, confirmations: { update: { judge: confirmed } } }
+    : { recorderId: userId, confirmations: { update: { recorder: confirmed } } };
+}
 
 export const closedSeatTitle = "Match concluded";
 
