@@ -8,7 +8,7 @@ import { revokeTicket, ticketChannel } from "../commands/schedule/channel.js";
 import { paintSchedule } from "../commands/schedule/live.js";
 import { publishUrgent, thumbnailImageUrl } from "../commands/schedule/messages.js";
 import { presentFace } from "../commands/schedule/store.js";
-import { postSeatLine, seatResignedLine, seatsAreClosed } from "../commands/schedule/seat.js";
+import { postSeatLine, seatHeldBy, seatResignedLine, seatsAreClosed, seatWrite, type Seat } from "../commands/schedule/seat.js";
 import { confirmRow, reminderScheduleEmbed } from "../commands/schedule/view.js";
 
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -63,8 +63,14 @@ async function sweep(client: Client): Promise<void> {
 const SWEEP_LANES = 4;
 
 async function tickSchedule(client: Client, now: Date, schedule: Schedule): Promise<void> {
-  const guild = await client.guilds.fetch(schedule.guildId).catch(() => null);
+  // With the Guilds intent the cache lists every server the bot is in (outages stay cached as unavailable).
+  // A miss means the bot left: retire the schedule instead of asking the API again every minute.
+  const guild = client.guilds.cache.get(schedule.guildId);
   if (!guild) {
+    await prisma.schedule.update({ where: { id: schedule.id }, data: { reminderPhase: "t0" } });
+    return;
+  }
+  if (!guild.available) {
     return;
   }
   if (schedule.reminderPhase === "pending" && now < schedule.scheduledAt) {
@@ -110,6 +116,22 @@ async function sendReminder(guild: Guild, schedule: Schedule): Promise<void> {
   });
 }
 
+/** Release a seat only if that same member still holds it unconfirmed, so a fresh claim is never wiped. */
+async function releaseUnconfirmed(scheduleId: string, seat: Seat, userId: string | null): Promise<boolean> {
+  if (!userId) {
+    return false;
+  }
+  const released = await prisma.schedule.updateMany({
+    where: {
+      id: scheduleId,
+      ...seatHeldBy(seat, userId),
+      confirmations: { is: seat === "judge" ? { judge: false } : { recorder: false } },
+    },
+    data: seatWrite(seat, null, false),
+  });
+  return released.count === 1;
+}
+
 async function startTime(guild: Guild, schedule: Schedule): Promise<void> {
   const { settings, tournament, match, ticket } = await loadScheduleContext(guild, schedule);
   if (!settings || !tournament || !match || !ticket) {
@@ -118,26 +140,24 @@ async function startTime(guild: Guild, schedule: Schedule): Promise<void> {
   }
   const closed = await seatsAreClosed(schedule);
   const alert = alertFrom(schedule);
-  let judgeId = schedule.judgeId;
-  let recorderId = schedule.recorderId;
-  if (judgeId && !schedule.confirmations.judge) {
-    await revokeTicket(ticket, judgeId, recorderId === judgeId && schedule.confirmations.recorder);
-    await postSeatLine(ticket, seatResignedLine("judge", judgeId), judgeId);
-    judgeId = null;
+  const judgeLeft = (await releaseUnconfirmed(schedule.id, "judge", schedule.judgeId)) ? schedule.judgeId : null;
+  const recorderLeft = (await releaseUnconfirmed(schedule.id, "recorder", schedule.recorderId)) ? schedule.recorderId : null;
+  const seated = await prisma.schedule.findUniqueOrThrow({ where: { id: schedule.id } });
+  const stillSeated = (userId: string) => seated.judgeId === userId || seated.recorderId === userId;
+  if (judgeLeft) {
+    await revokeTicket(ticket, judgeLeft, stillSeated(judgeLeft));
+    await postSeatLine(ticket, seatResignedLine("judge", judgeLeft), judgeLeft);
   }
-  if (recorderId && !schedule.confirmations.recorder) {
-    await revokeTicket(ticket, recorderId, judgeId === recorderId);
-    await postSeatLine(ticket, seatResignedLine("recorder", recorderId), recorderId);
-    recorderId = null;
+  if (recorderLeft) {
+    await revokeTicket(ticket, recorderLeft, stillSeated(recorderLeft));
+    await postSeatLine(ticket, seatResignedLine("recorder", recorderLeft), recorderLeft);
   }
-  const needsUrgent = !closed && (!judgeId || !recorderId);
-  const claimsOpenUntil = needsUrgent ? new Date(Date.now() + 10 * 60 * 1000) : closed ? null : schedule.claimsOpenUntil;
+  const needsUrgent = !closed && (!seated.judgeId || !seated.recorderId);
+  const claimsOpenUntil = needsUrgent ? new Date(Date.now() + 10 * 60 * 1000) : closed ? null : seated.claimsOpenUntil;
+  // Seats are settled above; this write only moves the phase and the urgent window.
   const next = await prisma.schedule.update({
     where: { id: schedule.id },
     data: {
-      judgeId,
-      recorderId,
-      confirmations: { judge: Boolean(judgeId) && schedule.confirmations.judge, recorder: Boolean(recorderId) && schedule.confirmations.recorder },
       reminderPhase: "t0",
       claimsOpenUntil,
       ...(alert && needsUrgent ? { alert } : {}),

@@ -15,15 +15,30 @@ import { findMatch, findScheduleForMatch, presentFace } from "./store.js";
 import type { TicketBundle } from "./ticket.js";
 import { resultsEmbed, type ScheduleFace } from "./view.js";
 
-function proofFiles(interaction: ChatInputCommandInteraction): AttachmentBuilder[] {
-  const files: AttachmentBuilder[] = [];
+type ProofFile = { data: Buffer; name: string };
+
+/** Download each proof once; the ticket and the result channel both upload from these bytes. */
+async function proofFiles(interaction: ChatInputCommandInteraction): Promise<ProofFile[]> {
+  const picked: { url: string; name: string }[] = [];
   for (let index = 1; index <= 10; index += 1) {
     const attachment = interaction.options.getAttachment(`image${index}`);
     if (attachment) {
-      files.push(new AttachmentBuilder(attachment.url, { name: attachment.name ?? `proof-${index}.png` }));
+      picked.push({ url: attachment.url, name: attachment.name ?? `proof-${index}.png` });
     }
   }
-  return files;
+  return Promise.all(
+    picked.map(async ({ url, name }) => {
+      const response = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+      if (!response.ok) {
+        throw new Error(`Could not download proof image ${name} (HTTP ${response.status}).`);
+      }
+      return { data: Buffer.from(await response.arrayBuffer()), name };
+    }),
+  );
+}
+
+function proofAttachments(files: ProofFile[]): AttachmentBuilder[] {
+  return files.map((file) => new AttachmentBuilder(file.data, { name: file.name }));
 }
 
 function resultsIntro(face: ScheduleFace): { content: string; users: string[] } {
@@ -150,23 +165,32 @@ export async function runResults(interaction: ChatInputCommandInteraction, bundl
     transcriptUrl: null,
   });
   const allowedMentions = { users: intro.users, parse: [] as const };
+  let proofs: ProofFile[];
+  try {
+    proofs = await proofFiles(interaction);
+  } catch (error) {
+    console.error("Schedule results proof download failed", error);
+    await replySchedule(interaction, scheduleNotice("error", "Images not loaded", "The proof images could not be downloaded. Upload them again."));
+    return;
+  }
   let ticketPost: Message | null = null;
   let channelPost: Message | null = null;
   try {
     ticketPost = await bundle.channel.send({
       content: intro.content,
       embeds: [embed],
-      files: proofFiles(interaction),
+      files: proofAttachments(proofs),
       allowedMentions,
     });
     channelPost = await resultChannel.send({
       embeds: [embed],
-      files: proofFiles(interaction),
+      files: proofAttachments(proofs),
       allowedMentions: { parse: [] },
     });
     const imageUrls = [...channelPost.attachments.values()].map((file) => file.url);
-    const next = await prisma.schedule.update({
-      where: { id: schedule.id },
+    // Store only if no other judge declared meanwhile; the loser's posts are removed below.
+    const stored = await prisma.schedule.updateMany({
+      where: { id: schedule.id, OR: [{ results: null }, { results: { isSet: false } }] },
       data: {
         results: {
           set: {
@@ -184,6 +208,13 @@ export async function runResults(interaction: ChatInputCommandInteraction, bundl
         },
       },
     });
+    if (stored.count === 0) {
+      await ticketPost.delete().catch(() => undefined);
+      await channelPost.delete().catch(() => undefined);
+      await replySchedule(interaction, scheduleNotice("error", "Result already posted", "Another judge declared this match a moment ago."));
+      return;
+    }
+    const next = await prisma.schedule.findUniqueOrThrow({ where: { id: schedule.id } });
     await paintSchedule(guild, bundle.channel, bundle.settings, bundle.tournament, bundle.match, next, false).catch((error) => {
       console.error("Schedule seat lock failed", error);
     });

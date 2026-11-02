@@ -4,23 +4,15 @@ import { decryptSecret } from "../../lib/crypto.js";
 import { formatHelpEntry } from "../../lib/formatters.js";
 import { prisma } from "../../lib/prisma.js";
 import { settingsCommandIdFor } from "../../lib/register-slash.js";
-import { attachResultsTranscript } from "../schedule/results.js";
 import { loadGuildSettings } from "../settings/store.js";
-import { closeTicket } from "../ticket/lifecycle.js";
 import { findTournamentById } from "../tournament/store.js";
 import { canUploadScore } from "./access.js";
 import { auditScoreUpload } from "./audit.js";
 import { markPendingForfeit, settlePendingForfeits } from "./forfeit.js";
 import { deferBracket, respondBracket } from "./respond.js";
-import { publishTicketTranscript, transcriptFilename } from "../ticket/transcript/index.js";
-import { bothDisqualifiedMessage, bracketPanel, channelClosedMessage, transcriptGeneratedMessage } from "./view.js";
+import { archiveBattleTicket } from "./archive.js";
+import { bothDisqualifiedMessage, bracketPanel } from "./view.js";
 import { slashMention } from "../../lib/register-slash.js";
-
-function archivedChannelName(current: string): string {
-  const bare = current.replace(/^[✅🔴]+/u, "").replace(/^-+/, "");
-  const next = `✅${bare}`.slice(0, 100).replace(/-+$/g, "");
-  return next || "done";
-}
 
 export async function runBracketDqBoth(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = interaction.guild;
@@ -131,6 +123,21 @@ export async function runBracketDqBoth(interaction: ChatInputCommandInteraction)
     const winnerName = names.get(winnerId) ?? "Unknown";
 
     await updateChallongeMatch(tournament.challongeId, match.id, apiKey, scoresCsv(score1, score2), winnerId);
+    // Challonge already holds the score: log it now, so a later Discord failure never hides it.
+    await auditScoreUpload(interaction, guild, settings, {
+      action: "disqualified",
+      tournamentName: tournament.name,
+      matchId: match.id,
+      leftName,
+      rightName,
+      score1,
+      score2,
+      winnerName,
+      channelId: channel.id,
+      note: "Side 1 advances and is forfeited in the next match. Side 2 is eliminated.",
+    }).catch((error) => {
+      console.error("Disqualification audit failed", error);
+    });
     const existing = await prisma.match.findUnique({
       where: {
         tournamentId_challongeMatchId: { tournamentId: tournament.id, challongeMatchId: match.id },
@@ -193,36 +200,13 @@ export async function runBracketDqBoth(interaction: ChatInputCommandInteraction)
       }),
     );
 
-    const ticket = channel as TextChannel;
-    const nextName = archivedChannelName(ticket.name);
-    if (nextName !== ticket.name) {
-      await ticket.setName(nextName, "Both sides disqualified").catch(() => undefined);
-    }
-    await closeTicket(ticket, guild, tournament);
-
-    await interaction.followUp(channelClosedMessage(interaction.user.id, actorTag));
-
-    const archivedName = ticket.name.startsWith("✅") ? ticket.name : nextName;
-    const transcriptUrl = await publishTicketTranscript(guild, ticket, tournament.transcriptChannelId, {
-      tournamentName: tournament.name,
-      actor: interaction.user,
-      filename: transcriptFilename(archivedName),
-      channelName: archivedName,
-    });
-    await attachResultsTranscript(guild, tournament.id, match.id, transcriptUrl).catch(() => undefined);
-    await interaction.followUp(transcriptGeneratedMessage(transcriptUrl, actorTag));
-
-    await auditScoreUpload(interaction, guild, settings, {
-      action: "disqualified",
-      tournamentName: tournament.name,
+    await archiveBattleTicket({
+      interaction,
+      guild,
+      ticket: channel as TextChannel,
+      tournament,
       matchId: match.id,
-      leftName,
-      rightName,
-      score1,
-      score2,
-      winnerName,
-      channelId: channel.id,
-      note: "Side 1 advances and is forfeited in the next match. Side 2 is eliminated.",
+      reason: "Both sides disqualified",
     });
   } catch (error) {
     const message =

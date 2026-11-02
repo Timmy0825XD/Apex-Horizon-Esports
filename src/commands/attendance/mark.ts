@@ -1,8 +1,9 @@
-import type { ChatInputCommandInteraction } from "discord.js";
+import type { ChatInputCommandInteraction, Guild } from "discord.js";
+import type { GuildSettings, Schedule, StaffConfig } from "@prisma/client";
 import { errorEmbed } from "../../lib/embeds.js";
 import { prisma } from "../../lib/prisma.js";
 import { attachResultsLinks } from "../schedule/results.js";
-import { loadTicket } from "../schedule/ticket.js";
+import { loadTicket, type TicketBundle } from "../schedule/ticket.js";
 import { loadGuildStaffState } from "../staff/store.js";
 import { attendanceAuditDetails, auditAttendance } from "./audit.js";
 import { canMarkAttendance } from "./access.js";
@@ -11,6 +12,10 @@ import { isDefaultWin } from "./payroll.js";
 import { deferHidden, editAttendance } from "./respond.js";
 import { findActiveAttendance } from "./store.js";
 import { readYoutubeLinks } from "./youtube.js";
+
+// Attendance rows keep soft-deleted history, so Mongo cannot hold a unique index per match.
+// The bot runs as one process: this lock stops two marks for the same match from overlapping.
+const marking = new Set<string>();
 
 export async function handleAttendanceMark(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = interaction.guild;
@@ -47,6 +52,29 @@ export async function handleAttendanceMark(interaction: ChatInputCommandInteract
     });
     return;
   }
+  const lockKey = `${bundle.tournament.id}:${bundle.match.challongeMatchId}`;
+  if (marking.has(lockKey)) {
+    await editAttendance(interaction, {
+      embeds: [errorEmbed("Attendance in progress", "Someone is marking attendance for this ticket right now.")],
+    });
+    return;
+  }
+  marking.add(lockKey);
+  try {
+    await markLocked(interaction, guild, bundle, bundle.schedule, settings, staff);
+  } finally {
+    marking.delete(lockKey);
+  }
+}
+
+async function markLocked(
+  interaction: ChatInputCommandInteraction,
+  guild: Guild,
+  bundle: TicketBundle,
+  schedule: Schedule,
+  settings: GuildSettings | null,
+  staff: StaffConfig,
+): Promise<void> {
   const existing = await findActiveAttendance(guild.id, bundle.tournament.id, bundle.match.challongeMatchId);
   if (existing) {
     await editAttendance(interaction, {
@@ -129,7 +157,7 @@ export async function handleAttendanceMark(interaction: ChatInputCommandInteract
         guildId: guild.id,
         tournamentId: bundle.tournament.id,
         challongeMatchId: bundle.match.challongeMatchId,
-        scheduleId: bundle.schedule.id,
+        scheduleId: schedule.id,
         judgeId: judge.id,
         recorderId: recorder.id,
         team1Score,

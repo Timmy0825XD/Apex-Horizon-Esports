@@ -28,6 +28,26 @@ function fitChoice(label: string): string {
   return `${clipped}${stamp}`.slice(0, 100);
 }
 
+// Autocomplete must answer within 3 s: read only the fields the labels use and join through maps.
+const scheduleChoiceFields = {
+  id: true,
+  tournamentId: true,
+  challongeMatchId: true,
+  channelId: true,
+  scheduledAt: true,
+  results: true,
+} as const;
+
+const matchNameFields = { tournamentId: true, challongeMatchId: true, player1Name: true, player2Name: true } as const;
+
+function matchKey(tournamentId: string, challongeMatchId: number): string {
+  return `${tournamentId}:${challongeMatchId}`;
+}
+
+function byMatchKey<T extends { tournamentId: string; challongeMatchId: number }>(rows: T[]): Map<string, T> {
+  return new Map(rows.map((row) => [matchKey(row.tournamentId, row.challongeMatchId), row]));
+}
+
 function utcStamp(when: Date): string {
   const day = String(when.getUTCDate()).padStart(2, "0");
   const month = String(when.getUTCMonth() + 1).padStart(2, "0");
@@ -59,6 +79,7 @@ export async function handleScheduleAuto(interaction: AutocompleteInteraction): 
     const upcoming = await prisma.schedule.findMany({
       where: { guildId, scheduledAt: { gt: now } },
       orderBy: { scheduledAt: "asc" },
+      select: scheduleChoiceFields,
     });
     const channelIds = [...new Set(upcoming.map((row) => row.channelId))];
     const rooms = channelIds.length
@@ -73,19 +94,19 @@ export async function handleScheduleAuto(interaction: AutocompleteInteraction): 
     }
     const [tournaments, matches] = await Promise.all([
       prisma.tournament.findMany({ where: { id: { in: tournamentIds } }, select: { id: true, name: true } }),
-      prisma.match.findMany({ where: { tournamentId: { in: tournamentIds } } }),
+      prisma.match.findMany({ where: { tournamentId: { in: tournamentIds } }, select: matchNameFields }),
     ]);
+    const tournamentNames = new Map(tournaments.map((row) => [row.id, row.name]));
+    const matchByKey = byMatchKey(matches);
     const choices = schedules
       .map((schedule) => {
-        const tournament = tournaments.find((row) => row.id === schedule.tournamentId);
-        const match = matches.find(
-          (item) => item.tournamentId === schedule.tournamentId && item.challongeMatchId === schedule.challongeMatchId,
-        );
-        if (!tournament || !match) {
+        const tournamentName = tournamentNames.get(schedule.tournamentId);
+        const match = matchByKey.get(matchKey(schedule.tournamentId, schedule.challongeMatchId));
+        if (tournamentName == null || !match) {
           return null;
         }
         const names = `${match.player1Name} vs ${match.player2Name}`;
-        const label = `${names} | ${tournament.name} | ${utcStamp(schedule.scheduledAt)}`;
+        const label = `${names} | ${tournamentName} | ${utcStamp(schedule.scheduledAt)}`;
         return { name: label.slice(0, 100), value: schedule.id, haystack: label.toLowerCase() };
       })
       .filter((choice): choice is { name: string; value: string; haystack: string } => choice !== null)
@@ -133,13 +154,15 @@ export async function handleScheduleAuto(interaction: AutocompleteInteraction): 
           ...(userId ? { OR: [{ judgeId: userId }, { recorderId: userId }] } : {}),
         },
         orderBy: { scheduledAt: "desc" },
+        select: scheduleChoiceFields,
       }),
-      prisma.match.findMany({ where: { tournamentId: { in: ids } } }),
+      prisma.match.findMany({ where: { tournamentId: { in: ids } }, select: matchNameFields }),
     ]);
     const named = new Map(tournaments.map((row) => [row.id, row.name]));
+    const matchByKey = byMatchKey(matches);
     const choices = schedules
       .map((schedule) => {
-        const match = matches.find((item) => item.tournamentId === schedule.tournamentId && item.challongeMatchId === schedule.challongeMatchId);
+        const match = matchByKey.get(matchKey(schedule.tournamentId, schedule.challongeMatchId));
         if (!match) {
           return null;
         }
@@ -177,11 +200,14 @@ export async function handleScheduleAuto(interaction: AutocompleteInteraction): 
     return;
   }
   const query = focused.value.trim().toLowerCase();
-  const schedules = await prisma.schedule.findMany({ where: { guildId, tournamentId }, orderBy: { scheduledAt: "asc" } });
-  const matches = await prisma.match.findMany({ where: { tournamentId } });
+  const [schedules, matches] = await Promise.all([
+    prisma.schedule.findMany({ where: { guildId, tournamentId }, orderBy: { scheduledAt: "asc" }, select: scheduleChoiceFields }),
+    prisma.match.findMany({ where: { tournamentId }, select: matchNameFields }),
+  ]);
+  const matchByKey = byMatchKey(matches);
   const choices = schedules
     .map((schedule) => {
-      const match = matches.find((item) => item.challongeMatchId === schedule.challongeMatchId);
+      const match = matchByKey.get(matchKey(schedule.tournamentId, schedule.challongeMatchId));
       const label = match ? `${match.player1Name} vs ${match.player2Name}` : `Match ${schedule.challongeMatchId}`;
       return { name: label.slice(0, 100), value: String(schedule.challongeMatchId), haystack: label.toLowerCase() };
     })

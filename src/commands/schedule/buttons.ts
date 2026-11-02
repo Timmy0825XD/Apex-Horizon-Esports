@@ -9,7 +9,7 @@ import { grantTicket, ticketChannel } from "./channel.js";
 import { paintSchedule } from "./live.js";
 import { formatUser } from "../../lib/formatters.js";
 import { schedulePlain } from "./respond.js";
-import { closedSeatBody, closedSeatTitle, postSeatLine, seatAssignedLine, seatsAreClosed } from "./seat.js";
+import { closedSeatBody, closedSeatTitle, postSeatLine, seatAssignedLine, seatHeldBy, seatsAreClosed, seatWrite } from "./seat.js";
 import { handleOpenButton } from "./query.js";
 import { handleShowButton } from "./show.js";
 import { claimsAreOpen, confirmRow, parseScheduleButton } from "./view.js";
@@ -101,11 +101,28 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
     await privateReply(interaction, "error", "Ticket missing", "The battle ticket for this schedule could not be opened.");
     return;
   }
-  await grantTicket(ticket, interaction.user.id);
-  const next = await prisma.schedule.update({
-    where: { id: schedule.id },
-    data: seat === "judge" ? { judgeId: interaction.user.id, confirmations: { ...schedule.confirmations, judge: false } } : { recorderId: interaction.user.id, confirmations: { ...schedule.confirmations, recorder: false } },
+  // Reserve the seat only if it is still empty: two members pressing at once must not both win.
+  const reserved = await prisma.schedule.updateMany({
+    where: { id: schedule.id, ...seatHeldBy(seat, null) },
+    data: seatWrite(seat, interaction.user.id, false),
   });
+  if (reserved.count === 0) {
+    const label = seat === "judge" ? "judge" : "recorder";
+    await privateReply(interaction, "error", "Seat taken", `A ${label} is already assigned.`);
+    return;
+  }
+  try {
+    await grantTicket(ticket, interaction.user.id);
+  } catch (error) {
+    console.error("Schedule seat grant failed", error);
+    await prisma.schedule.updateMany({
+      where: { id: schedule.id, ...seatHeldBy(seat, interaction.user.id) },
+      data: seatWrite(seat, null, false),
+    });
+    await privateReply(interaction, "error", "Ticket access failed", "The bot could not add you to the battle ticket, so the seat was released.");
+    return;
+  }
+  const next = await prisma.schedule.findUniqueOrThrow({ where: { id: schedule.id } });
   await paintSchedule(guild, ticket, settings, tournament, match, next, false);
   const label = seat === "judge" ? "Judge" : "Recorder";
   await postSeatLine(ticket, seatAssignedLine(seat, interaction.user.id), interaction.user.id);
@@ -129,9 +146,17 @@ async function confirmSeat(interaction: ButtonInteraction, guild: Guild, schedul
     await privateReply(interaction, "error", "Match started", "Confirmation closes when the match starts.");
     return;
   }
-  const confirmations = { ...schedule.confirmations, [seat]: true };
-  await prisma.schedule.update({ where: { id: schedule.id }, data: { confirmations } });
-  const row = confirmRow(schedule.id, schedule.judgeId, schedule.recorderId, confirmations.judge, confirmations.recorder);
+  // Only flip this seat, and only while the presser still holds it.
+  const confirmed = await prisma.schedule.updateMany({
+    where: { id: schedule.id, ...seatHeldBy(seat, interaction.user.id) },
+    data: { confirmations: { update: seat === "judge" ? { judge: true } : { recorder: true } } },
+  });
+  if (confirmed.count === 0) {
+    await privateReply(interaction, "error", "Not your seat", "Only the person assigned to that seat can confirm.");
+    return;
+  }
+  const current = await prisma.schedule.findUniqueOrThrow({ where: { id: schedule.id } });
+  const row = confirmRow(current.id, current.judgeId, current.recorderId, current.confirmations.judge, current.confirmations.recorder);
   await interaction.update({ components: row ? [row] : [], allowedMentions: { parse: [] } });
   const ticket = await ticketChannel(guild, schedule.channelId);
   const label = seat === "judge" ? "Judge" : "Recorder";

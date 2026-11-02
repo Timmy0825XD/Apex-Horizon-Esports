@@ -34,7 +34,7 @@ export type ChallongeBracket = {
 
 export class ChallongeError extends Error {
   constructor(
-    readonly code: "bad-key" | "not-found" | "timeout" | "bad-response",
+    readonly code: "bad-key" | "rejected" | "not-found" | "timeout" | "network" | "bad-response",
     message: string,
   ) {
     super(message);
@@ -64,6 +64,17 @@ export function normalizeChallongeId(raw: string): string {
   }
 }
 
+/** Challonge 422 bodies look like `{"errors":["..."]}`; keep the first readable reason. */
+function challongeErrors(body: string): string | null {
+  try {
+    const parsed = JSON.parse(body) as { errors?: unknown };
+    const first = Array.isArray(parsed.errors) ? parsed.errors.find((item) => typeof item === "string") : null;
+    return typeof first === "string" && first.trim() ? first.trim().slice(0, 300) : null;
+  } catch {
+    return null;
+  }
+}
+
 async function challongeRequest(
   method: "GET" | "PUT" | "POST",
   path: string,
@@ -88,13 +99,18 @@ async function challongeRequest(
       body: body ? JSON.stringify(body) : undefined,
     });
 
-    if (response.status === 401 || response.status === 422) {
+    if (response.status === 401) {
+      throw new ChallongeError("bad-key", "Challonge rejected that API key.");
+    }
+    if (response.status === 422) {
+      // 422 is a validation refusal (score, winner, reopen…), not an auth problem.
       const detail = await response.text().catch(() => "");
+      const reason = challongeErrors(detail);
       throw new ChallongeError(
-        "bad-key",
-        detail.includes("score") || detail.includes("winner")
-          ? "Challonge rejected that score update. Check the scores and that the match can still be edited."
-          : "Challonge rejected that API key.",
+        "rejected",
+        reason
+          ? `Challonge refused that change: ${reason}`
+          : "Challonge refused that change. Check the scores and that the match can still be edited.",
       );
     }
     if (response.status === 404) {
@@ -122,7 +138,10 @@ async function challongeRequest(
     if (error instanceof SyntaxError) {
       throw new ChallongeError("bad-response", "Challonge returned an unexpected payload.");
     }
-    throw new ChallongeError("timeout", "Timed out talking to Challonge. Try again in a moment.");
+    if (controller.signal.aborted) {
+      throw new ChallongeError("timeout", "Timed out talking to Challonge. Try again in a moment.");
+    }
+    throw new ChallongeError("network", "Could not reach Challonge. Try again in a moment.");
   } finally {
     clearTimeout(timer);
   }

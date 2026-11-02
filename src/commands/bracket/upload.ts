@@ -10,21 +10,14 @@ import { decryptSecret } from "../../lib/crypto.js";
 import { formatHelpEntry } from "../../lib/formatters.js";
 import { prisma } from "../../lib/prisma.js";
 import { settingsCommandIdFor } from "../../lib/register-slash.js";
-import { attachResultsTranscript } from "../schedule/results.js";
 import { loadGuildSettings } from "../settings/store.js";
-import { closeTicket } from "../ticket/lifecycle.js";
 import { findTournamentById } from "../tournament/store.js";
 import { canUploadScore } from "./access.js";
 import { settlePendingForfeits } from "./forfeit.js";
 import { auditScoreUpload } from "./audit.js";
 import { deferBracket, respondBracket } from "./respond.js";
-import { publishTicketTranscript, transcriptFilename } from "../ticket/transcript/index.js";
-import {
-  bracketPanel,
-  channelClosedMessage,
-  matchUpdatedMessage,
-  transcriptGeneratedMessage,
-} from "./view.js";
+import { archiveBattleTicket } from "./archive.js";
+import { bracketPanel, matchUpdatedMessage } from "./view.js";
 import { slashMention } from "../../lib/register-slash.js";
 
 async function syncMatchRow(
@@ -51,12 +44,6 @@ async function syncMatchRow(
     },
     update: { state, round, group, player1Name: leftName, player2Name: rightName },
   });
-}
-
-function archivedChannelName(current: string): string {
-  const bare = current.replace(/^[✅🔴]+/u, "").replace(/^-+/, "");
-  const next = `✅${bare}`.slice(0, 100).replace(/-+$/g, "");
-  return next || "done";
 }
 
 export async function runBracketUpload(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -177,6 +164,21 @@ export async function runBracketUpload(interaction: ChatInputCommandInteraction)
     const csv = scoresCsv(score1, score2);
 
     await updateChallongeMatch(tournament.challongeId, match.id, apiKey, csv, winnerId);
+    // Challonge already holds the score: log it now, so a later Discord failure never hides it.
+    await auditScoreUpload(interaction, guild, settings, {
+      action: "uploaded",
+      tournamentName: tournament.name,
+      matchId: match.id,
+      leftName,
+      rightName,
+      score1,
+      score2,
+      winnerName,
+      channelId: channel.id,
+      note,
+    }).catch((error) => {
+      console.error("Score upload audit failed", error);
+    });
     const existing = await prisma.match.findUnique({
       where: {
         tournamentId_challongeMatchId: { tournamentId: tournament.id, challongeMatchId: match.id },
@@ -192,7 +194,9 @@ export async function runBracketUpload(interaction: ChatInputCommandInteraction)
       rightName,
       match.round,
       existing?.group ?? null,
-    );
+    ).catch((error) => {
+      console.error(`Match row sync failed after score upload for match ${match.id}`, error);
+    });
     await settlePendingForfeits({ guild, tournament, actor: interaction.user }).catch((error) => {
       console.error("Pending forfeit settle failed after score upload", error);
     });
@@ -214,36 +218,13 @@ export async function runBracketUpload(interaction: ChatInputCommandInteraction)
       }),
     );
 
-    const ticket = channel as TextChannel;
-    const nextName = archivedChannelName(ticket.name);
-    if (nextName !== ticket.name) {
-      await ticket.setName(nextName, "Bracket score uploaded").catch(() => undefined);
-    }
-    await closeTicket(ticket, guild, tournament);
-
-    await interaction.followUp(channelClosedMessage(interaction.user.id, actorTag));
-
-    const archivedName = ticket.name.startsWith("✅") ? ticket.name : nextName;
-    const transcriptUrl = await publishTicketTranscript(guild, ticket, tournament.transcriptChannelId, {
-      tournamentName: tournament.name,
-      actor: interaction.user,
-      filename: transcriptFilename(archivedName),
-      channelName: archivedName,
-    });
-    await attachResultsTranscript(guild, tournament.id, match.id, transcriptUrl).catch(() => undefined);
-    await interaction.followUp(transcriptGeneratedMessage(transcriptUrl, actorTag));
-
-    await auditScoreUpload(interaction, guild, settings, {
-      action: "uploaded",
-      tournamentName: tournament.name,
+    await archiveBattleTicket({
+      interaction,
+      guild,
+      ticket: channel as TextChannel,
+      tournament,
       matchId: match.id,
-      leftName,
-      rightName,
-      score1,
-      score2,
-      winnerName,
-      channelId: channel.id,
-      note,
+      reason: "Bracket score uploaded",
     });
   } catch (error) {
     const message =
