@@ -64,6 +64,7 @@ export const emojis = {
   gold : "<:gold:1519109971764314194>",
   stats : "<:stats:1557586404244983928>",
   judge_recorder : "<:judgerecorder:1557586288507355178>",
+  mw : "<:MW:1566720140005867661>",
 } as const;
 
 export const numberEmojis = [

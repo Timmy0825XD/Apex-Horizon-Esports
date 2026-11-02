@@ -25,7 +25,7 @@ El bot no habla “como el bot” en esos canales si puede evitarlo. Usa **un we
 | Canal configurado | Nombre que aparece | Para qué |
 |---|---|---|
 | Bot logs | **Server Config** | `/settings` set/edit, `/staff` set/edit (roles y canales del servidor y del staff) |
-| Bot logs | **Staff** | Recruit, fire |
+| Bot logs | **Staff** | Recruit, fire, staff info registrada o editada |
 | Bot logs | **Moderation** | `/role` individual y masivo, `/user` ban/unban, y ban/unban aplicados desde un aviso de `bans_channel` (con enlace al aviso) |
 | Bot logs | **Tournaments** | Alta, edición y baja de torneo; `/sheet add`; `/tournament role`; `/tournament validate` |
 | Bot logs | **Rooms** | `/room create`, `/auto_room`, franjas de auto-room (incluida la recuperada) |
@@ -55,7 +55,7 @@ Las listas largas (tickets abiertos, hojas archivadas) muestran **15** y cierran
 
 | Familia | Eventos |
 |---|---|
-| Servidor | Settings set/edit; staff config set/edit; recruit; fire; rol individual; rol masivo; ban; unban |
+| Servidor | Settings set/edit; staff config set/edit; recruit; fire; staff info add/edit; rol individual; rol masivo; ban; unban |
 | Torneo | Alta, edición, baja; `/sheet add`; `/tournament role`; `/tournament validate` (si abrió al menos un ticket); auto-room on/off; salas creadas |
 | Bracket | Score subido; score corregido (marcador viejo → nuevo + ganador) |
 | Schedule | Crear, actualizar (con motivo), borrar, refresh, resign, asignar por botón, resultado declarado, resultado borrado |
