@@ -6,7 +6,7 @@ Detalle: [context/platform/discord-ui.md](context/platform/discord-ui.md).
 
 En embeds y texto visible **no** uses `role.name`, `user.tag`, `user.username` ni `channel.name`. Usa helpers (`formatRole`, `formatChannel`, `formatUser`, …) para menciones (`<@&id>`, `<#id>`, `<@id>`). CSV/Excel y nombres de archivo de audit pueden ir en texto plano.
 
-Menciones de slash: `</name:id>` vía `formatHelpEntry` (cuando exista `bot-info`).
+Menciones de slash: siempre clicables, `</name sub:id>` vía `slashMention(guildId, "name sub")` (`lib/register-slash.ts`). Nunca escribas el comando a mano como `` `/name sub` ``.
 
 ## Énfasis
 

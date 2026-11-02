@@ -45,6 +45,7 @@ import {
   scoreCorrectedMessage,
   type CorrectTicket,
 } from "./view.js";
+import { slashMention } from "../../lib/register-slash.js";
 
 type ComponentNode = {
   type: number;
@@ -514,7 +515,7 @@ export async function handleBracketButton(interaction: ButtonInteraction): Promi
 
   if (interaction.user.id !== parsed.userId) {
     await interaction.reply(
-      bracketPanel("error", "Not your confirmation", ["Only the person who ran `/bracket correct` can use these buttons."]),
+      bracketPanel("error", "Not your confirmation", [`Only the person who ran ${slashMention(interaction.guildId, "bracket correct")} can use these buttons.`]),
     );
     return;
   }

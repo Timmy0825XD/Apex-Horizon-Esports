@@ -21,5 +21,5 @@ export async function handleTournamentList(interaction: ChatInputCommandInteract
 
   await deferTournament(interaction, true);
   const tournaments = await listTournaments(guild.id);
-  await respondTournament(interaction, tournamentListMessage(tournaments));
+  await respondTournament(interaction, tournamentListMessage(tournaments, interaction.guildId));
 }
