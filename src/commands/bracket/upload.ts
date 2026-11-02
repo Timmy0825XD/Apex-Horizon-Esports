@@ -25,6 +25,7 @@ import {
   matchUpdatedMessage,
   transcriptGeneratedMessage,
 } from "./view.js";
+import { slashMention } from "../../lib/register-slash.js";
 
 async function syncMatchRow(
   guildId: string,
@@ -64,7 +65,7 @@ export async function runBracketUpload(interaction: ChatInputCommandInteraction)
   if (!guild || !interaction.guildId || !channel || channel.type !== ChannelType.GuildText) {
     await respondBracket(
       interaction,
-      bracketPanel("error", "Not a battle ticket", ["Run `/bracket upload` inside a battle-ticket text channel."]),
+      bracketPanel("error", "Not a battle ticket", [`Run ${slashMention(interaction.guildId, "bracket upload")} inside a battle-ticket text channel.`]),
     );
     return;
   }
@@ -93,7 +94,7 @@ export async function runBracketUpload(interaction: ChatInputCommandInteraction)
   if (room.status === "closed") {
     await respondBracket(
       interaction,
-      bracketPanel("error", "Ticket already closed", ["This battle ticket is already archived. Use `/bracket correct` to amend the score."]),
+      bracketPanel("error", "Ticket already closed", [`This battle ticket is already archived. Use ${slashMention(interaction.guildId, "bracket correct")} to amend the score.`]),
     );
     return;
   }
@@ -162,7 +163,7 @@ export async function runBracketUpload(interaction: ChatInputCommandInteraction)
       await respondBracket(
         interaction,
         bracketPanel("error", "Score already posted", [
-          "This match is already complete on Challonge. Use `/bracket correct` to amend it.",
+          `This match is already complete on Challonge. Use ${slashMention(interaction.guildId, "bracket correct")} to amend it.`,
         ]),
       );
       return;

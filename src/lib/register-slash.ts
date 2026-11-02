@@ -18,6 +18,7 @@ import { tournamentSlash } from "../commands/tournament/slash.js";
 import { userSlash } from "../commands/user/slash.js";
 import { utilitySlash } from "../commands/utility/slash.js";
 import { env } from "./env.js";
+import { formatHelpEntry } from "./formatters.js";
 
 const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
   botSlash.toJSON(),
@@ -87,6 +88,11 @@ export const roomCommandIdFor = (guildId: string | null | undefined) => commandI
 export const ticketCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "ticket");
 export const bracketCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "bracket");
 export const scheduleCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "schedule");
+
+/** Clickable </command sub:ID> mention; plain `/command sub` code until the ID is known. */
+export function slashMention(guildId: string | null | undefined, path: string): string {
+  return formatHelpEntry(path, commandIdFor(guildId, path.split(" ")[0] ?? path));
+}
 
 export async function registerSlashCommands(): Promise<void> {
   const rest = new REST({ version: "10" }).setToken(env.discordToken);

@@ -23,6 +23,7 @@ import {
 } from "./fields.js";
 import type { DeletedRelated } from "./store.js";
 import type { BannedPlayerHit } from "./banned-ids.js";
+import { slashMention } from "../../lib/register-slash.js";
 
 export type TournamentPanelKind = "add" | "edit" | "info";
 
@@ -199,7 +200,7 @@ export function tournamentBannedPlayersMessage(hits: BannedPlayerHit[], kind: "a
   };
 }
 
-export function tournamentListMessage(tournaments: TournamentRecord[]): InteractionReplyOptions {
+export function tournamentListMessage(tournaments: TournamentRecord[], guildId: string | null): InteractionReplyOptions {
   if (tournaments.length === 0) {
     return {
       flags: [...v2Flags, MessageFlags.Ephemeral],
@@ -208,7 +209,7 @@ export function tournamentListMessage(tournaments: TournamentRecord[]): Interact
           .setAccentColor(embedColors.info)
           .addTextDisplayComponents(
             textBlock(`# ${emojis.info} No tournaments yet`),
-            textBlock("This server has no operable tournaments. An **Admin** can register one with `/tournament add`."),
+            textBlock(`This server has no operable tournaments. An **Admin** can register one with ${slashMention(guildId, "tournament add")}.`),
           ),
       ],
     };

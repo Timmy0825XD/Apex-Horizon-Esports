@@ -20,6 +20,7 @@ import { divider, textBlock, v2Flags } from "../../lib/v2.js";
 import { escapeDiscord } from "../room/labels.js";
 import { replySchedule, scheduleNotice } from "./respond.js";
 import { scheduleStatus, type ScheduleStatus } from "./show.js";
+import { slashMention } from "../../lib/register-slash.js";
 
 const PAGE_SIZE = 5;
 const OPEN_COLOR = 0xf1c40f;
@@ -309,7 +310,7 @@ export async function handleOpenButton(interaction: ButtonInteraction): Promise<
   }
   const parsed = parseOpenCustomId(interaction.customId);
   if (!parsed) {
-    await interaction.reply(scheduleNotice("error", "Page expired", "Run `/schedule unassigned` again to open a fresh list.")).catch(() => undefined);
+    await interaction.reply(scheduleNotice("error", "Page expired", `Run ${slashMention(interaction.guildId, "schedule unassigned")} again to open a fresh list.`)).catch(() => undefined);
     return;
   }
   if (!(await actorMatches(interaction, { admin: true, organiser: true, helper: true, staff: true }))) {

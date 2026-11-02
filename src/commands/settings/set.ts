@@ -7,6 +7,7 @@ import { readRequiredSettings } from "./options.js";
 import { deferSettings, respondSettings } from "./respond.js";
 import { loadGuildSettings, saveGuildSettings } from "./store.js";
 import { settingsErrorMessage, settingsMessage } from "./view.js";
+import { slashMention } from "../../lib/register-slash.js";
 
 export async function handleSettingsSet(
   interaction: ChatInputCommandInteraction,
@@ -23,7 +24,7 @@ export async function handleSettingsSet(
       interaction,
       settingsErrorMessage(
         "Administrator required",
-        "Only a Discord **Administrator** can run `/settings set` the first time.",
+        `Only a Discord **Administrator** can run ${slashMention(interaction.guildId, "settings set")} the first time.`,
       ),
     );
     return;

@@ -24,6 +24,7 @@ import { actorMatches } from "../../lib/command-access.js";
 import { thumbnailImageUrl } from "./messages.js";
 import { replySchedule, scheduleNotice } from "./respond.js";
 import { presentFace } from "./store.js";
+import { slashMention } from "../../lib/register-slash.js";
 
 const PAGE_SIZE = 5;
 const PENDING_COLOR = 0xf1c40f;
@@ -593,7 +594,7 @@ export async function handleShowButton(interaction: ButtonInteraction): Promise<
   }
   const parsed = parseShowCustomId(interaction.customId);
   if (!parsed) {
-    await interaction.reply(scheduleNotice("error", "Page expired", "Run `/schedule show` again to open a fresh list.")).catch(() => undefined);
+    await interaction.reply(scheduleNotice("error", "Page expired", `Run ${slashMention(interaction.guildId, "schedule show")} again to open a fresh list.`)).catch(() => undefined);
     return;
   }
   if (!(await actorMatches(interaction, { admin: true, organiser: true, helper: true, staff: true }))) {
