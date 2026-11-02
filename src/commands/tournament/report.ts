@@ -1,18 +1,45 @@
 import { AttachmentBuilder, ContainerBuilder, type ChatInputCommandInteraction, type Guild } from "discord.js";
-import type { Attendance, Match, Schedule } from "@prisma/client";
+import type { Attendance, Schedule, Tournament } from "@prisma/client";
 import { emojis } from "../../emojis.js";
+import { fetchChallongeBracket } from "../../lib/challonge.js";
+import { decryptSecret } from "../../lib/crypto.js";
 import { formatUser } from "../../lib/formatters.js";
 import { prisma } from "../../lib/prisma.js";
 import { attachedFile, divider, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
 import { isDefaultWin, payModeForFormat, payModeLabel } from "../attendance/payroll.js";
 import { whereActive } from "../attendance/store.js";
+import { groupLetters } from "../room/bracket.js";
 import { escapeDiscord } from "../room/labels.js";
 import { requireOrganiser } from "./access.js";
 import { optionalTextChannelFields, roleFields, textChannelFields } from "./fields.js";
+import {
+  buildOverview,
+  buildTodo,
+  compareKeys,
+  confirmedLabel,
+  matchTitle,
+  minutesToResult,
+  scheduleStatusOf,
+  sortKey,
+  stageContext,
+  stageLabel,
+  todoSummary,
+  type BracketMatch,
+  type RoomRow,
+} from "./report-checks.js";
+import {
+  buildTournamentReport,
+  type AttendanceLine,
+  type ConfigEntry,
+  type OverviewBook,
+  type ResultLine,
+  type ScheduleLine,
+  type TodoLine,
+  type WorkLine,
+} from "./report-book.js";
 import { deferTournament, respondTournament } from "./respond.js";
 import { objectIdLike } from "./store.js";
 import { tournamentErrorMessage } from "./view.js";
-import { buildTournamentReport, type AttendanceLine, type ConfigEntry, type ResultLine, type WorkLine } from "./report-book.js";
 
 const ACCENT = 0xc6a15a;
 
@@ -32,80 +59,7 @@ function titleCase(value: string): string {
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
 }
 
-type StageContext = {
-  lastWinnerRound: number | null;
-  hasLosers: boolean;
-};
-
-function stageContext(matches: Match[]): StageContext {
-  const winners = matches.filter((match) => !match.group && match.round > 0).map((match) => match.round);
-  return {
-    lastWinnerRound: winners.length > 0 ? Math.max(...winners) : null,
-    hasLosers: matches.some((match) => !match.group && match.round < 0),
-  };
-}
-
-function stageLabel(match: Match | undefined, context: StageContext): string {
-  if (!match) {
-    return "—";
-  }
-  if (match.group) {
-    return `Group ${match.group} · Round ${match.round}`;
-  }
-  if (match.thirdPlace) {
-    return "3rd place";
-  }
-  if (match.round < 0) {
-    return `Losers round ${Math.abs(match.round)}`;
-  }
-  if (context.lastWinnerRound != null && match.round === context.lastWinnerRound) {
-    return context.hasLosers ? "Grand final" : "Final";
-  }
-  if (context.lastWinnerRound != null && !context.hasLosers && match.round === context.lastWinnerRound - 1) {
-    return "Semifinal";
-  }
-  return `Round ${match.round}`;
-}
-
-function sortKey(match: Match | undefined, matchId: number): [number, string, number, number] {
-  if (!match) {
-    return [4, "", 0, matchId];
-  }
-  if (match.group) {
-    return [0, match.group, match.round, matchId];
-  }
-  if (match.thirdPlace) {
-    return [2, "", match.round, matchId];
-  }
-  if (match.round < 0) {
-    return [3, "", Math.abs(match.round), matchId];
-  }
-  return [1, "", match.round, matchId];
-}
-
-function compareKeys(left: [number, string, number, number], right: [number, string, number, number]): number {
-  if (left[0] !== right[0]) {
-    return left[0] - right[0];
-  }
-  if (left[1] !== right[1]) {
-    return left[1] < right[1] ? -1 : 1;
-  }
-  if (left[2] !== right[2]) {
-    return left[2] - right[2];
-  }
-  return left[3] - right[3];
-}
-
-function matchTitle(match: Match | undefined, matchId: number): string {
-  const left = match?.player1Name.trim();
-  const right = match?.player2Name.trim();
-  if (!left && !right) {
-    return `Match ${matchId}`;
-  }
-  return `${left || "Team 1"} vs ${right || "Team 2"}`;
-}
-
-function winnerOf(match: Match | undefined, team1: number, team2: number): { name: string; tie: boolean } {
+function winnerOf(match: BracketMatch | undefined, team1: number, team2: number): { name: string; tie: boolean } {
   if (team1 === team2) {
     return { name: "Tie", tie: true };
   }
@@ -157,6 +111,13 @@ function resource(guild: Guild, id: string, kind: "role" | "channel"): string {
   }
   const channel = guild.channels.cache.get(id);
   return channel ? `${channel.name} · ${id}` : `Missing · ${id}`;
+}
+
+function channelName(guild: Guild, id: string | null | undefined): string {
+  if (!id) {
+    return "—";
+  }
+  return guild.channels.cache.get(id)?.name ?? `Deleted · ${id}`;
 }
 
 function workLines(rows: Attendance[], names: Map<string, string>): WorkLine[] {
@@ -228,6 +189,40 @@ function httpLink(value: string | null | undefined): string | undefined {
   return link;
 }
 
+type BracketRead = {
+  matches: BracketMatch[];
+  /** Read from Challonge when the command ran, or the copy stored at the last ticket sync. */
+  live: boolean;
+};
+
+/** Reads the bracket once, now. Falls back to the stored copy when Challonge cannot be reached. */
+async function readBracket(tournament: Tournament, stored: BracketMatch[]): Promise<BracketRead> {
+  try {
+    const bracket = await fetchChallongeBracket(tournament.challongeId, decryptSecret(tournament.challongeKeyEnc));
+    const letters = groupLetters(bracket.matches);
+    const names = new Map(bracket.participants.map((participant) => [participant.id, participant.name]));
+    return {
+      live: true,
+      matches: bracket.matches.map((match) => ({
+        challongeMatchId: match.id,
+        state: match.state,
+        round: match.round,
+        group: match.groupId == null ? null : (letters.get(match.groupId) ?? null),
+        thirdPlace: match.thirdPlace,
+        player1Name: names.get(match.player1Id ?? -1) ?? "",
+        player2Name: names.get(match.player2Id ?? -1) ?? "",
+      })),
+    };
+  } catch (error) {
+    console.error(`Tournament report could not read Challonge for ${tournament.id}; using stored matches`, error);
+    return { live: false, matches: stored };
+  }
+}
+
+function percent(part: number, whole: number): string {
+  return whole === 0 ? "0%" : `${Math.round((part / whole) * 100)}%`;
+}
+
 export async function handleTournamentReport(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = interaction.guild;
   if (!guild) {
@@ -260,7 +255,7 @@ export async function handleTournamentReport(interaction: ChatInputCommandIntera
   }
 
   try {
-    const [marks, matches, schedules, rooms, attendanceTotal] = await Promise.all([
+    const [marks, storedMatches, schedules, rooms, attendanceTotal] = await Promise.all([
       prisma.attendance.findMany({
         where: whereActive({ guildId: guild.id, tournamentId: tournament.id }),
         orderBy: { createdAt: "asc" },
@@ -269,16 +264,21 @@ export async function handleTournamentReport(interaction: ChatInputCommandIntera
       prisma.schedule.findMany({ where: { guildId: guild.id, tournamentId: tournament.id } }),
       prisma.room.findMany({
         where: { guildId: guild.id, tournamentId: tournament.id },
-        select: { status: true },
-      }),
+        select: { challongeMatchId: true, channelId: true, status: true },
+      }) as Promise<RoomRow[]>,
       prisma.attendance.count({
         where: { guildId: guild.id, tournamentId: tournament.id },
       }).catch(() => 0),
     ]);
 
     const generatedAt = new Date();
-    const faces = new Map(matches.map((match) => [match.challongeMatchId, match]));
-    const context = stageContext(matches);
+    const bracket = await readBracket(tournament, storedMatches);
+    // Stored rows fill any match Challonge no longer returns (deleted or reset), so old records keep their names.
+    const faces = new Map<number, BracketMatch>(storedMatches.map((match) => [match.challongeMatchId, match]));
+    for (const match of bracket.matches) {
+      faces.set(match.challongeMatchId, match);
+    }
+    const context = stageContext(bracket.matches);
     const attendanceByMatch = new Map<number, Attendance>();
     for (const mark of marks) {
       attendanceByMatch.set(mark.challongeMatchId, mark);
@@ -287,6 +287,7 @@ export async function handleTournamentReport(interaction: ChatInputCommandIntera
     for (const schedule of schedules) {
       scheduleByMatch.set(schedule.challongeMatchId, schedule);
     }
+    const roomByMatch = new Map(rooms.map((room) => [room.challongeMatchId, room]));
 
     const ids = new Set<string>([tournament.createdBy]);
     for (const mark of marks) {
@@ -311,6 +312,8 @@ export async function handleTournamentReport(interaction: ChatInputCommandIntera
     const names = await loadNames(guild, ids);
     const generatedLabel = stamp(generatedAt);
     const mode = payModeLabel(payModeForFormat(tournament.format));
+    const ticketOf = (matchId: number, fallbackChannelId?: string | null) =>
+      channelName(guild, roomByMatch.get(matchId)?.channelId ?? fallbackChannelId);
 
     const attendance: AttendanceLine[] = [...marks]
       .sort((left, right) => {
@@ -330,11 +333,12 @@ export async function handleTournamentReport(interaction: ChatInputCommandIntera
         const recorder = person(names, mark.recorderId);
         const markedBy = person(names, mark.createdBy);
         const defaultWin = isDefaultWin(mark.remark);
-        const remark = defaultWin ? "Default win" : mark.remark?.trim() || "—";
+        const schedule = scheduleByMatch.get(mark.challongeMatchId);
         return {
           stage: stageLabel(match, context),
           matchId: mark.challongeMatchId,
           match: matchTitle(match, mark.challongeMatchId),
+          ticket: ticketOf(mark.challongeMatchId, schedule?.channelId),
           judge: judge.name,
           judgeId: judge.id,
           recorder: recorder.name,
@@ -345,21 +349,27 @@ export async function handleTournamentReport(interaction: ChatInputCommandIntera
           games: mark.team1Score + mark.team2Score,
           winner: winner.name,
           tie: winner.tie,
-          remark,
+          remark: defaultWin ? "Default win" : mark.remark?.trim() || "—",
           defaultWin,
           recordings: mark.links,
-          proof: scheduleByMatch.get(mark.challongeMatchId)?.results?.imageUrls ?? [],
+          proof: schedule?.results?.imageUrls ?? [],
+          resultDeclared: Boolean(schedule?.results),
           markedBy: markedBy.name,
           markedAt: stamp(mark.createdAt),
         };
       });
 
+    const bracketOrder = (left: Schedule, right: Schedule) =>
+      compareKeys(
+        sortKey(faces.get(left.challongeMatchId), left.challongeMatchId),
+        sortKey(faces.get(right.challongeMatchId), right.challongeMatchId),
+      ) || left.scheduledAt.getTime() - right.scheduledAt.getTime();
+
     const results: ResultLine[] = schedules
-      .flatMap((schedule) => {
-        const declared = schedule.results;
-        if (!declared) {
-          return [];
-        }
+      .filter((schedule) => schedule.results)
+      .sort(bracketOrder)
+      .map((schedule) => {
+        const declared = schedule.results!;
         const match = faces.get(schedule.challongeMatchId);
         const winner = winnerOf(match, declared.team1Score, declared.team2Score);
         const attendanceMark = attendanceByMatch.get(schedule.challongeMatchId);
@@ -367,39 +377,107 @@ export async function handleTournamentReport(interaction: ChatInputCommandIntera
         const judge = person(names, schedule.judgeId);
         const recorder = person(names, schedule.recorderId);
         const declaredBy = person(names, declared.uploadedBy);
-        const outcome = defaultWin ? "Default win" : winner.tie ? "Tie" : "Decision";
-        return [
-          {
-            stage: stageLabel(match, context),
-            matchId: schedule.challongeMatchId,
-            match: matchTitle(match, schedule.challongeMatchId),
-            state: titleCase(match?.state ?? ""),
-            team1: declared.team1Score,
-            team2: declared.team2Score,
-            winner: winner.name,
-            tie: winner.tie,
-            outcome,
-            defaultWin,
-            judge: judge.name,
-            judgeId: judge.id,
-            recorder: recorder.name,
-            recorderId: recorder.id,
-            declaredBy: declaredBy.name,
-            declaredById: declaredBy.id,
-            declaredAt: stamp(declared.declaredAt),
-            scheduledAt: stamp(schedule.scheduledAt),
-            notes: declared.notes?.trim() || "—",
-            scheduleNote: schedule.remark?.trim() || "—",
-            transcript: declared.transcriptUrl,
-            recordings: declared.links ?? [],
-            proof: declared.imageUrls ?? [],
-            sort: sortKey(match, schedule.challongeMatchId),
-            when: declared.declaredAt.getTime(),
-          },
-        ];
-      })
-      .sort((left, right) => compareKeys(left.sort, right.sort) || left.when - right.when)
-      .map(({ sort: _sort, when: _when, ...line }) => line);
+        return {
+          stage: stageLabel(match, context),
+          matchId: schedule.challongeMatchId,
+          match: matchTitle(match, schedule.challongeMatchId),
+          state: titleCase(match?.state ?? ""),
+          team1: declared.team1Score,
+          team2: declared.team2Score,
+          winner: winner.name,
+          tie: winner.tie,
+          outcome: defaultWin ? "Default win" : winner.tie ? "Tie" : "Decision",
+          defaultWin,
+          judge: judge.name,
+          judgeId: judge.id,
+          recorder: recorder.name,
+          recorderId: recorder.id,
+          declaredBy: declaredBy.name,
+          declaredById: declaredBy.id,
+          declaredAt: stamp(declared.declaredAt),
+          scheduledAt: stamp(schedule.scheduledAt),
+          resultAfter: minutesToResult(schedule),
+          attendanceMarked: Boolean(attendanceMark),
+          notes: declared.notes?.trim() || "—",
+          scheduleNote: schedule.remark?.trim() || "—",
+          transcript: declared.transcriptUrl,
+          recordings: declared.links ?? [],
+          proof: declared.imageUrls ?? [],
+        };
+      });
+
+    const scheduleLines: ScheduleLine[] = [...schedules].sort(bracketOrder).map((schedule) => {
+      const match = faces.get(schedule.challongeMatchId);
+      return {
+        stage: stageLabel(match, context),
+        matchId: schedule.challongeMatchId,
+        match: matchTitle(match, schedule.challongeMatchId),
+        status: scheduleStatusOf(schedule, generatedAt),
+        scheduledAt: stamp(schedule.scheduledAt),
+        declaredAt: schedule.results ? stamp(schedule.results.declaredAt) : "—",
+        resultAfter: minutesToResult(schedule),
+        judge: schedule.judgeId ? person(names, schedule.judgeId).name : "Open",
+        recorder: schedule.recorderId ? person(names, schedule.recorderId).name : "Open",
+        confirmed: confirmedLabel(schedule),
+        score: schedule.results ? `${schedule.results.team1Score} - ${schedule.results.team2Score}` : "—",
+        ticket: ticketOf(schedule.challongeMatchId, schedule.channelId),
+        note: schedule.remark?.trim() || "—",
+      };
+    });
+
+    const todoItems = buildTodo({ matches: bracket.matches, rooms, marks, schedules, now: generatedAt });
+    const todo: TodoLine[] = todoItems.map((item) => ({
+      priority: item.priority,
+      check: item.label,
+      stage: item.stage,
+      matchId: item.matchId,
+      match: item.match,
+      ticket: channelName(guild, item.channelId),
+      fix: item.fix,
+      detail: item.detail,
+    }));
+
+    const work = workLines(marks, names);
+    const overview = buildOverview({ matches: bracket.matches, rooms, marks, schedules });
+    const totals = overview.totals;
+    const openWithTicket = bracket.matches.filter(
+      (match) => match.state.toLowerCase() === "open" && roomByMatch.has(match.challongeMatchId),
+    ).length;
+    const defaultWins = marks.filter((mark) => isDefaultWin(mark.remark)).length;
+    const highItems = todoItems.filter((item) => item.priority === "high").length;
+    const upcoming = scheduleLines.filter((line) => line.status === "Upcoming");
+    const delays = schedules.map(minutesToResult).filter((value): value is number => value != null);
+    const sourceLabel = bracket.live
+      ? "Bracket read from Challonge"
+      : "Challonge did not answer · bracket from the last ticket sync";
+
+    const overviewBook: OverviewBook = {
+      source: sourceLabel,
+      kpis: [
+        { value: `${totals.complete} / ${totals.matches}`, label: `Matches complete · ${percent(totals.complete, totals.matches)}` },
+        { value: String(totals.open), label: `Open now · ${openWithTicket} with a ticket` },
+        { value: String(results.length), label: "Results declared" },
+        { value: String(marks.length), label: `Attendance marks · ${defaultWins} DW` },
+        { value: String(todoItems.length), label: `To do · ${highItems} high` },
+      ],
+      stages: overview.stages,
+      totals,
+      topStaff: work.slice(0, 5).map((line) => ({ username: line.username, rounds: line.totalRounds, games: line.totalGames })),
+      schedules: [
+        { label: "Schedules", value: String(schedules.length) },
+        { label: "Completed", value: String(results.length) },
+        { label: "Overdue", value: String(scheduleLines.filter((line) => line.status === "Overdue").length) },
+        { label: "Upcoming", value: String(upcoming.length) },
+        {
+          label: "Upcoming with judge and recorder",
+          value: `${upcoming.filter((line) => line.judge !== "Open" && line.recorder !== "Open").length} / ${upcoming.length}`,
+        },
+        {
+          label: "Average time to result",
+          value: delays.length === 0 ? "—" : `${Math.round(delays.reduce((sum, value) => sum + value, 0) / delays.length)} min`,
+        },
+      ],
+    };
 
     const openRooms = rooms.filter((room) => room.status === "open").length;
     const closedRooms = rooms.filter((room) => room.status === "closed").length;
@@ -464,7 +542,8 @@ export async function handleTournamentReport(interaction: ChatInputCommandIntera
       { kind: "field", label: "Server ID", value: guild.id },
       { kind: "field", label: "Generated at", value: generatedLabel },
       { kind: "section", title: "Snapshot" },
-      { kind: "field", label: "Matches stored", value: String(matches.length) },
+      { kind: "field", label: "Bracket source", value: sourceLabel },
+      { kind: "field", label: "Matches on the bracket", value: String(bracket.matches.length) },
       { kind: "field", label: "Rooms open", value: String(openRooms) },
       { kind: "field", label: "Rooms closed", value: String(closedRooms) },
       ...(otherRooms > 0 ? [{ kind: "field" as const, label: "Rooms in another state", value: String(otherRooms) }] : []),
@@ -472,36 +551,55 @@ export async function handleTournamentReport(interaction: ChatInputCommandIntera
       { kind: "field", label: "Results declared", value: String(results.length) },
       { kind: "field", label: "Attendance marks", value: String(marks.length) },
       { kind: "field", label: "Attendance removed", value: String(Math.max(0, attendanceTotal - marks.length)) },
-      { kind: "field", label: "People on the board", value: String(new Set(marks.flatMap((mark) => [mark.judgeId, mark.recorderId])).size) },
+      { kind: "field", label: "People on the board", value: String(work.length) },
     ];
 
-    const work = workLines(marks, names);
     const filename = `${slug(tournament.name)}-report.xlsx`;
     const buffer = await buildTournamentReport({
       tournamentName: tournament.name,
       generatedLabel,
       payModeLabel: mode,
+      overview: overviewBook,
+      todo,
+      schedules: scheduleLines,
       attendance,
       work,
       results,
       config,
     });
 
-    const icon = guild.iconURL({ extension: "png", size: 256 });
+    const stageLine =
+      totals.matches === 0
+        ? "The bracket has no matches yet."
+        : overview.currentStage
+          ? `**${escapeDiscord(overview.currentStage)}** in progress`
+          : "Bracket complete";
     const heading = `# ${emojis.torneo} Tournament report`;
-    const summary = `**${escapeDiscord(tournament.name)}**\nAttendance, staff work, declared results, and the stored setup, in one workbook.`;
-    const sheets = [
-      `${emojis.judge} **Attendance** — active marks, scores, recordings, and score proof`,
-      `${emojis.stats} **Work count** — rounds and games for each seat`,
-      `${emojis.scoreboard} **Results** — winner, transcript, notes, and who declared it`,
-      `${emojis.settings} **Configuration** — roles, channels, categories, and a snapshot`,
+    const summary = `**${escapeDiscord(tournament.name)}** · ${stageLine}`;
+    const progress = [
+      "-# Progress",
+      `\`${totals.complete} / ${totals.matches}\` matches complete · **${percent(totals.complete, totals.matches)}**`,
+      `\`${totals.open}\` open · \`${totals.pending}\` pending`,
+      "-# Records",
+      `\`${marks.length}\` attendance · \`${results.length}\` results · \`${work.length}\` staff on the board`,
     ].join("\n");
-    const counts = [
-      `${emojis.judge_recorder} **Attendance:** \`${marks.length}\` active ${marks.length === 1 ? "mark" : "marks"}`,
-      `${emojis.stats} **Work:** \`${work.length}\` ${work.length === 1 ? "person" : "people"}`,
-      `${emojis.winner} **Results:** \`${results.length}\` declared`,
-      `${emojis.calendar} **Generated:** <t:${Math.floor(generatedAt.getTime() / 1000)}:F>`,
-    ].join("\n");
+    const highRows = todoSummary(todoItems).filter((row) => row.priority === "high");
+    const lower = todoItems.length - highItems;
+    const todoText =
+      todoItems.length === 0
+        ? `${emojis.success} Nothing to fix. Every check passed.`
+        : [
+            `-# ${emojis.alert} To do · ${todoItems.length}`,
+            ...highRows.map((row) => `\`${row.count}\` ${row.label.charAt(0).toLowerCase()}${row.label.slice(1)}`),
+            ...(lower > 0
+              ? [`*${highRows.length > 0 ? "And " : ""}${lower} lower-priority ${lower === 1 ? "item" : "items"} in the workbook.*`]
+              : []),
+          ].join("\n");
+    const footer = `-# Requested by ${formatUser(interaction.user.id)} · ${
+      bracket.live ? "bracket read from Challonge" : "Challonge did not answer, bracket from the last ticket sync"
+    }`;
+
+    const icon = guild.iconURL({ extension: "png", size: 256 });
     const container = new ContainerBuilder().setAccentColor(ACCENT);
     if (icon) {
       container.addSectionComponents(headingWithThumbnail(heading, icon, summary));
@@ -510,12 +608,12 @@ export async function handleTournamentReport(interaction: ChatInputCommandIntera
     }
     container
       .addSeparatorComponents(divider())
-      .addTextDisplayComponents(textBlock(sheets))
+      .addTextDisplayComponents(textBlock(progress))
       .addSeparatorComponents(divider())
-      .addTextDisplayComponents(textBlock(counts))
+      .addTextDisplayComponents(textBlock(todoText))
       .addSeparatorComponents(divider())
       .addFileComponents(attachedFile(filename))
-      .addTextDisplayComponents(textBlock(`-# Requested by ${formatUser(interaction.user.id)}`));
+      .addTextDisplayComponents(textBlock(footer));
 
     await interaction.editReply({
       components: [container],
@@ -523,7 +621,8 @@ export async function handleTournamentReport(interaction: ChatInputCommandIntera
       flags: v2Flags,
       allowedMentions: { parse: [] },
     });
-  } catch {
+  } catch (error) {
+    console.error(`Tournament report failed for ${tournament.id}`, error);
     await respondTournament(
       interaction,
       tournamentErrorMessage("Report failed", "The workbook could not be built. Try again in a moment.", false),

@@ -72,7 +72,7 @@ function realSideName(name: string | undefined): string | null {
   return trimmed;
 }
 
-function groupLetters(matches: ChallongeMatch[]): Map<number, string> {
+export function groupLetters(matches: ChallongeMatch[]): Map<number, string> {
   const ids = [...new Set(matches.flatMap((match) => (match.groupId == null ? [] : [match.groupId])))].sort(
     (left, right) => left - right,
   );
