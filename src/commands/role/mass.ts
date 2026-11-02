@@ -1,9 +1,24 @@
-import { type ChatInputCommandInteraction, type Guild, type GuildMember, type Role } from "discord.js";
+import type { ChatInputCommandInteraction, Guild, GuildMember, InteractionReplyOptions, Role } from "discord.js";
 import { formatRoleFromRole } from "../../lib/formatters.js";
+import { v2Flags } from "../../lib/v2.js";
 import { auditRoleMass } from "./audit.js";
 import { botCanManageRoles, fetchActor, unmanageableRoleReason } from "./hierarchy.js";
 import { deferRole, respondRole } from "./respond.js";
-import { roleErrorMessage, roleInfoMessage, roleMassMessage, type MassBuckets } from "./view.js";
+import {
+  roleErrorMessage,
+  roleInfoMessage,
+  roleMassProgressMessage,
+  roleMassResultMessage,
+  type MassAction,
+  type MassProgress,
+} from "./view.js";
+
+/** Role updates are one REST call per member; a few in flight keeps discord.js's rate-limit queue busy. */
+const CONCURRENCY = 5;
+/** Interaction edits are rate limited too, so progress refreshes on a timer, not per member. */
+const PROGRESS_EVERY_MS = 2_500;
+/** The interaction token lasts 15 minutes; past this, the result goes to the channel instead. */
+const TOKEN_SAFE_MS = 14 * 60_000;
 
 async function hydrateMembers(guild: Guild): Promise<void> {
   if (guild.members.cache.size >= guild.memberCount) {
@@ -13,46 +28,87 @@ async function hydrateMembers(guild: Guild): Promise<void> {
 }
 
 async function applyMass(
-  members: GuildMember[],
+  targets: GuildMember[],
   role: Role,
-  action: "add" | "remove",
+  action: MassAction,
   reason: string,
-): Promise<MassBuckets> {
-  const buckets: MassBuckets = { changed: [], skipped: [], failed: [] };
-
-  for (const member of members) {
-    const hasRole = member.roles.cache.has(role.id);
-    const alreadyDone = action === "add" ? hasRole : !hasRole;
-    if (alreadyDone) {
-      buckets.skipped.push(member);
-      continue;
-    }
-
-    try {
-      if (action === "add") {
-        await member.roles.add(role, reason);
-      } else {
-        await member.roles.remove(role, reason);
+  progress: MassProgress,
+): Promise<void> {
+  let next = 0;
+  const worker = async () => {
+    while (next < targets.length) {
+      const member = targets[next];
+      next += 1;
+      if (!member) {
+        continue;
       }
-      buckets.changed.push(member);
-    } catch {
-      buckets.failed.push(member);
+      try {
+        if (action === "add") {
+          await member.roles.add(role, reason);
+        } else {
+          await member.roles.remove(role, reason);
+        }
+        progress.changed += 1;
+      } catch {
+        progress.failed += 1;
+      }
+      progress.done += 1;
     }
-  }
-
-  return buckets;
+  };
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, targets.length) }, worker));
 }
 
-export async function handleRoleMass(
+/** Refreshes the deferred reply on a timer while the work runs. One edit in flight at a time. */
+function startProgressTicker(
   interaction: ChatInputCommandInteraction,
-  action: "add" | "remove",
+  render: () => InteractionReplyOptions,
+  startedAt: number,
+): () => Promise<void> {
+  let inFlight: Promise<void> | null = null;
+  const timer = setInterval(() => {
+    if (inFlight || Date.now() - startedAt > TOKEN_SAFE_MS) {
+      return;
+    }
+    inFlight = respondRole(interaction, render())
+      .catch(() => undefined)
+      .finally(() => {
+        inFlight = null;
+      });
+  }, PROGRESS_EVERY_MS);
+
+  return async () => {
+    clearInterval(timer);
+    await inFlight;
+  };
+}
+
+async function deliverResult(
+  interaction: ChatInputCommandInteraction,
+  payload: InteractionReplyOptions,
+  startedAt: number,
 ): Promise<void> {
+  if (Date.now() - startedAt <= TOKEN_SAFE_MS) {
+    const sent = await respondRole(interaction, payload).then(() => true, () => false);
+    if (sent) {
+      return;
+    }
+  }
+  const channel = interaction.channel;
+  if (channel?.isSendable()) {
+    await channel
+      .send({ components: payload.components, flags: v2Flags, allowedMentions: { parse: [] } })
+      .catch(() => undefined);
+  }
+}
+
+export async function handleRoleMass(interaction: ChatInputCommandInteraction, action: MassAction): Promise<void> {
   const guild = interaction.guild;
   if (!guild) {
     await respondRole(interaction, roleErrorMessage("Guild only", "This command can only be used in a server."));
     return;
   }
 
+  const startedAt = Date.now();
   await deferRole(interaction);
   await guild.roles.fetch().catch(() => undefined);
 
@@ -79,7 +135,10 @@ export async function handleRoleMass(
     return;
   }
 
-  await hydrateMembers(guild);
+  if (guild.members.cache.size < guild.memberCount) {
+    await respondRole(interaction, roleMassProgressMessage(action, role, null, startedAt));
+    await hydrateMembers(guild);
+  }
   const members = [...guild.members.cache.values()];
   if (members.length === 0) {
     await respondRole(
@@ -89,22 +148,51 @@ export async function handleRoleMass(
     return;
   }
 
-  const mention = formatRoleFromRole(role);
-  if (action === "remove" && !members.some((member) => member.roles.cache.has(role.id))) {
+  const targets = members.filter((member) => member.roles.cache.has(role.id) === (action === "remove"));
+  const skipped = members.length - targets.length;
+  if (targets.length === 0) {
+    const mention = formatRoleFromRole(role);
     await respondRole(
       interaction,
-      roleInfoMessage("Nobody has that role", `No member currently has ${mention}.`, false),
+      action === "add"
+        ? roleInfoMessage("Everyone already has it", `All **${members.length}** members already have ${mention}.`, false)
+        : roleInfoMessage("Nobody has that role", `No member currently has ${mention}.`, false),
     );
     return;
   }
 
-  const buckets = await applyMass(
-    members,
-    role,
-    action,
-    action === "add" ? `Role add all by ${interaction.user.id}` : `Role remove all by ${interaction.user.id}`,
+  const progress: MassProgress = { total: targets.length, done: 0, changed: 0, failed: 0 };
+  await respondRole(interaction, roleMassProgressMessage(action, role, progress, startedAt));
+  const stopTicker = startProgressTicker(
+    interaction,
+    () => roleMassProgressMessage(action, role, progress, startedAt),
+    startedAt,
   );
 
-  await respondRole(interaction, roleMassMessage(action, role, buckets, interaction.user.id));
-  await auditRoleMass(interaction, guild, role.id, action, buckets.changed.length);
+  try {
+    await applyMass(
+      targets,
+      role,
+      action,
+      action === "add" ? `Role add all by ${interaction.user.id}` : `Role remove all by ${interaction.user.id}`,
+      progress,
+    );
+  } finally {
+    await stopTicker();
+  }
+
+  await deliverResult(
+    interaction,
+    roleMassResultMessage({
+      action,
+      role,
+      changed: progress.changed,
+      skipped,
+      failed: progress.failed,
+      elapsedMs: Date.now() - startedAt,
+      actorId: interaction.user.id,
+    }),
+    startedAt,
+  );
+  await auditRoleMass(interaction, guild, role.id, action, progress.changed);
 }

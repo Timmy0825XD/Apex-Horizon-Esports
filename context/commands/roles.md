@@ -17,7 +17,13 @@ El objetivo tiene que estar en el servidor. El bot necesita **Manage Roles**. Au
 
 ## `/role add all` / `/role remove all`
 
-**Para qué:** Asignar o quitar un rol en masa. Omite quien ya está en el estado deseado. Si Discord rechaza a alguien, ese fallo va en un bloque aparte (copy distinto del de éxito y del de “ya estaba”).
+**Para qué:** Asignar o quitar un rol en masa. Omite quien ya está en el estado deseado.
+
+Discord no tiene un cambio de rol en lote: es una llamada por miembro. El bot solo llama para quien necesita el cambio y mantiene **5** en paralelo; los límites de velocidad los gestiona discord.js.
+
+Mientras trabaja, la respuesta es un Components V2 de progreso que se refresca cada **2,5 s**: primero *cargando la lista de miembros* (si no estaba en caché), después barra, porcentaje, `hechos de total`, actualizados, fallidos y tiempo transcurrido.
+
+Al terminar, la misma respuesta pasa a un **resumen** sin lista de miembros: rol, cuántos se cambiaron, cuántos ya estaban (*Already had it* / *Did not have it*), cuántos fallaron (con aviso de revisar la posición del rol del bot) y cuánto tardó, con footer `Triggered by`. Verde salvo que fallen todos. Si nadie necesita el cambio, responde un V2 de info y no toca a nadie. Si la operación pasa de **14 minutos** (el token de la interacción dura 15), deja de refrescar y publica el resumen en el canal.
 
 | Campo | Tipo | Obligatorio |
 |---|---|---|
