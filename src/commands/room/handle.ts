@@ -4,6 +4,7 @@ import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { memberIsOrganiser } from "../../lib/organiser.js";
 import { TicketQueueError, loadTicketQueue } from "./bracket.js";
 import { auditRoomsCreated } from "./audit.js";
+import { handleRoomAutoSlash } from "./auto.js";
 import { respondRoomChoices } from "./autocomplete.js";
 import { openPendingTickets, type RoomScope } from "./open.js";
 import { roundTitle } from "./labels.js";
@@ -31,6 +32,10 @@ export async function handleRoomSlash(interaction: ChatInputCommandInteraction):
   }
   if (sub === "available") {
     await handleAvailable(interaction);
+    return;
+  }
+  if (sub === "auto") {
+    await handleRoomAutoSlash(interaction);
   }
 }
 

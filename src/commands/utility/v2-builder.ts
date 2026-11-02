@@ -266,7 +266,7 @@ export async function handleV2Edit(interaction: ChatInputCommandInteraction, gui
     await interaction.reply(
       utilityError(
         "That's a classic embed",
-        `Use ${formatHelpEntry("utility edit_embed", utilityCommandIdFor(guild.id))} to rewrite an embed message.`,
+        `Use ${formatHelpEntry("utility embed edit", utilityCommandIdFor(guild.id))} to rewrite an embed message.`,
       ),
     );
     return;
@@ -316,7 +316,7 @@ export async function handleV2Button(interaction: ButtonInteraction): Promise<vo
     await interaction.reply(
       utilityError(
         "Builder expired",
-        `Start again with ${formatHelpEntry("utility v2", utilityCommandIdFor(guild.id))} or ${formatHelpEntry("utility edit_v2", utilityCommandIdFor(guild.id))}.`,
+        `Start again with ${formatHelpEntry("utility v2 create", utilityCommandIdFor(guild.id))} or ${formatHelpEntry("utility v2 edit", utilityCommandIdFor(guild.id))}.`,
       ),
     );
     return;
@@ -422,7 +422,7 @@ export async function handleV2Modal(interaction: ModalSubmitInteraction): Promis
     await interaction.reply(
       utilityError(
         "Builder expired",
-        `Start again with ${formatHelpEntry("utility v2", utilityCommandIdFor(guild.id))} or ${formatHelpEntry("utility edit_v2", utilityCommandIdFor(guild.id))}.`,
+        `Start again with ${formatHelpEntry("utility v2 create", utilityCommandIdFor(guild.id))} or ${formatHelpEntry("utility v2 edit", utilityCommandIdFor(guild.id))}.`,
       ),
     );
     return;

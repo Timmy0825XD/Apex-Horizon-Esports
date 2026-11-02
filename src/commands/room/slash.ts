@@ -41,4 +41,18 @@ export const roomSlash = new SlashCommandBuilder()
           .setRequired(true)
           .setAutocomplete(true),
       ),
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("auto")
+      .setDescription("Turn automatic battle tickets on or off")
+      .addStringOption((option) =>
+        option.setName("tournament").setDescription("Tournament to update").setRequired(true).setAutocomplete(true),
+      )
+      .addBooleanOption((option) =>
+        option
+          .setName("status")
+          .setDescription("On opens ready matches now, then waits for 00:00 and 12:00 UTC")
+          .setRequired(true),
+      ),
   );

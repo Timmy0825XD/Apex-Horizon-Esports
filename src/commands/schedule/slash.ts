@@ -99,32 +99,37 @@ export const scheduleSlash = new SlashCommandBuilder()
       .addStringOption((option) => option.setName("reason").setDescription("Use . if private").setMaxLength(300))
       .addBooleanOption((option) => option.setName("regenerate_image").setDescription("Thumbnail")),
   )
-  .addSubcommand((subcommand) =>
-    subcommand
+  .addSubcommandGroup((group) =>
+    group
       .setName("results")
-      .setDescription("Post this match's result")
-      .addIntegerOption((option) =>
-        option.setName("team_1").setDescription("Team 1").setRequired(true).setMinValue(0).setMaxValue(99),
+      .setDescription("Post or remove this match's result")
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName("add")
+          .setDescription("Post this match's result")
+          .addIntegerOption((option) =>
+            option.setName("team_1").setDescription("Team 1").setRequired(true).setMinValue(0).setMaxValue(99),
+          )
+          .addIntegerOption((option) =>
+            option.setName("team_2").setDescription("Team 2").setRequired(true).setMinValue(0).setMaxValue(99),
+          )
+          .addStringOption((option) => option.setName("notes").setDescription("Notes").setMaxLength(500))
+          .addAttachmentOption((option) => option.setName("image1").setDescription("Proof"))
+          .addAttachmentOption((option) => option.setName("image2").setDescription("Proof"))
+          .addAttachmentOption((option) => option.setName("image3").setDescription("Proof"))
+          .addAttachmentOption((option) => option.setName("image4").setDescription("Proof"))
+          .addAttachmentOption((option) => option.setName("image5").setDescription("Proof"))
+          .addAttachmentOption((option) => option.setName("image6").setDescription("Proof"))
+          .addAttachmentOption((option) => option.setName("image7").setDescription("Proof"))
+          .addAttachmentOption((option) => option.setName("image8").setDescription("Proof"))
+          .addAttachmentOption((option) => option.setName("image9").setDescription("Proof"))
+          .addAttachmentOption((option) => option.setName("image10").setDescription("Proof")),
       )
-      .addIntegerOption((option) =>
-        option.setName("team_2").setDescription("Team 2").setRequired(true).setMinValue(0).setMaxValue(99),
-      )
-      .addStringOption((option) => option.setName("notes").setDescription("Notes").setMaxLength(500))
-      .addAttachmentOption((option) => option.setName("image1").setDescription("Proof"))
-      .addAttachmentOption((option) => option.setName("image2").setDescription("Proof"))
-      .addAttachmentOption((option) => option.setName("image3").setDescription("Proof"))
-      .addAttachmentOption((option) => option.setName("image4").setDescription("Proof"))
-      .addAttachmentOption((option) => option.setName("image5").setDescription("Proof"))
-      .addAttachmentOption((option) => option.setName("image6").setDescription("Proof"))
-      .addAttachmentOption((option) => option.setName("image7").setDescription("Proof"))
-      .addAttachmentOption((option) => option.setName("image8").setDescription("Proof"))
-      .addAttachmentOption((option) => option.setName("image9").setDescription("Proof"))
-      .addAttachmentOption((option) => option.setName("image10").setDescription("Proof")),
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName("results_delete")
-      .setDescription("Remove this match's posted result")
-      .addBooleanOption((option) => option.setName("confirm").setDescription("Confirm").setRequired(true))
-      .addStringOption((option) => option.setName("reason").setDescription("Reason").setMaxLength(300)),
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName("delete")
+          .setDescription("Remove this match's posted result")
+          .addBooleanOption((option) => option.setName("confirm").setDescription("Confirm").setRequired(true))
+          .addStringOption((option) => option.setName("reason").setDescription("Reason").setMaxLength(300)),
+      ),
   );

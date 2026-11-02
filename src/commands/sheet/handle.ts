@@ -1,6 +1,6 @@
 import { MessageFlags, type AutocompleteInteraction, type ChatInputCommandInteraction } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
-import { sheetCommandIdFor, tournamentCommandIdFor, utilityCommandIdFor } from "../../lib/register-slash.js";
+import { sheetCommandIdFor, subcommandPath, tournamentCommandIdFor, utilityCommandIdFor } from "../../lib/register-slash.js";
 import { handleSheetAdd } from "./add.js";
 import { handleSheetAutocomplete } from "./autocomplete.js";
 import { handleSheetFindPlayer } from "./find-player.js";
@@ -19,7 +19,7 @@ export async function handleSheetSlash(interaction: ChatInputCommandInteraction)
   }
 
   const commandId = sheetCommandIdFor(interaction.guildId) ?? interaction.commandId;
-  const sub = interaction.options.getSubcommand();
+  const sub = subcommandPath(interaction);
 
   if (sub === "add") {
     await handleSheetAdd(interaction, commandId);
@@ -29,7 +29,7 @@ export async function handleSheetSlash(interaction: ChatInputCommandInteraction)
     await handleSheetGet(interaction, commandId);
     return;
   }
-  if (sub === "find_player") {
+  if (sub === "find player") {
     await handleSheetFindPlayer(interaction);
     return;
   }

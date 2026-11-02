@@ -40,9 +40,9 @@ La gente los confunde. El bot **no** los fusiona en un solo comando.
 | Acto | Qué demuestra | Avanza el bracket |
 |---|---|---|
 | `/attendance mark` | Staff presente, marcador de trabajo, evidencia de grabación | No |
-| `/schedule results` | Declaración pública en el ticket y en el canal de resultados. Las capturas son opcionales | No |
+| `/schedule results add` | Declaración pública en el ticket y en el canal de resultados. Las capturas son opcionales | No |
 | `/bracket upload` | Informe oficial al cuadro | **Sí** |
-| `/bracket dq_both` | Descalificación doble: lado 1 avanza con `0` y pierde la llave siguiente sin ticket | **Sí** |
+| `/bracket dq both` | Descalificación doble: lado 1 avanza con `0` y pierde la llave siguiente sin ticket | **Sí** |
 
 Se puede marcar asistencia sin haber subido el score, y se puede subir el score sin haber declarado resultados de schedule. Operativamente se espera el orden de arriba.
 
@@ -52,7 +52,7 @@ Se puede marcar asistencia sin haber subido el score, y se puede subir el score 
 /settings + /staff config
         → habilitan logs, schedules, roles operativos, thumbnails
 
-/sheet validate + /utility discord_tag
+/sheet validate + /utility discord tag
         → limpian la hoja
 
 /tournament add
@@ -64,7 +64,7 @@ Se puede marcar asistencia sin haber subido el score, y se puede subir el score 
 /sheet get
         → link de una hoja por nombre, o CSV de todo el archivo global
 
-/sheet find_player
+/sheet find player
         → busca en todas las copias del bot (activas, manuales, histórico, cualquier servidor)
 
 /tournament role + /team *
@@ -76,7 +76,7 @@ Se puede marcar asistencia sin haber subido el score, y se puede subir el score 
 /ticket close en ese canal
         → transcript HTML al canal elegido y el canal se borra
 
-/auto_room status:true  o  /room create
+/room auto status:true  o  /room create
         → el partido se vuelve ticket
 
 00:00 y 12:00 UTC, si auto-room sigue on
@@ -91,13 +91,13 @@ botones + worker T-10/T-0
 /attendance * + /link *
         → el trabajo se contabiliza
 
-/schedule results
+/schedule results add
         → el ticket y el canal de resultados tienen la declaración. Links se rellenan después con attachResultsLinks
 
 /bracket upload
         → el bracket avanza y, al publicar el transcript, attachResultsTranscript enlaza el título de los dos embeds. El siguiente ticket no nace al momento: espera 00:00 o 12:00 UTC si auto-room está on, o `/room create`
 
-/bracket dq_both
+/bracket dq both
         → el partido queda 0 / -1 (lado 1 avanza marcado, lado 2 eliminado). La llave siguiente del marcado se reporta -1 / 0, o 0 / -1 si los dos llegan marcados, y no abre ticket
 
 /bracket correct

@@ -8,7 +8,7 @@ La autoridad no es “quien tiene un rol bonito”. Es **alcance**.
 | **Organiser** (rol manager del servidor) | Opera el torneo a nivel de salas, tickets, lookup de equipos (`/team`), rol de participantes (`/tournament role`), roles masivos, bans de usuario, muchas acciones de bracket |
 | **Admin / Helper del torneo** | Roles *de ese torneo*: scores, crear / actualizar / borrar schedules, ayuda operativa |
 | **Staff** (rol de `/staff config`) | `show` y `unassigned` de schedule |
-| **Judge** | Entra al ticket cuando hay schedule; marca asistencia; confirma T-10; declara y borra `/schedule results`; puede `/schedule refresh` |
+| **Judge** | Entra al ticket cuando hay schedule; marca asistencia; confirma T-10; declara y borra `/schedule results add`; puede `/schedule refresh` |
 | **Recorder** | Igual que Judge en el ticket; dueño de los links de YouTube de *su* asistencia; puede `/schedule refresh`. No declara results |
 | **Capitán** | Solo su ticket. No ejecuta ningún `/schedule` |
 | **Público** | Consultas que no mutan estado (info de servidor, headers de hoja, ping, about/help) |
@@ -25,7 +25,7 @@ Reclutar un puesto **añade un paquete de roles** (p. ej. Judge implica también
 |---|---|
 | Admin | Administrator de Discord **o** `admin_role` de `/settings` |
 | Organiser | `manager_role` de `/staff config` **o** Administrator |
-| Discord Administrator | Solo el permiso nativo (recruit/fire, a veces `clear_category`) |
+| Discord Administrator | Solo el permiso nativo (recruit/fire, a veces `/utility clear category`) |
 | Staff de torneo | Roles judge/recorder/staff del servidor, o admin/helper del torneo |
 | Público | Cualquier miembro, solo en servidor |
 

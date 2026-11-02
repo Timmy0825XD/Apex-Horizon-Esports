@@ -4,7 +4,7 @@ El organizador crea y siembra el bracket **fuera**. El bot guarda la identidad d
 
 - **Sincroniza** partidos (ronda, grupo/fase, nombres, estado y si es el partido de 3er puesto).
 - **Reporta** un marcador (`/bracket upload`).
-- **Descalifica** los dos lados (`/bracket dq_both`): lado 1 avanza con `0` y pierde la llave siguiente sin ticket.
+- **Descalifica** los dos lados (`/bracket dq both`): lado 1 avanza con `0` y pierde la llave siguiente sin ticket.
 - **Corrige** un marcador ya subido (`/bracket correct`) y deja rastro de “antes / después”.
 
 Empates en el bracket **no se aceptan**. El ganador se deduce del marcador.
@@ -19,7 +19,7 @@ Empates en el bracket **no se aceptan**. El ganador se deduce del marcador.
 
 ## Auto-room
 
-Auto-room **no** se elige al dar de alta el torneo. Nace apagado. Solo `/auto_room` lo cambia (`tournament` + `status`).
+Auto-room **no** se elige al dar de alta el torneo. Nace apagado. Solo `/room auto` lo cambia (`tournament` + `status`).
 
 Al pasar de **off a on**, el bot abre en ese momento los partidos `open` que aún no tienen sala.
 
@@ -68,9 +68,9 @@ Si `/bracket correct` cambia quién avanza y ya había ticket(s) en partidos des
 
 `/room available` no crea nada: enseña la cola (quién podría tener sala ahora, y quién está bloqueado por la hoja).
 
-`/bracket upload` solo se usa **dentro del ticket**. Reporta al bracket, completa el match, renombra (sin `🔴`, solo `✅`), cierra/archiva, genera con el renderer propio el transcript del estado final visible (nombre = título del canal) y publica su Components V2 índice en el canal de transcripts, con el emoji `transcript_thumnail` de thumbnail. Si supera el límite seguro, lo divide en páginas HTML sin cortar mensajes. Enlaza la URL del índice a los embeds de `/schedule results` si existen. Las tres confirmaciones en el ticket son Components V2 con título grande: avatar de quien ejecutó, emoji `open_close` y emoji `transcript_thumnail`. La advertencia y el éxito de `/bracket correct` son Components V2; el éxito lleva el emoji de Challonge como thumbnail. El siguiente ticket, si auto-room está on, espera a 00:00 o 12:00 UTC. Empate prohibido.
+`/bracket upload` solo se usa **dentro del ticket**. Reporta al bracket, completa el match, renombra (sin `🔴`, solo `✅`), cierra/archiva, genera con el renderer propio el transcript del estado final visible (nombre = título del canal) y publica su Components V2 índice en el canal de transcripts, con el emoji `transcript_thumnail` de thumbnail. Si supera el límite seguro, lo divide en páginas HTML sin cortar mensajes. Enlaza la URL del índice a los embeds de `/schedule results add` si existen. Las tres confirmaciones en el ticket son Components V2 con título grande: avatar de quien ejecutó, emoji `open_close` y emoji `transcript_thumnail`. La advertencia y el éxito de `/bracket correct` son Components V2; el éxito lleva el emoji de Challonge como thumbnail. El siguiente ticket, si auto-room está on, espera a 00:00 o 12:00 UTC. Empate prohibido.
 
-`/bracket dq_both` tampoco tiene campos y solo se usa dentro del ticket. Reporta **lado 1 = 0** y **lado 2 = -1**, cierra el ticket igual que `upload`, y marca al lado 1. Esa marca hace que su siguiente partido `open` se reporte antes de crear sala: el marcado pierde **-1** y el rival gana **0**, sin ticket. Si los dos lados de esa llave están marcados, el marcador es otra vez lado 1 **0** / lado 2 **-1**, sin ticket, y el lado 1 sigue marcado hacia la próxima llave. `/room available` no las enseña. Corregir un marcador con negativo quita la marca de esos dos lados.
+`/bracket dq both` tampoco tiene campos y solo se usa dentro del ticket. Reporta **lado 1 = 0** y **lado 2 = -1**, cierra el ticket igual que `upload`, y marca al lado 1. Esa marca hace que su siguiente partido `open` se reporte antes de crear sala: el marcado pierde **-1** y el rival gana **0**, sin ticket. Si los dos lados de esa llave están marcados, el marcador es otra vez lado 1 **0** / lado 2 **-1**, sin ticket, y el lado 1 sigue marcado hacia la próxima llave. `/room available` no las enseña. Corregir un marcador con negativo quita la marca de esos dos lados.
 
 ## Relacionado
 

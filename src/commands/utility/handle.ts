@@ -13,6 +13,7 @@ import {
 } from "./tools.js";
 import { handleV2Button, handleV2Create, handleV2Edit, handleV2Modal } from "./v2-builder.js";
 import { utilityError } from "./view.js";
+import { subcommandPath } from "../../lib/register-slash.js";
 
 const unauthorized = {
   content: "This server is not authorized to use this bot.",
@@ -31,15 +32,15 @@ export async function handleUtilitySlash(interaction: ChatInputCommandInteractio
     return;
   }
 
-  const sub = interaction.options.getSubcommand();
+  const sub = subcommandPath(interaction);
   switch (sub) {
-    case "clear":
+    case "clear messages":
       await handleClear(interaction, guild);
       return;
-    case "clear_category":
+    case "clear category":
       await handleClearCategory(interaction, guild);
       return;
-    case "emoji_steal":
+    case "emoji steal":
       await handleEmojiSteal(interaction, guild);
       return;
     case "random":
@@ -48,7 +49,7 @@ export async function handleUtilitySlash(interaction: ChatInputCommandInteractio
     case "utc":
       await handleUtc(interaction);
       return;
-    case "discord_tag":
+    case "discord tag":
       await handleDiscordTag(interaction);
       return;
     case "avatar":
@@ -60,16 +61,16 @@ export async function handleUtilitySlash(interaction: ChatInputCommandInteractio
     case "enlarge":
       await handleEnlarge(interaction);
       return;
-    case "embed":
+    case "embed create":
       await handleEmbedCreate(interaction, guild);
       return;
-    case "edit_embed":
+    case "embed edit":
       await handleEmbedEdit(interaction, guild);
       return;
-    case "v2":
+    case "v2 create":
       await handleV2Create(interaction, guild);
       return;
-    case "edit_v2":
+    case "v2 edit":
       await handleV2Edit(interaction, guild);
   }
 }

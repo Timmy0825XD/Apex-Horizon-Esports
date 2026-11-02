@@ -54,7 +54,7 @@ Jerarquía Discord siempre gana. Ver [../product/actors.md](../product/actors.md
 - Utilidades de timing UTC (la misma idea de reloj que los schedules), azar, avatares, emojis.
 - Constructores de **embed clásico** y de **Components V2** (crear y reescribir mensajes del bot).
 
-`/utility clear_category` muta el servidor de forma destructiva.
+`/utility clear category` muta el servidor de forma destructiva.
 
 ## Relacionado
 

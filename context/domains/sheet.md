@@ -9,9 +9,9 @@ Cada jugador ocupa **5 columnas**, en este orden: Discord Tag · Discord ID · i
 
 Los campos adicionales **siempre van al final**. El bot detecta el formato cogiendo el mayor `k` (5…1) cuyo bloque core cabe, y el resto son extra. `/tournament add` y `/sheet add` hacen esa detección solos.
 
-El torneo y la copia en BD guardan `format` y `additionalFieldCount`. Los extra se almacenan con el **nombre del header** de la fila 1; `/team` los muestra al final del V2. `/sheet find_player` **no** los usa.
+El torneo y la copia en BD guardan `format` y `additionalFieldCount`. Los extra se almacenan con el **nombre del header** de la fila 1; `/team` los muestra al final del V2. `/sheet find player` **no** los usa.
 
-Operar un torneo vivo (`/sheet validate`, `/team info`, `/tournament role`) **sigue leyendo Google**. Además, el bot **almacena copias** de hojas en un archivo **global** (todos los servidores del bot). `find_player` no relee Google: mira esas copias, en cualquier gremio.
+Operar un torneo vivo (`/sheet validate`, `/team info`, `/tournament role`) **sigue leyendo Google**. Además, el bot **almacena copias** de hojas en un archivo **global** (todos los servidores del bot). `/sheet find player` no relee Google: mira esas copias, en cualquier gremio.
 
 ## Archivo de sheets (BD)
 
@@ -22,7 +22,7 @@ Un solo pozo de búsqueda para **todo el bot**. Cada copia recuerda de qué serv
 | `/tournament add` | Al crear el torneo se **copia** la sheet | Cruza in-game IDs con la lista oficial de baneados; si hay alguno, **no** crea. Si `/tournament edit` cambia `sheet_link`, esa copia se **reemplaza** (mismo cruce). |
 | `/sheet add` | Alta manual: **link + name**, o un **CSV** (nombre, link, sin headers; coma, `;` o tab) | Detecta formato y extra igual que add. Un link ya archivado se omite. |
 | `/sheet get` | Lookup por nombre, o CSV de todo el archivo | Lectura. Autocomplete global. No audita. |
-| `/tournament delete` | La config del torneo y sus partidos / salas / schedules / asistencias se borran | La sheet **pasa a histórico**. Sigue saliendo en `/sheet find_player` / `/sheet get` (global). |
+| `/tournament delete` | La config del torneo y sus partidos / salas / schedules / asistencias se borran | La sheet **pasa a histórico**. Sigue saliendo en `/sheet find player` / `/sheet get` (global). |
 
 La copia guarda link, formato, cuántos campos extra hay, el nombre del torneo, y el servidor de origen.
 
@@ -41,7 +41,7 @@ La copia guarda link, formato, cuántos campos extra hay, el nombre del torneo, 
 
 La hoja tiene que ser **visible con el link**. El bot lee **una fila por equipo** (también si Google la tiene como Tabla). Compara cada in-game ID (hex, ignorando espacios y caracteres invisibles) con la [lista oficial de baneados](https://docs.google.com/spreadsheets/d/17Xv8rF_UmKslmd_MBGiBf610xb2YleQJHivoc-6JqYU/edit?usp=sharing). Un solo ID de juego en la lista **bloquea** el alta o el cambio de hoja y lista a los jugadores. No se crea el torneo hasta que salgan de la **Google Sheet del `sheet_link`**.
 
-`/utility discord_tag` existe para **arreglar la columna de tags**: pegas IDs, recibes usernames en el mismo orden.
+`/utility discord tag` existe para **arreglar la columna de tags**: pegas IDs, recibes usernames en el mismo orden.
 
 ## Durante el torneo
 
@@ -51,7 +51,7 @@ La hoja tiene que ser **visible con el link**. El bot lee **una fila por equipo*
 
 Un ban de Discord **no** es el cruce con la lista de IDs de juego baneados. Esa lista interviene al validar la hoja, al crear o cambiar la sheet de un torneo, y al asignar roles de torneo.
 
-## `/sheet find_player`
+## `/sheet find player`
 
 Busca en **todas** las copies almacenadas del bot (activas, manuales e histórico, **cualquier servidor**). No es `/team info`.
 
@@ -73,4 +73,4 @@ No audita (lectura). Comandos: [../commands/tournament.md](../commands/tournamen
 - Comandos de hoja viva: [../commands/sheet-teams.md](../commands/sheet-teams.md)
 - Moderación: [moderation.md](moderation.md)
 - Alta de torneo y role: [../commands/tournament.md](../commands/tournament.md)
-- `/sheet add` / `get` / `find_player` / `validate`: [../commands/sheet-teams.md](../commands/sheet-teams.md)
+- `/sheet add` / `get` / `find player` / `validate`: [../commands/sheet-teams.md](../commands/sheet-teams.md)

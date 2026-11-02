@@ -15,7 +15,7 @@ Reglas: [../domains/attendance-payroll.md](../domains/attendance-payroll.md).
 | remark | STRING (Autocomplete) | No | `DW` |
 | link | STRING | No | YouTube, varias URLs separadas por espacios |
 
-Requiere schedule y hora alcanzada. Un activo por partido. Empate permitido. El mismo Components V2 queda en el ticket y en el canal de asistencia, sin thumbnail. Debajo del título van el marcador y **Tournament:**. Un separador, y después **Judge**, **Recorder** y **Channel**, cada etiqueta con su emoji y el valor en la línea siguiente. El footer es `Uploaded by` con mención y la fecha y hora. `Recording Link` solo entra si hay URLs. `Remark` solo si es `DW`. Si hay links y el torneo tiene `events_links`, publica un texto con partido, marcador y links, sin el nombre del torneo, y guarda su id. La respuesta del slash se borra. Audita `Attendance Marked`. Si el partido ya tiene `/schedule results`, llama `attachResultsLinks` con esos links.
+Requiere schedule y hora alcanzada. Un activo por partido. Empate permitido. El mismo Components V2 queda en el ticket y en el canal de asistencia, sin thumbnail. Debajo del título van el marcador y **Tournament:**. Un separador, y después **Judge**, **Recorder** y **Channel**, cada etiqueta con su emoji y el valor en la línea siguiente. El footer es `Uploaded by` con mención y la fecha y hora. `Recording Link` solo entra si hay URLs. `Remark` solo si es `DW`. Si hay links y el torneo tiene `events_links`, publica un texto con partido, marcador y links, sin el nombre del torneo, y guarda su id. La respuesta del slash se borra. Audita `Attendance Marked`. Si el partido ya tiene `/schedule results add`, llama `attachResultsLinks` con esos links.
 
 ## `/attendance delete`
 

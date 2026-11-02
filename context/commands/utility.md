@@ -6,32 +6,32 @@ Slash: comando `utility`. Las respuestas de lectura y mutación son **Components
 
 | Comando | Permiso típico | Campos | Para qué |
 |---|---|---|---|
-| `/utility clear_category` | Admin | `category` CHANNEL (categoría) **sí** | Borra **todos** los canales hijos (confirmación). Relación: limpieza post-torneo. Audita. |
-| `/utility clear` | Admin | `number` INTEGER 1–1000 **o** `days` INTEGER 1–14 (no ambos) | Purga el canal actual. Mensajes de más de 14 días no se pueden borrar en lote. Audita. |
-| `/utility emoji_steal` | Admin | `emoji_id` STRING **sí** | Quita un emoji custom **de este servidor** y adjunta la imagen. Audita. |
+| `/utility clear category` | Admin | `category` CHANNEL (categoría) **sí** | Borra **todos** los canales hijos (confirmación). Relación: limpieza post-torneo. Audita. |
+| `/utility clear messages` | Admin | `number` INTEGER 1–1000 **o** `days` INTEGER 1–14 (no ambos) | Purga el canal actual. Mensajes de más de 14 días no se pueden borrar en lote. Audita. |
+| `/utility emoji steal` | Admin | `emoji_id` STRING **sí** | Quita un emoji custom **de este servidor** y adjunta la imagen. Audita. |
 | `/utility random` | Público | `options` STRING **sí**; `number` INTEGER **no** | Sorteo (coma, pipe o salto de línea). |
 | `/utility utc` | Público | `hour` `minute` `day` `month` `year` INTEGER **sí** | Misma idea de reloj UTC que schedules. |
-| `/utility discord_tag` | Admin u Organiser | `ids` STRING **sí** | Puente a la hoja: IDs → usernames en el mismo orden. Efímero. |
+| `/utility discord tag` | Admin u Organiser | `ids` STRING **sí** | Puente a la hoja: IDs → usernames en el mismo orden. Efímero. |
 | `/utility avatar` | Público | `user` USER **no** | Avatar (por defecto tú). |
 | `/utility toss` | Público | — | Cara o cruz. |
 | `/utility enlarge` | Público | `emoji` STRING **sí** | Emoji a tamaño grande (custom o unicode). |
-| `/utility embed` | Admin u Organiser | `channel` CHANNEL **sí** | Constructor interactivo de embed clásico; publica en ese canal. Audita al publicar. |
-| `/utility edit_embed` | Admin u Organiser | `message_id` STRING **sí**; `message_channel` CHANNEL **no** | Reescribe un embed **del bot**. Audita. |
-| `/utility v2` | Admin u Organiser | `channel` CHANNEL **sí** | Constructor interactivo de **Components V2**; publica en ese canal. Audita al publicar. |
-| `/utility edit_v2` | Admin u Organiser | `message_id` STRING **sí**; `message_channel` CHANNEL **no** | Reescribe un mensaje V2 **del bot**. Audita. |
+| `/utility embed create` | Admin u Organiser | `channel` CHANNEL **sí** | Constructor interactivo de embed clásico; publica en ese canal. Audita al publicar. |
+| `/utility embed edit` | Admin u Organiser | `message_id` STRING **sí**; `message_channel` CHANNEL **no** | Reescribe un embed **del bot**. Audita. |
+| `/utility v2 create` | Admin u Organiser | `channel` CHANNEL **sí** | Constructor interactivo de **Components V2**; publica en ese canal. Audita al publicar. |
+| `/utility v2 edit` | Admin u Organiser | `message_id` STRING **sí**; `message_channel` CHANNEL **no** | Reescribe un mensaje V2 **del bot**. Audita. |
 
 ## Builders (embed y V2)
 
 Sesión **efímera**, 15 minutos de inactividad. Un draft por persona y servidor. Solo se publican o editan mensajes **de este bot**.
 
-El panel de `/utility embed` es un embed clásico (el draft es el preview). El de `/utility v2` es Components V2: un container de contenido + un container de controles.
+El panel de `/utility embed create` es un embed clásico (el draft es el preview). El de `/utility v2 create` es Components V2: un container de contenido + un container de controles.
 
 | Builder | Se puede añadir |
 |---|---|
 | Embed | Title, description, color, author, footer, thumbnail, image, fields, timestamp |
 | V2 | Text display (markdown), section (heading + extra + thumbnail), separator, media gallery, accent color. Undo last. |
 
-`clear_category` muta el servidor de forma destructiva. Lecturas (`random`, `utc`, `discord_tag`, `avatar`, `toss`, `enlarge`) no entran en la auditoría.
+`clear category` muta el servidor de forma destructiva. Lecturas (`random`, `utc`, `discord tag`, `avatar`, `toss`, `enlarge`) no entran en la auditoría.
 
 ## Relacionado
 

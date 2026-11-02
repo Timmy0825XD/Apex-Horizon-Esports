@@ -18,7 +18,7 @@ Reglas de producto: [../product/overview.md](../product/overview.md). Bracket: [
 | transcript_channel | CHANNEL | Sí | HTML al cerrar por score |
 | rules_channel | CHANNEL | Sí | Reglamento |
 | deadline_channel | CHANNEL | Sí | Deadlines / info |
-| result_channel | CHANNEL | Sí | `/schedule results` |
+| result_channel | CHANNEL | Sí | `/schedule results add` |
 | closed_ticket_category | CHANNEL (categoría) | Sí | Tickets cerrados |
 | ticket_open_category_1 | CHANNEL (categoría) | Sí | Primera cola de tickets |
 | ticket_open_category_2 | CHANNEL (categoría) | Sí | Desborde |
@@ -27,7 +27,7 @@ Reglas de producto: [../product/overview.md](../product/overview.md). Bracket: [
 | ticket_open_category_4 | CHANNEL (categoría) | No | Desborde |
 | events_links | CHANNEL | No | Publicación de YouTube |
 
-Valida bracket + layout de la hoja. Cada jugador tiene **5** columnas (tag, Discord ID, in-game name, in-game ID, Current Title). Detecta formato (`1vs1`…`5vs5`) y cuántos campos extra hay al final. En `1vs1` el tag del capitán es el nombre de Challonge; en `2vs2`, `3vs3`, `4vs4` y `5vs5` la primera columna es el equipo. La hoja tiene que ser **visible con el link**. Cruza cada in-game ID (ignorando espacios y caracteres invisibles) con la [lista oficial de baneados](https://docs.google.com/spreadsheets/d/17Xv8rF_UmKslmd_MBGiBf610xb2YleQJHivoc-6JqYU/edit?usp=sharing): si hay **uno o más**, **no** registra el torneo y lista quiénes son. **Copia la sheet a la BD** (`format` + `additionalFieldCount`). Máximo 4 torneos activos. Auto-room nace **apagado**; solo lo enciende `/auto_room`. Audita.
+Valida bracket + layout de la hoja. Cada jugador tiene **5** columnas (tag, Discord ID, in-game name, in-game ID, Current Title). Detecta formato (`1vs1`…`5vs5`) y cuántos campos extra hay al final. En `1vs1` el tag del capitán es el nombre de Challonge; en `2vs2`, `3vs3`, `4vs4` y `5vs5` la primera columna es el equipo. La hoja tiene que ser **visible con el link**. Cruza cada in-game ID (ignorando espacios y caracteres invisibles) con la [lista oficial de baneados](https://docs.google.com/spreadsheets/d/17Xv8rF_UmKslmd_MBGiBf610xb2YleQJHivoc-6JqYU/edit?usp=sharing): si hay **uno o más**, **no** registra el torneo y lista quiénes son. **Copia la sheet a la BD** (`format` + `additionalFieldCount`). Máximo 4 torneos activos. Auto-room nace **apagado**; solo lo enciende `/room auto`. Audita.
 
 ## `/tournament edit`
 
@@ -39,7 +39,7 @@ Valida bracket + layout de la hoja. Cada jugador tiene **5** columnas (tag, Disc
 |---|---|---|
 | id | STRING (Autocomplete) | Sí |
 
-Apaga automatización y **borra la config del torneo** más todo lo que el bot guardó de ese mundo: partidos, salas, schedules y asistencias. **No** borra canales Discord, la hoja de Google ni el bracket externo. La copia de la sheet en BD **pasa a histórico** (sigue saliendo en `/sheet find_player` / `/sheet get`). Admin u Organiser. Audita.
+Apaga automatización y **borra la config del torneo** más todo lo que el bot guardó de ese mundo: partidos, salas, schedules y asistencias. **No** borra canales Discord, la hoja de Google ni el bracket externo. La copia de la sheet en BD **pasa a histórico** (sigue saliendo en `/sheet find player` / `/sheet get`). Admin u Organiser. Audita.
 
 ## `/tournament info` / `/tournament list`
 
@@ -68,7 +68,7 @@ El libro tiene siete hojas, en este orden. Los nombres de usuario, rol y canal v
 | Schedules | Todos los schedules, con o sin resultado, en orden de bracket. Estado (*Completed*, *Overdue*, *Upcoming*), hora programada, hora del resultado, minutos hasta el resultado, juez y recorder (*Open* si falta), quién confirmó *Present*, marcador, ticket y nota. |
 | Attendance | Marcas activas, en orden de bracket. Etapa, partido, ticket, juez, recorder, si ocupó los dos puestos, marcador, juegos, ganador, `DW`, grabaciones, prueba del resultado si existe, si hay resultado declarado, quién marcó y cuándo. Las borradas no entran. |
 | Work count | Una fila por persona. Rondas y juegos como juez, como recorder y en ambos puestos. Los `DW` entran en esa cubeta y además se listan aparte; esa columna no se suma a las rondas. No muestra oro. La tarifa del encabezado sale del formato guardado. |
-| Results | Declaraciones de `/schedule results`, en orden de bracket. Marcador, ganador, empate, decisión o default win (si la asistencia activa es `DW`), staff del schedule, quién declaró, cuándo, hora programada, minutos hasta el resultado, si hay asistencia, notas, nota del schedule, transcript, grabaciones y pruebas. |
+| Results | Declaraciones de `/schedule results add`, en orden de bracket. Marcador, ganador, empate, decisión o default win (si la asistencia activa es `DW`), staff del schedule, quién declaró, cuándo, hora programada, minutos hasta el resultado, si hay asistencia, notas, nota del schedule, transcript, grabaciones y pruebas. |
 | Configuration | Identidad, roles, canales, categorías, auto-room, alta del mundo y un snapshot: de dónde salió el bracket, partidos en el bracket, salas, schedules, resultados y asistencias. Lo que no está configurado sale como *Not configured*. |
 
 **Comprobaciones de To do:**
@@ -76,7 +76,7 @@ El libro tiene siete hojas, en este orden. Los nombres de usuario, rol y canal v
 | Prioridad | Comprobación | Se resuelve con |
 |---|---|---|
 | Alta | Partido completo en el bracket que tuvo ticket y no tiene asistencia activa. Los partidos cerrados sin ticket (forfeits automáticos) no cuentan. | `/attendance mark` |
-| Alta | Schedule cuya hora ya pasó y no tiene resultado declarado. | `/schedule results` |
+| Alta | Schedule cuya hora ya pasó y no tiene resultado declarado. | `/schedule results add` |
 | Alta | Schedule en las próximas **24 horas** sin juez, sin recorder o sin ambos. | `/schedule update` |
 | Media | Ticket abierto de un partido ya completo en el bracket. | `/ticket close` |
 | Media | Resultado declarado sin asistencia activa. | `/attendance mark` |

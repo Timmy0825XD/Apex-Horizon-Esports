@@ -47,18 +47,17 @@ src/
     bot/               # /bot ping|about|help
     settings/          # /settings set|edit|show
     server/            # /server info|banlist|tree|invites
-    staff/             # /staff config, recruit, fire, work
+    staff/             # /staff config, info, recruit, fire, work
     tournament/        # /tournament add|edit|delete|info|list|role|validate
-    sheet/             # /sheet add|get|find_player|validate
-    auto-room/         # /auto_room
-    room/              # /room create|available y la tubería de battle tickets
-    bracket/           # /bracket upload|dq_both|correct
+    sheet/             # /sheet add|get|find player|validate
+    room/              # /room create|available|auto y la tubería de battle tickets (incluye la franja de auto-room)
+    bracket/           # /bracket upload|dq both|correct
     ticket/            # /ticket close|reopen|delete
     team/              # /team info|list
     role/              # /role user|add all|remove all|list
     user/              # /user ban|unban (y la lógica de ban que reusa ban-watch)
     ban-watch/         # avisos de baneo en bans_channel: lector, tarjetas y botones
-    utility/           # /utility clear, utc, embed, v2, …
+    utility/           # /utility clear messages, utc, embed, v2, …
     schedule/          # /schedule y todo lo suyo (cuando exista)
     ...
   workers/

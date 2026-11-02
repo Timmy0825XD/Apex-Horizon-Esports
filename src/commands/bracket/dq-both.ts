@@ -20,7 +20,7 @@ export async function runBracketDqBoth(interaction: ChatInputCommandInteraction)
   if (!guild || !interaction.guildId || !channel || channel.type !== ChannelType.GuildText) {
     await respondBracket(
       interaction,
-      bracketPanel("error", "Not a battle ticket", [`Run ${slashMention(interaction.guildId, "bracket dq_both")} inside a battle-ticket text channel.`]),
+      bracketPanel("error", "Not a battle ticket", [`Run ${slashMention(interaction.guildId, "bracket dq both")} inside a battle-ticket text channel.`]),
     );
     return;
   }
@@ -172,7 +172,7 @@ export async function runBracketDqBoth(interaction: ChatInputCommandInteraction)
       forfeited = await settlePendingForfeits({ guild, tournament, actor: interaction.user });
     } catch (error) {
       forfeitFailed = true;
-      console.error("Pending forfeit settle failed after dq_both", error);
+      console.error("Pending forfeit settle failed after dq-both", error);
     }
     const pendingLeft = new Set(
       (

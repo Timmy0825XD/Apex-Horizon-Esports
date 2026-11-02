@@ -11,9 +11,9 @@ Solo se auditan mutaciones. Extraer o visualizar información **no** genera log.
 | Acción | ¿Audita? | Ejemplos |
 |---|---|---|
 | **Crear / registrar** | Sí | `/settings set`, `/tournament add`, `/sheet add`, `/schedule create`, `/attendance mark` |
-| **Modificar** | Sí | `/settings edit`, `/bracket upload`, `/bracket dq_both`, `/schedule update`, `/staff recruit` |
+| **Modificar** | Sí | `/settings edit`, `/bracket upload`, `/bracket dq both`, `/schedule update`, `/staff recruit` |
 | **Borrar** | Sí | `/tournament delete`, `/ticket delete`, `/attendance delete`, `/user unban` |
-| **Leer / listar / extraer** | No | `/bot ping`, `/settings show`, `/tournament list`, `/sheet find_player`, `/sheet get`, `/sheet validate`, `/team info`, `/team list`, `/staff work`, `/server banlist` |
+| **Leer / listar / extraer** | No | `/bot ping`, `/settings show`, `/tournament list`, `/sheet find player`, `/sheet get`, `/sheet validate`, `/team info`, `/team list`, `/staff work`, `/server banlist` |
 
 - Se escribe el log **después de que la mutación tenga éxito**.
 - Fallar al loguear **nunca deshace** el comando. El log es testigo, no parte de la transacción.
@@ -28,13 +28,13 @@ El bot no habla “como el bot” en esos canales si puede evitarlo. Usa **un we
 | Bot logs | **Staff** | Recruit, fire, staff info registrada o editada |
 | Bot logs | **Moderation** | `/role` individual y masivo, `/user` ban/unban, y ban/unban aplicados desde un aviso de `bans_channel` (con enlace al aviso) |
 | Bot logs | **Tournaments** | Alta, edición y baja de torneo; `/sheet add`; `/tournament role`; `/tournament validate` |
-| Bot logs | **Rooms** | `/room create`, `/auto_room`, franjas de auto-room (incluida la recuperada) |
+| Bot logs | **Rooms** | `/room create`, `/room auto`, franjas de auto-room (incluida la recuperada) |
 | Bot logs | **Schedules** | Crear, actualizar, borrar, refresh, resign, puesto tomado, resultado declarado o borrado |
 | Bot logs | **Attendance** | Marcar, borrar, añadir o borrar links |
 | Bot logs | **Utility** | Purga, wipe de categoría, emoji, embed y Components V2 publicados o reescritos |
 | Bot logs | **Ticket System** | Cerrar / reabrir / borrar ticket |
 | Challonge logs | **Challonge Logs** | Vincular el bracket o reemplazar sus credenciales |
-| Challonge logs | **Score Upload** | `/bracket upload`, `/bracket dq_both`, `/bracket correct` y forfeits automáticos |
+| Challonge logs | **Score Upload** | `/bracket upload`, `/bracket dq both`, `/bracket correct` y forfeits automáticos |
 | Transcript logs | **Transcripts** | Archivo HTML (no es auditoría de “quién pulsó qué”) |
 
 Si el webhook no se puede crear o falló el envío, se **reintenta** y, si sigue fallando, el mismo log lo manda el propio bot. Nadie es mencionado desde un log (`allowed mentions` vacío).

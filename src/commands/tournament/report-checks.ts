@@ -183,7 +183,7 @@ export type TodoCheck =
 
 export const todoChecks: Record<TodoCheck, { priority: Priority; label: string; fix: string }> = {
   "complete-no-attendance": { priority: "high", label: "Complete on the bracket, ticket had no attendance", fix: "/attendance mark" },
-  "schedule-overdue": { priority: "high", label: "Schedule passed, no result declared", fix: "/schedule results" },
+  "schedule-overdue": { priority: "high", label: "Schedule passed, no result declared", fix: "/schedule results add" },
   "schedule-soon-unstaffed": { priority: "high", label: "Schedule in the next 24 h without judge or recorder", fix: "/schedule update" },
   "ticket-open-complete": { priority: "medium", label: "Ticket still open, match complete", fix: "/ticket close" },
   "result-no-attendance": { priority: "medium", label: "Result declared, no attendance", fix: "/attendance mark" },

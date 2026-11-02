@@ -56,7 +56,7 @@ function buildArchiveContainers(
   commandId?: string,
 ) {
   const containers = [];
-  const findPlayer = formatHelpEntry("sheet find_player", commandId);
+  const findPlayer = formatHelpEntry("sheet find player", commandId);
 
   if (archived.length === 1 && skipped.length === 0 && failed.length === 0) {
     const row = archived[0];
@@ -360,7 +360,7 @@ export function sheetValidateMessage(
     const copy = ISSUE_COPY[bucket.kind];
     const tagHint =
       bucket.kind === "tag"
-        ? `\n${formatHelpEntry("utility discord_tag", commandIds.utilityCommandId)} turns Discord IDs into usernames in sheet order.`
+        ? `\n${formatHelpEntry("utility discord tag", commandIds.utilityCommandId)} turns Discord IDs into usernames in sheet order.`
         : "";
     containers.push(
       new ContainerBuilder()
