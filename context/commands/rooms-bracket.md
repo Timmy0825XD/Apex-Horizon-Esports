@@ -2,7 +2,7 @@
 
 Reglas: [../domains/bracket-rooms.md](../domains/bracket-rooms.md). Worker: [../platform/workers.md](../platform/workers.md).
 
-## `/auto_room`
+## `/room auto`
 
 Un solo comando. Organiser.
 
@@ -51,11 +51,11 @@ Respuesta en el canal (no efímera), **tres Components V2** con título grande, 
 2. Confirmación de que el canal se cerró y movió a categoría de archivados. Thumbnail: emoji `open_close`.
 3. Confirmación de que se generó el transcript, con enlace al mensaje del HTML. Thumbnail: emoji `transcript_thumnail`.
 
-Al publicar el transcript llama `attachResultsTranscript` con la URL de ese mensaje para enlazar el título de los embeds de `/schedule results` (ticket y canal de resultados). El siguiente ticket espera al reloj si auto-room está on. Log: **Score Upload**, publicado en cuanto Challonge acepta el marcador (antes de cerrar el ticket).
+Al publicar el transcript llama `attachResultsTranscript` con la URL de ese mensaje para enlazar el título de los embeds de `/schedule results add` (ticket y canal de resultados). El siguiente ticket espera al reloj si auto-room está on. Log: **Score Upload**, publicado en cuanto Challonge acepta el marcador (antes de cerrar el ticket).
 
-Si Challonge ya aceptó el marcador y después falla un paso de Discord (categorías de archivados llenas, transcript), el comando **no** dice que la subida falló: avisa en privado de qué quedó pendiente (*Ticket not archived* o *Transcript not generated*) para terminarlo a mano. `/bracket dq_both` sigue la misma regla.
+Si Challonge ya aceptó el marcador y después falla un paso de Discord (categorías de archivados llenas, transcript), el comando **no** dice que la subida falló: avisa en privado de qué quedó pendiente (*Ticket not archived* o *Transcript not generated*) para terminarlo a mano. `/bracket dq both` sigue la misma regla.
 
-## `/bracket dq_both`
+## `/bracket dq both`
 
 **Solo dentro del ticket.** Sin campos. Mismo rol que `upload` (admin o helper de ese torneo, u Organiser).
 
@@ -66,7 +66,7 @@ Cuando la llave siguiente ya tiene los dos lados y está `open`, el bot la repor
 - Si solo uno viene marcado: ese lado recibe **-1** y el otro **0**. El limpio avanza. No hay ticket. Se le quita la marca al que perdió.
 - Si los dos vienen marcados (el comando se usó en las dos llaves que alimentan ese partido): lado 1 recibe **0** y lado 2 **-1**. No hay ticket. El lado 1 **sigue marcado**, y la llave de después se descalifica igual.
 
-Si el rival todavía no está, la marca espera. Completar el otro partido (`upload`, otro `dq_both` o `correct`), `/room create`, encender auto-room o el reloj de 00:00 / 12:00 UTC aplican la marca en cuanto el partido está `open`. Esas llaves no se listan en `/room available` ni abren ticket. Cada forfeit automático también va a **Score Upload**.
+Si el rival todavía no está, la marca espera. Completar el otro partido (`upload`, otro `dq both` o `correct`), `/room create`, encender auto-room o el reloj de 00:00 / 12:00 UTC aplican la marca en cuanto el partido está `open`. Esas llaves no se listan en `/room available` ni abren ticket. Cada forfeit automático también va a **Score Upload**.
 
 `/bracket correct` sobre un marcador que tenía un negativo quita la marca de los dos lados de ese partido.
 

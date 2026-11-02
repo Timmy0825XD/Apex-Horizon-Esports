@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isLateSlot, latestSlot } from "../src/commands/auto-room/slot.js";
+import { isLateSlot, latestSlot } from "../src/commands/room/auto-slot.js";
 
 const at = (iso: string) => new Date(iso);
 

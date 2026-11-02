@@ -4,7 +4,7 @@ import { fact, listWithOverflow, publishAudit } from "../lib/audit.js";
 import { formatChannel } from "../lib/formatters.js";
 import { openPendingTickets } from "../commands/room/open.js";
 import { loadGuildSettings } from "../commands/settings/store.js";
-import { isLateSlot, latestSlot } from "../commands/auto-room/slot.js";
+import { isLateSlot, latestSlot } from "../commands/room/auto-slot.js";
 import { claimAutoRoomSlot, listRunningAutoRooms } from "../commands/tournament/store.js";
 
 let timer: ReturnType<typeof setInterval> | null = null;

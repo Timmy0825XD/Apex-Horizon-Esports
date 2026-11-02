@@ -1,6 +1,6 @@
 import { MessageFlags, type AutocompleteInteraction, type ButtonInteraction, type ChatInputCommandInteraction } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
-import { slashMention } from "../../lib/register-slash.js";
+import { slashMention, subcommandPath } from "../../lib/register-slash.js";
 import { handleBracketAuto } from "./autocomplete.js";
 import { handleBracketButton, runBracketCorrect } from "./correct.js";
 import { runBracketDqBoth } from "./dq-both.js";
@@ -19,12 +19,12 @@ export async function handleBracketSlash(interaction: ChatInputCommandInteractio
     return;
   }
 
-  const sub = interaction.options.getSubcommand();
+  const sub = subcommandPath(interaction);
   if (sub === "upload") {
     await runBracketUpload(interaction);
     return;
   }
-  if (sub === "dq_both") {
+  if (sub === "dq both") {
     await runBracketDqBoth(interaction);
     return;
   }
@@ -36,7 +36,7 @@ export async function handleBracketSlash(interaction: ChatInputCommandInteractio
   await respondBracket(
     interaction,
     bracketPanel("error", "Unknown subcommand", [
-      `That bracket action is not available. Use ${["bracket upload", "bracket dq_both", "bracket correct"]
+      `That bracket action is not available. Use ${["bracket upload", "bracket dq both", "bracket correct"]
         .map((path) => slashMention(interaction.guildId, path))
         .join(", ")}.`,
     ]),

@@ -9,6 +9,7 @@ import { runResults, runResultsDelete } from "./results.js";
 import { replySchedule, scheduleNotice } from "./respond.js";
 import { loadTicket } from "./ticket.js";
 import { runRefresh, runUpdate } from "./update.js";
+import { subcommandPath } from "../../lib/register-slash.js";
 
 const unauthorized = scheduleNotice("error", "Server not allowed", "This server is not authorized to use this bot.");
 
@@ -30,7 +31,7 @@ export async function handleScheduleSlash(interaction: ChatInputCommandInteracti
 }
 
 async function dispatchSchedule(interaction: ChatInputCommandInteraction): Promise<void> {
-  const sub = interaction.options.getSubcommand();
+  const sub = subcommandPath(interaction);
   const hidden = sub === "update";
   if (!isAllowedGuild(interaction.guildId)) {
     await interaction.reply(hidden ? { ...unauthorized, flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral] } : unauthorized);
@@ -72,11 +73,11 @@ async function dispatchSchedule(interaction: ChatInputCommandInteraction): Promi
     await runResign(interaction, loaded);
     return;
   }
-  if (sub === "results") {
+  if (sub === "results add") {
     await runResults(interaction, loaded);
     return;
   }
-  if (sub === "results_delete") {
+  if (sub === "results delete") {
     await runResultsDelete(interaction, loaded);
   }
 }

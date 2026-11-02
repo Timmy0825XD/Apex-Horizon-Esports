@@ -9,7 +9,7 @@ Las respuestas del comando (éxito, error e info) son **Components V2** en el ca
 | `create` · `update` · `delete` | Admin o helper **de ese torneo**, u Organiser |
 | `show` · `unassigned` | Admin, Organiser, helper de un torneo o rol **staff** |
 | `refresh` | Organiser, helper de un torneo, **staff**, **judge** o **recorder** |
-| `results` · `results_delete` | Rol **judge** del servidor |
+| `results add` · `results delete` | Rol **judge** del servidor |
 | `resign` | Solo quien está asignado a ese schedule, dentro del ticket |
 
 ## `/schedule create`
@@ -50,7 +50,7 @@ Sin `match`, lista. `tour`, `user` y `filter` se combinan. Sin ninguno, lista to
 Estados:
 
 - **Pending**: hora futura y sin declaración.
-- **Completed**: hay `/schedule results`.
+- **Completed**: hay `/schedule results add`.
 - **Result pending**: la hora ya pasó y no hay declaración.
 
 `past` (Past/Completed) incluye Completed y Result pending.
@@ -72,7 +72,7 @@ La ficha de `match` repite la tarjeta del schedule. Con declaración muestra la 
 |---|---|---|---|
 | filter | STRING (Choice) | No | `any` · `all` · `missing_judge` · `missing_recorder`. Por defecto `any` |
 
-Cualquier canal. Admin, Organiser, helper de un torneo o rol staff. No audita. Components V2 en el canal, sin ping, 5 por página. Solo schedules cuyo torneo sigue registrado, sin `/schedule results` y con el ticket abierto. Un resultado o un ticket cerrado deja ese schedule fuera de la lista. Cada fila lleva enfrentamiento, hora relativa y UTC, estado, torneo, canal, id de Challonge, y las dos líneas de **Judge** y **Recorder** (*Open* si el puesto está vacío). Con `any`, las filas se agrupan en **Both seats open**, **Judge open** y **Recorder open**, y dentro de cada grupo van por hora. El encabezado cuenta cuántos hay de cada hueco. Las flechas las pulsa quien puede usar el comando.
+Cualquier canal. Admin, Organiser, helper de un torneo o rol staff. No audita. Components V2 en el canal, sin ping, 5 por página. Solo schedules cuyo torneo sigue registrado, sin `/schedule results add` y con el ticket abierto. Un resultado o un ticket cerrado deja ese schedule fuera de la lista. Cada fila lleva enfrentamiento, hora relativa y UTC, estado, torneo, canal, id de Challonge, y las dos líneas de **Judge** y **Recorder** (*Open* si el puesto está vacío). Con `any`, las filas se agrupan en **Both seats open**, **Judge open** y **Recorder open**, y dentro de cada grupo van por hora. El encabezado cuenta cuántos hay de cada hueco. Las flechas las pulsa quien puede usar el comando.
 
 ## `/schedule refresh`
 
@@ -92,7 +92,7 @@ Cualquier canal. Admin, Organiser, helper de un torneo o rol staff. No audita. C
 | reason | STRING | No | `.` si es privado |
 | regenerate_image | BOOLEAN | No | Reaplica el fondo ya asignado |
 
-## `/schedule results`
+## `/schedule results add`
 
 **Solo ticket.** Rol judge. Hora ya pasada. El único empate permitido es **0 - 0**. Una declaración por schedule. El capitán no declara.
 
@@ -103,9 +103,9 @@ Cualquier canal. Admin, Organiser, helper de un torneo o rol staff. No audita. C
 | notes | STRING | No | Máx. 500. Sale como **Remarks** |
 | image1 … image10 | ATTACHMENT | No | Pruebas. Todas opcionales |
 
-Publica el mismo embed en el ticket y en `result_channel`. Solo el ticket lleva encima el texto **Match Complete** con los capitanes, y esas menciones les hacen ping. Es la tarjeta del schedule, en verde, con la hora de la declaración (**Result UTC Time** / **Result Local Time**), más **Results** (marcador; el ganador lleva el trofeo) y **Links**. Links nace vacío: lo llenan `/attendance mark` y `/link add` llamando `attachResultsLinks` con la lista completa. `/link delete` y `/attendance delete` lo vacían. El título no lleva enlace hasta que `/bracket upload` transcriba el ticket y llame `attachResultsTranscript` con la URL de ese mensaje. No sube el bracket. Relación: `/bracket upload`, `/schedule results_delete`.
+Publica el mismo embed en el ticket y en `result_channel`. Solo el ticket lleva encima el texto **Match Complete** con los capitanes, y esas menciones les hacen ping. Es la tarjeta del schedule, en verde, con la hora de la declaración (**Result UTC Time** / **Result Local Time**), más **Results** (marcador; el ganador lleva el trofeo) y **Links**. Links nace vacío: lo llenan `/attendance mark` y `/link add` llamando `attachResultsLinks` con la lista completa. `/link delete` y `/attendance delete` lo vacían. El título no lleva enlace hasta que `/bracket upload` transcriba el ticket y llame `attachResultsTranscript` con la URL de ese mensaje. No sube el bracket. Relación: `/bracket upload`, `/schedule results delete`.
 
-## `/schedule results_delete`
+## `/schedule results delete`
 
 | Campo | Tipo | Obligatorio |
 |---|---|---|

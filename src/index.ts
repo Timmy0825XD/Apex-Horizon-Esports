@@ -1,6 +1,5 @@
 import "./lib/env.js";
 import { Client, Events, GatewayIntentBits, MessageFlags } from "discord.js";
-import { handleAutoRoomAuto, handleAutoRoomSlash } from "./commands/auto-room/handle.js";
 import { handleAttendanceAuto, handleAttendanceSlash } from "./commands/attendance/handle.js";
 import { handleGetAuto, handleGetSlash } from "./commands/get/handle.js";
 import { handleLinkAuto, handleLinkSlash } from "./commands/link/handle.js";
@@ -140,11 +139,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
-    if (interaction.isChatInputCommand() && interaction.commandName === "auto_room") {
-      await handleAutoRoomSlash(interaction);
-      return;
-    }
-
     if (interaction.isChatInputCommand() && interaction.commandName === "room") {
       await handleRoomSlash(interaction);
       return;
@@ -197,11 +191,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.isAutocomplete() && interaction.commandName === "team") {
       await handleTeamAuto(interaction);
-      return;
-    }
-
-    if (interaction.isAutocomplete() && interaction.commandName === "auto_room") {
-      await handleAutoRoomAuto(interaction);
       return;
     }
 

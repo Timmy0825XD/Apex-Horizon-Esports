@@ -42,7 +42,7 @@ function addSharedWorldOptions(subcommand: SlashCommandSubcommandBuilder, requir
   addTextChannel(subcommand, "transcript_channel", "Channel for HTML transcripts", required);
   addTextChannel(subcommand, "rules_channel", "Channel with the ruleset", required);
   addTextChannel(subcommand, "deadline_channel", "Channel for deadlines and info", required);
-  addTextChannel(subcommand, "result_channel", "Channel for /schedule results", required);
+  addTextChannel(subcommand, "result_channel", "Channel for /schedule results add", required);
   addCategory(subcommand, "closed_ticket_category", "Category for closed tickets", required);
   addCategory(subcommand, "ticket_open_category_1", "First open-ticket category", required);
   addCategory(subcommand, "ticket_open_category_2", "Overflow open-ticket category", required);

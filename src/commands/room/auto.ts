@@ -1,31 +1,19 @@
-import { MessageFlags, type AutocompleteInteraction, type ChatInputCommandInteraction } from "discord.js";
+import type { ChatInputCommandInteraction } from "discord.js";
 import { ChallongeError } from "../../lib/challonge.js";
-import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { formatHelpEntry } from "../../lib/formatters.js";
-import { memberIsOrganiser } from "../../lib/organiser.js";
 import { roomCommandIdFor } from "../../lib/register-slash.js";
-import { auditAutoRoom } from "../room/audit.js";
-import { respondTournamentChoices } from "../room/autocomplete.js";
-import { TicketQueueError } from "../room/bracket.js";
-import { openPendingTickets } from "../room/open.js";
-import { prepareTournament } from "../room/prepare.js";
-import { deferRoom, respondRoom } from "../room/respond.js";
-import { creationReport } from "../room/report.js";
-import { roomPanel } from "../room/view.js";
-import { escapeDiscord } from "../room/labels.js";
+import { auditAutoRoom } from "./audit.js";
+import { TicketQueueError } from "./bracket.js";
+import { openPendingTickets } from "./open.js";
+import { prepareTournament } from "./prepare.js";
+import { deferRoom, respondRoom } from "./respond.js";
+import { creationReport } from "./report.js";
+import { roomPanel } from "./view.js";
+import { escapeDiscord } from "./labels.js";
 import { setAutoRoomRunning } from "../tournament/store.js";
 
-const unauthorized = {
-  content: "This server is not authorized to use this bot.",
-  flags: MessageFlags.Ephemeral,
-} as const;
-
-export async function handleAutoRoomSlash(interaction: ChatInputCommandInteraction): Promise<void> {
-  if (!isAllowedGuild(interaction.guildId)) {
-    await interaction.reply(unauthorized);
-    return;
-  }
-
+/** `/room auto`: turns the auto-room worker on or off for one tournament. */
+export async function handleRoomAutoSlash(interaction: ChatInputCommandInteraction): Promise<void> {
   const ready = await prepareTournament(interaction, "change auto-room");
   if (!ready) {
     return;
@@ -95,19 +83,5 @@ export async function handleAutoRoomSlash(interaction: ChatInputCommandInteracti
         ? error.message
         : "Auto-room stayed off because the bracket could not be read.";
     await respondRoom(interaction, roomPanel("error", "Auto-room stayed off", [message]));
-  }
-}
-
-export async function handleAutoRoomAuto(interaction: AutocompleteInteraction): Promise<void> {
-  if (!isAllowedGuild(interaction.guildId) || !(await memberIsOrganiser(interaction))) {
-    await interaction.respond([]);
-    return;
-  }
-  try {
-    await respondTournamentChoices(interaction);
-  } catch {
-    if (!interaction.responded) {
-      await interaction.respond([]).catch(() => undefined);
-    }
   }
 }

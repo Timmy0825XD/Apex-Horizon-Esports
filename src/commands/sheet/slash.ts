@@ -40,19 +40,24 @@ export const sheetSlash = new SlashCommandBuilder()
         option.setName("csv").setDescription("Export every stored tournament and its sheet as a CSV").setRequired(false),
       ),
   )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName("find_player")
-      .setDescription("Find a player in every stored sheet")
-      .addStringOption((option) => option.setName("game_id").setDescription("In-game ID").setRequired(false))
-      .addStringOption((option) =>
-        option.setName("discord_id").setDescription("Discord user ID").setRequired(false),
-      )
-      .addStringOption((option) =>
-        option.setName("discord_tag").setDescription("Discord tag / username").setRequired(false),
-      )
-      .addStringOption((option) =>
-        option.setName("player_name").setDescription("In-game name").setRequired(false),
+  .addSubcommandGroup((group) =>
+    group
+      .setName("find")
+      .setDescription("Search the stored sheets")
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName("player")
+          .setDescription("Find a player in every stored sheet")
+          .addStringOption((option) => option.setName("game_id").setDescription("In-game ID").setRequired(false))
+          .addStringOption((option) =>
+            option.setName("discord_id").setDescription("Discord user ID").setRequired(false),
+          )
+          .addStringOption((option) =>
+            option.setName("discord_tag").setDescription("Discord tag / username").setRequired(false),
+          )
+          .addStringOption((option) =>
+            option.setName("player_name").setDescription("In-game name").setRequired(false),
+          ),
       ),
   )
   .addSubcommand((subcommand) =>

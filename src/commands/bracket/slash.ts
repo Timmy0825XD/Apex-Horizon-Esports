@@ -18,8 +18,13 @@ export const bracketSlash = new SlashCommandBuilder()
         option.setName("note").setDescription("Optional note for the score upload log").setRequired(false),
       ),
   )
-  .addSubcommand((subcommand) =>
-    subcommand.setName("dq_both").setDescription("Disqualify both teams in this match"),
+  .addSubcommandGroup((group) =>
+    group
+      .setName("dq")
+      .setDescription("Disqualify teams in this match")
+      .addSubcommand((subcommand) =>
+        subcommand.setName("both").setDescription("Disqualify both teams in this match"),
+      ),
   )
   .addSubcommand((subcommand) =>
     subcommand

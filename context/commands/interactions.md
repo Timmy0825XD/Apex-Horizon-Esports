@@ -10,10 +10,10 @@ Las mismas reglas de permiso y de “un partido / un schedule” aplican. Ver [.
 | Paginación de help | `/bot help` | Previous / Next por familia de comandos |
 | Paginación de salas | `/room available` | Previous / Next, 20 partidos por página |
 | Confirmar corrección de bracket | `/bracket correct` cuando hay tickets aguas abajo | Components V2 con logo de Challonge y la lista de tickets. Sin Aceptar no se borra ni se recrea nada |
-| Confirmar borrar categoría | `/utility clear_category` | Sin confirmación no se borra nada |
+| Confirmar borrar categoría | `/utility clear category` | Sin confirmación no se borra nada |
 | Confirmar rol a todos | `/tournament role` sin `id_header` | Sin confirmación no se asigna el rol a todo el roster |
-| Builder de embed | `/utility embed` · `/utility edit_embed` | Sesión temporal de edición visual (embed clásico) |
-| Builder de Components V2 | `/utility v2` · `/utility edit_v2` | Sesión temporal de edición visual (container, text, section, media) |
+| Builder de embed | `/utility embed create` · `/utility embed edit` | Sesión temporal de edición visual (embed clásico) |
+| Builder de Components V2 | `/utility v2 create` · `/utility v2 edit` | Sesión temporal de edición visual (container, text, section, media) |
 | Decidir un aviso de baneo | Tarjeta en `bans_channel` (no viene de un slash) | Confirm ban (Permanent por defecto), Change duration (lista de duraciones; luego hay que confirmar), Cancel. En un aviso de unban: Confirm unban / Cancel. Ver [../domains/moderation.md](../domains/moderation.md) |
 
 Asignar por botón de schedule se audita. Banear o desbanear desde un aviso también (log **Moderation**); cancelarlo no. Ver [../platform/audit.md](../platform/audit.md).

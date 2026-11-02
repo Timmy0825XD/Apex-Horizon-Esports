@@ -239,7 +239,7 @@ export function tournamentDeletedMessage(
   related: DeletedRelated,
   commandId?: string,
 ): InteractionReplyOptions {
-  const findPlayer = formatHelpEntry("sheet find_player", commandId);
+  const findPlayer = formatHelpEntry("sheet find player", commandId);
   const container = new ContainerBuilder()
     .setAccentColor(embedColors.success)
     .addTextDisplayComponents(

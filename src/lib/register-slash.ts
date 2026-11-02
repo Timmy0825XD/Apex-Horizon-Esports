@@ -1,5 +1,9 @@
-import { REST, Routes, type RESTPostAPIChatInputApplicationCommandsJSONBody } from "discord.js";
-import { autoRoomSlash } from "../commands/auto-room/slash.js";
+import {
+  REST,
+  Routes,
+  type ChatInputCommandInteraction,
+  type RESTPostAPIChatInputApplicationCommandsJSONBody,
+} from "discord.js";
 import { attendanceSlash } from "../commands/attendance/slash.js";
 import { botSlash } from "../commands/bot/slash.js";
 import { getSlash } from "../commands/get/slash.js";
@@ -31,7 +35,6 @@ const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
   roleSlash.toJSON(),
   userSlash.toJSON(),
   utilitySlash.toJSON(),
-  autoRoomSlash.toJSON(),
   roomSlash.toJSON(),
   ticketSlash.toJSON(),
   bracketSlash.toJSON(),
@@ -83,7 +86,6 @@ export const teamCommandIdFor = (guildId: string | null | undefined) => commandI
 export const roleCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "role");
 export const userCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "user");
 export const utilityCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "utility");
-export const autoRoomCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "auto_room");
 export const roomCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "room");
 export const ticketCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "ticket");
 export const bracketCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "bracket");
@@ -103,4 +105,11 @@ export async function registerSlashCommands(): Promise<void> {
     })) as Array<{ id: string; name: string }>;
     commandIds.set(guildId, new Map(registered.map((command) => [command.name, command.id])));
   }
+}
+
+/** Full subcommand path without the command name: `"dq both"`, `"results add"`, `"create"`. */
+export function subcommandPath(interaction: ChatInputCommandInteraction): string {
+  const group = interaction.options.getSubcommandGroup(false);
+  const sub = interaction.options.getSubcommand();
+  return group ? `${group} ${sub}` : sub;
 }

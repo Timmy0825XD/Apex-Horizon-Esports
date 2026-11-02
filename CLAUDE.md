@@ -8,6 +8,7 @@ Las reglas del proyecto viven en `.claude/rules/` y se cargan siempre:
 - `command-access.md` — `context/commands/access.md` decide quién usa cada comando
 - `bot-structure.md` — agrupar por contexto de comando, sin sobreingeniería
 - `autocomplete.md` — datos guardados por el bot se eligen por autocomplete o Choice
+- `command-naming.md` — comandos y subcomandos de una palabra, separados por espacios (niveles), sin `_` ni `-`
 - `discord-ui.md` — menciones con helpers, emojis desde `emojis.ts`, copy propio por bloque
 - `bot-audit-logs.md` — las mutaciones se auditan por webhook; las lecturas no
 - `git-flow.md` — ramas, commits, PR contra `develop` y limpieza de ramas mergeadas

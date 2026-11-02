@@ -233,7 +233,7 @@ export async function handleEmbedEdit(interaction: ChatInputCommandInteraction, 
     await interaction.reply(
       utilityError(
         "That's Components V2",
-        `Use ${formatHelpEntry("utility edit_v2", utilityCommandIdFor(guild.id))} to rewrite a Components V2 message.`,
+        `Use ${formatHelpEntry("utility v2 edit", utilityCommandIdFor(guild.id))} to rewrite a Components V2 message.`,
       ),
     );
     return;
@@ -288,7 +288,7 @@ export async function handleEmbedButton(interaction: ButtonInteraction): Promise
     await interaction.reply(
       utilityError(
         "Builder expired",
-        `Start again with ${formatHelpEntry("utility embed", utilityCommandIdFor(guild.id))} or ${formatHelpEntry("utility edit_embed", utilityCommandIdFor(guild.id))}.`,
+        `Start again with ${formatHelpEntry("utility embed create", utilityCommandIdFor(guild.id))} or ${formatHelpEntry("utility embed edit", utilityCommandIdFor(guild.id))}.`,
       ),
     );
     return;
@@ -447,7 +447,7 @@ export async function handleEmbedModal(interaction: ModalSubmitInteraction): Pro
     await interaction.reply(
       utilityError(
         "Builder expired",
-        `Start again with ${formatHelpEntry("utility embed", utilityCommandIdFor(guild.id))} or ${formatHelpEntry("utility edit_embed", utilityCommandIdFor(guild.id))}.`,
+        `Start again with ${formatHelpEntry("utility embed create", utilityCommandIdFor(guild.id))} or ${formatHelpEntry("utility embed edit", utilityCommandIdFor(guild.id))}.`,
       ),
     );
     return;

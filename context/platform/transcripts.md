@@ -27,7 +27,7 @@ Toda descarga tiene timeout, límite de bytes, límite de redirects, concurrenci
 
 Cada página se mantiene por debajo de un límite conservador de subida. Los mensajes nunca se cortan entre páginas. Si una sola tarjeta sería demasiado grande por sus previews, esa tarjeta usa URLs externas en vez de previews incrustadas.
 
-Un transcript pequeño se adjunta al mismo Components V2 que lo anuncia. Si hace falta dividirlo, cada parte se sube como HTML y un Components V2 final funciona como índice. La URL de ese índice es la que se enlaza desde `/schedule results`.
+Un transcript pequeño se adjunta al mismo Components V2 que lo anuncia. Si hace falta dividirlo, cada parte se sube como HTML y un Components V2 final funciona como índice. La URL de ese índice es la que se enlaza desde `/schedule results add`.
 
 Si falla una publicación multiparte, el bot intenta borrar las partes incompletas. En un ticket de validación, cualquier fallo conserva el canal. En una sala de partido ya archivada, el fallo se informa y nunca se anuncia un transcript parcial como completo.
 

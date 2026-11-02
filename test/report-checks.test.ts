@@ -112,7 +112,7 @@ test("the workbook opens with the three new sheets and keeps the old ones", asyn
       topStaff: [{ username: "kairo", rounds: 1, games: 3 }],
       schedules: [{ label: "Schedules", value: "1" }],
     },
-    todo: [{ priority: "high", check: "Schedule passed, no result declared", stage: "Round 1", matchId: 1, match: "A vs B", ticket: "r1-a-vs-b", fix: "/schedule results", detail: "Scheduled 2026-11-02 14:00 UTC." }],
+    todo: [{ priority: "high", check: "Schedule passed, no result declared", stage: "Round 1", matchId: 1, match: "A vs B", ticket: "r1-a-vs-b", fix: "/schedule results add", detail: "Scheduled 2026-11-02 14:00 UTC." }],
     schedules: [{ stage: "Round 1", matchId: 1, match: "A vs B", status: "Overdue", scheduledAt: "x", declaredAt: "—", resultAfter: null, judge: "kairo", recorder: "Open", confirmed: "None", score: "—", ticket: "r1", note: "—" }],
     attendance: [{ stage: "Round 1", matchId: 1, match: "A vs B", ticket: "r1", judge: "k", judgeId: "1", recorder: "n", recorderId: "2", bothSeats: false, team1: 2, team2: 1, games: 3, winner: "A", tie: false, remark: "—", defaultWin: false, recordings: [], proof: [], resultDeclared: false, markedBy: "k", markedAt: "x" }],
     work: [],

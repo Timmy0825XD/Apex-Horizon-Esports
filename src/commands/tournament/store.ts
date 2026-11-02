@@ -1,6 +1,6 @@
 import type { Prisma, Tournament as TournamentRow } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
-import { latestSlot } from "../auto-room/slot.js";
+import { latestSlot } from "../room/auto-slot.js";
 import { isTeamFormat, type TeamFormat, type TournamentRecord, type TournamentWorld } from "./fields.js";
 import type { ParsedSheet, ExtraField, SheetTeam } from "./sheet.js";
 

@@ -158,7 +158,7 @@ export async function handleSheetAdd(interaction: ChatInputCommandInteraction, c
       interaction,
       sheetErrorMessage(
         "Sheet already stored",
-        `That Google Sheet is already in the global archive. ${formatHelpEntry("sheet find_player", commandId)} can already search it.`,
+        `That Google Sheet is already in the global archive. ${formatHelpEntry("sheet find player", commandId)} can already search it.`,
         false,
       ),
     );

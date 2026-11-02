@@ -350,7 +350,7 @@ Ninguna.
 
 Ninguna.
 
-### `/sheet find_player`
+### `/sheet find player`
 
 - [x] Admin
 - [x] Organiser
@@ -400,7 +400,7 @@ Ninguna.
 
 ## Salas y bracket
 
-### `/auto_room`
+### `/room auto`
 
 - [ ] Admin
 - [x] Organiser
@@ -452,7 +452,7 @@ Ninguna.
 - Helper es el `helper_role` de **ese** torneo.
 - Organiser (`manager_role` o Administrator) también entra.
 
-### `/bracket dq_both`
+### `/bracket dq both`
 
 - [x] Admin
 - [x] Organiser
@@ -597,7 +597,7 @@ El capitán no ejecuta ningún `/schedule`. Tener un rol no abre los subcomandos
 - Ningún rol marcado lo abre. Solo el usuario que está sentado como juez y/o recorder de **ese** schedule.
 - Tener el rol sin estar asignado no basta. Dejar de tener el rol no quita la renuncia si sigue siendo esa persona.
 
-### `/schedule results`
+### `/schedule results add`
 
 - [ ] Admin
 - [ ] Organiser
@@ -610,7 +610,7 @@ El capitán no ejecuta ningún `/schedule`. Tener un rol no abre los subcomandos
 - Solo dentro del ticket, y solo si ese ticket tiene schedule.
 - Solo `judge_role`. Estar asignado como juez de ese partido no sustituye el rol, ni al revés: no se mira el asiento.
 
-### `/schedule results_delete`
+### `/schedule results delete`
 
 - [ ] Admin
 - [ ] Organiser
@@ -927,7 +927,7 @@ Ninguna.
 
 ## Utility
 
-### `/utility clear_category`
+### `/utility clear category`
 
 - [x] Admin
 - [ ] Organiser
@@ -940,7 +940,7 @@ Ninguna.
 - Admin (`admin_role` o Administrator). `manager_role` no entra.
 - Sin la confirmación no se borra nada.
 
-### `/utility clear`
+### `/utility clear messages`
 
 - [x] Admin
 - [ ] Organiser
@@ -953,7 +953,7 @@ Ninguna.
 - Admin (`admin_role` o Administrator). `manager_role` no entra.
 - Solo el canal donde se ejecuta.
 
-### `/utility emoji_steal`
+### `/utility emoji steal`
 
 - [x] Admin
 - [ ] Organiser
@@ -990,7 +990,7 @@ Ninguna.
 
 Ninguna.
 
-### `/utility discord_tag`
+### `/utility discord tag`
 
 - [x] Admin
 - [x] Organiser
@@ -1038,7 +1038,7 @@ Ninguna.
 
 Ninguna.
 
-### `/utility embed`
+### `/utility embed create`
 
 - [x] Admin
 - [x] Organiser
@@ -1051,7 +1051,7 @@ Ninguna.
 - Admin u Organiser.
 - Solo publica o edita mensajes de este bot.
 
-### `/utility edit_embed`
+### `/utility embed edit`
 
 - [x] Admin
 - [x] Organiser
@@ -1064,7 +1064,7 @@ Ninguna.
 - Admin u Organiser.
 - Solo reescribe un embed de este bot.
 
-### `/utility v2`
+### `/utility v2 create`
 
 - [x] Admin
 - [x] Organiser
@@ -1077,7 +1077,7 @@ Ninguna.
 - Admin u Organiser.
 - Solo publica mensajes de este bot.
 
-### `/utility edit_v2`
+### `/utility v2 edit`
 
 - [x] Admin
 - [x] Organiser
