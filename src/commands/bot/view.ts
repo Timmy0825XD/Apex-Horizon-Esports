@@ -16,21 +16,9 @@ export type BotPanel = "about" | "help" | "ping";
 
 export type BotViewContext = {
   client: Client;
+  guildId?: string | null;
   createdTimestamp: number;
   commandId?: string;
-  settingsCommandId?: string;
-  serverCommandId?: string;
-  staffCommandId?: string;
-  tournamentCommandId?: string;
-  sheetCommandId?: string;
-  teamCommandId?: string;
-  roleCommandId?: string;
-  userCommandId?: string;
-  utilityCommandId?: string;
-  autoRoomCommandId?: string;
-  roomCommandId?: string;
-  ticketCommandId?: string;
-  scheduleCommandId?: string;
   helpPage?: number;
 };
 
