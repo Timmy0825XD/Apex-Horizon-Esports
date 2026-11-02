@@ -1,6 +1,5 @@
 import type { StaffConfig } from "@prisma/client";
-import type { AutocompleteInteraction, ButtonInteraction, ChatInputCommandInteraction } from "discord.js";
-import { isOrganiser } from "./permissions.js";
+import { isOrganiser, type PermissionInteraction } from "./permissions.js";
 import { loadGuildConfig } from "./guild-config.js";
 
 export async function loadStaffConfig(guildId: string): Promise<StaffConfig | null> {
@@ -12,7 +11,7 @@ export async function loadStaffConfig(guildId: string): Promise<StaffConfig | nu
 }
 
 export async function memberIsOrganiser(
-  interaction: ChatInputCommandInteraction | AutocompleteInteraction | ButtonInteraction,
+  interaction: PermissionInteraction,
 ): Promise<boolean> {
   if (!interaction.guildId) {
     return false;

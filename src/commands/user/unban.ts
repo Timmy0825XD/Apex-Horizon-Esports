@@ -1,9 +1,44 @@
-import { PermissionFlagsBits, type ChatInputCommandInteraction } from "discord.js";
+import { PermissionFlagsBits, type ChatInputCommandInteraction, type Guild, type User } from "discord.js";
 import { formatUser } from "../../lib/formatters.js";
 import { auditUserUnban } from "./audit.js";
 import { deferUser, respondUser } from "./respond.js";
 import { deleteTrackedBan, fetchDiscordBan, findTrackedBan, forgetDiscordBan, isSnowflake } from "./store.js";
 import { userErrorMessage, userUnbanMessage } from "./view.js";
+
+export type UnbanOutcome =
+  | { ok: true; user: User | null; hadDiscordBan: boolean }
+  | { ok: false; title: string; body: string };
+
+/** Lift the Discord ban and forget the tracked expiry. Shared by `/user unban` and the announcement buttons. */
+export async function applyUnban(input: { guild: Guild; actorId: string; targetId: string }): Promise<UnbanOutcome> {
+  const { guild, targetId } = input;
+  if (!guild.members.me?.permissions.has(PermissionFlagsBits.BanMembers)) {
+    return { ok: false, title: "Missing permission", body: "I need the **Ban Members** permission to unban people." };
+  }
+
+  const discordBan = await fetchDiscordBan(guild, targetId);
+  const tracked = await findTrackedBan(guild.id, targetId);
+  if (!discordBan && !tracked) {
+    return { ok: false, title: "Not banned", body: `${formatUser(targetId)} is not banned in this server.` };
+  }
+
+  if (discordBan) {
+    try {
+      await guild.bans.remove(targetId, `Unbanned by ${input.actorId}`);
+    } catch {
+      return {
+        ok: false,
+        title: "Could not unban",
+        body: "Discord rejected the unban. Check my **Ban Members** permission and try again.",
+      };
+    }
+    forgetDiscordBan(guild, targetId);
+  }
+
+  await deleteTrackedBan(guild.id, targetId);
+  const user = discordBan?.user ?? (await guild.client.users.fetch(targetId).catch(() => null));
+  return { ok: true, user, hadDiscordBan: Boolean(discordBan) };
+}
 
 export async function handleUserUnban(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = interaction.guild;
@@ -14,14 +49,6 @@ export async function handleUserUnban(interaction: ChatInputCommandInteraction):
 
   await deferUser(interaction);
 
-  if (!guild.members.me?.permissions.has(PermissionFlagsBits.BanMembers)) {
-    await respondUser(
-      interaction,
-      userErrorMessage("Missing permission", "I need the **Ban Members** permission to unban people.", false),
-    );
-    return;
-  }
-
   const rawId = interaction.options.getString("discord_id", true).trim();
   if (!isSnowflake(rawId)) {
     await respondUser(
@@ -31,44 +58,19 @@ export async function handleUserUnban(interaction: ChatInputCommandInteraction):
     return;
   }
 
-  const discordBan = await fetchDiscordBan(guild, rawId);
-  const tracked = await findTrackedBan(guild.id, rawId);
-
-  if (!discordBan && !tracked) {
-    await respondUser(
-      interaction,
-      userErrorMessage("Not banned", `${formatUser(rawId)} is not banned in this server.`, false),
-    );
+  const outcome = await applyUnban({ guild, actorId: interaction.user.id, targetId: rawId });
+  if (!outcome.ok) {
+    await respondUser(interaction, userErrorMessage(outcome.title, outcome.body, false));
     return;
   }
 
-  if (discordBan) {
-    try {
-      await guild.bans.remove(rawId, `Unbanned by ${interaction.user.id}`);
-    } catch {
-      await respondUser(
-        interaction,
-        userErrorMessage(
-          "Could not unban",
-          "Discord rejected the unban. Check my **Ban Members** permission and try again.",
-          false,
-        ),
-      );
-      return;
-    }
-    forgetDiscordBan(guild, rawId);
-  }
-
-  await deleteTrackedBan(guild.id, rawId);
-
-  const user = discordBan?.user ?? (await guild.client.users.fetch(rawId).catch(() => null));
   await respondUser(
     interaction,
     userUnbanMessage({
       userId: rawId,
       actorId: interaction.user.id,
-      thumbnailUrl: user?.displayAvatarURL({ size: 256 }),
-      hadDiscordBan: Boolean(discordBan),
+      thumbnailUrl: outcome.user?.displayAvatarURL({ size: 256 }),
+      hadDiscordBan: outcome.hadDiscordBan,
     }),
   );
   await auditUserUnban(interaction, guild, rawId);

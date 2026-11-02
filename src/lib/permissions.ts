@@ -4,6 +4,7 @@ import {
   type ButtonInteraction,
   type ChatInputCommandInteraction,
   type ModalSubmitInteraction,
+  type StringSelectMenuInteraction,
 } from "discord.js";
 import type { GuildSettings, StaffConfig } from "@prisma/client";
 
@@ -11,7 +12,8 @@ export type PermissionInteraction =
   | ChatInputCommandInteraction
   | AutocompleteInteraction
   | ButtonInteraction
-  | ModalSubmitInteraction;
+  | ModalSubmitInteraction
+  | StringSelectMenuInteraction;
 
 export function isDiscordAdministrator(interaction: PermissionInteraction): boolean {
   return interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) ?? false;

@@ -14,5 +14,6 @@ Las mismas reglas de permiso y de “un partido / un schedule” aplican. Ver [.
 | Confirmar rol a todos | `/tournament role` sin `id_header` | Sin confirmación no se asigna el rol a todo el roster |
 | Builder de embed | `/utility embed` · `/utility edit_embed` | Sesión temporal de edición visual (embed clásico) |
 | Builder de Components V2 | `/utility v2` · `/utility edit_v2` | Sesión temporal de edición visual (container, text, section, media) |
+| Decidir un aviso de baneo | Tarjeta en `bans_channel` (no viene de un slash) | Confirm ban (Permanent por defecto), Change duration (lista de duraciones; luego hay que confirmar), Cancel. En un aviso de unban: Confirm unban / Cancel. Ver [../domains/moderation.md](../domains/moderation.md) |
 
-Asignar por botón de schedule se audita. Ver [../platform/audit.md](../platform/audit.md).
+Asignar por botón de schedule se audita. Banear o desbanear desde un aviso también (log **Moderation**); cancelarlo no. Ver [../platform/audit.md](../platform/audit.md).

@@ -247,3 +247,26 @@ model Ban {
   @@index([expiresAt])
   @@map("bans")
 }
+
+/// One Discord ID read from a ban or unban announcement, waiting for an Organiser decision.
+model BanRequest {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  guildId         String
+  channelId       String
+  sourceMessageId String
+  kind            String
+  userId          String
+  reason          String?
+  duration        String    @default("Permanent")
+  cardMessageId   String?
+  pingMessageId   String?
+  status          String    @default("pending")
+  decidedBy       String?
+  decidedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([guildId, sourceMessageId, userId])
+  @@index([guildId, userId, status])
+  @@map("ban_requests")
+}

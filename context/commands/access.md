@@ -871,6 +871,19 @@ Ninguna.
 
 - Solo Organiser. `admin_role` no entra.
 
+### Avisos de baneo (botones en `bans_channel`)
+
+- [ ] Admin
+- [x] Organiser
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
+
+- Confirm ban, Change duration, Confirm unban y Cancel: solo Organiser, como `/user ban` y `/user unban`. A cualquier otro se le responde en privado y la tarjeta no cambia.
+- Banear por botón aplica las mismas reglas que `/user ban`: no a uno mismo, al owner, al bot ni a otros bots, y la jerarquía de Discord gana.
+
 ## Utility
 
 ### `/utility clear_category`
