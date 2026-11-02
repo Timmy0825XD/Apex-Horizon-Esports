@@ -1,9 +1,9 @@
 import { ContainerBuilder } from "discord.js";
-import { embedColors } from "../../lib/embeds.js";
+import { emojis } from "../../emojis.js";
 import { formatHelpEntry } from "../../lib/formatters.js";
 import { commandIdFor } from "../../lib/register-slash.js";
 import { helpCatalog } from "./catalog.js";
-import { divider, helpPagerRow, textBlock, type BotViewContext } from "./view.js";
+import { brandColors, divider, helpJumpRow, textBlock, type BotViewContext } from "./view.js";
 
 function helpCommandId(slash: string, ctx: BotViewContext): string | undefined {
   const command = slash.split(" ")[0] ?? slash;
@@ -11,6 +11,11 @@ function helpCommandId(slash: string, ctx: BotViewContext): string | undefined {
     return ctx.commandId;
   }
   return commandIdFor(ctx.guildId, command);
+}
+
+/** "Admin, Organiser, or Helper" → "Admin · Organiser · Helper". */
+export function formatAccess(access: string): string {
+  return access.replace(/,? or /g, " · ").replace(/, /g, " · ");
 }
 
 export function normalizeHelpPage(page: number | undefined): number {
@@ -25,17 +30,14 @@ export function buildHelpContainer(ctx: BotViewContext): ContainerBuilder {
   const category = helpCatalog[page] ?? helpCatalog[0];
   const lines = category.entries.map((entry) => {
     const mention = formatHelpEntry(entry.slash, helpCommandId(entry.slash, ctx));
-    return `${mention}\n${entry.summary}\n*${entry.access}*`;
+    return `${mention}\n${entry.summary}\n-# ${formatAccess(entry.access)}`;
   });
 
   return new ContainerBuilder()
-    .setAccentColor(embedColors.error)
-    .addTextDisplayComponents(
-      textBlock(`# ${category.title}`),
-      textBlock(category.description),
-      textBlock(lines.join("\n\n")),
-      textBlock(`-# ${category.title} · Category ${page + 1}/${helpCatalog.length}`),
-    )
+    .setAccentColor(brandColors.gold)
+    .addTextDisplayComponents(textBlock(`## ${emojis.help} ${category.title}`), textBlock(category.description))
     .addSeparatorComponents(divider())
-    .addActionRowComponents(helpPagerRow(page));
+    .addTextDisplayComponents(textBlock(lines.join("\n\n")))
+    .addSeparatorComponents(divider())
+    .addActionRowComponents(helpJumpRow(page));
 }

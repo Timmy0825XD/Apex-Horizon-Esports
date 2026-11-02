@@ -3,6 +3,7 @@ import {
   type ButtonInteraction,
   type ChatInputCommandInteraction,
   type Client,
+  type StringSelectMenuInteraction,
 } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { actorMatches } from "../../lib/command-access.js";
@@ -10,7 +11,7 @@ import { botCommandIdFor } from "../../lib/register-slash.js";
 import { buildAboutContainer } from "./about.js";
 import { buildHelpContainer, normalizeHelpPage } from "./help.js";
 import { buildPingContainer } from "./ping.js";
-import { panelMessage, type BotPanel, type BotViewContext } from "./view.js";
+import { HELP_JUMP_ID, helpArrows, panelMessage, type BotPanel, type BotViewContext } from "./view.js";
 
 const unauthorized = {
   content: "This server is not authorized to use this bot.",
@@ -26,7 +27,7 @@ function botAccessDenied(panel: BotPanel) {
 }
 
 async function canOpenBotPanel(
-  interaction: ChatInputCommandInteraction | ButtonInteraction,
+  interaction: ChatInputCommandInteraction | ButtonInteraction | StringSelectMenuInteraction,
   panel: BotPanel,
 ): Promise<boolean> {
   if (panel === "help") {
@@ -40,7 +41,8 @@ async function buildPanel(panel: BotPanel, ctx: BotViewContext) {
     return panelMessage("about", await buildAboutContainer(ctx));
   }
   if (panel === "help") {
-    return panelMessage("help", buildHelpContainer({ ...ctx, helpPage: normalizeHelpPage(ctx.helpPage) }));
+    const page = normalizeHelpPage(ctx.helpPage);
+    return panelMessage("help", buildHelpContainer({ ...ctx, helpPage: page }), helpArrows(page));
   }
   return panelMessage("ping", await buildPingContainer(ctx));
 }
@@ -75,11 +77,6 @@ export async function handleBotButton(interaction: ButtonInteraction, client: Cl
   }
 
   const id = interaction.customId;
-  if (id === "bot:help:current") {
-    await interaction.deferUpdate();
-    return;
-  }
-
   let panel: BotPanel = "ping";
   let helpPage = 0;
   if (id === "bot:nav:about") {
@@ -108,6 +105,31 @@ export async function handleBotButton(interaction: ButtonInteraction, client: Cl
       guildId: interaction.guildId,
       commandId: botCommandIdFor(interaction.guildId),
       helpPage,
+    }),
+  );
+}
+
+/** Help's "Jump to a section" menu. */
+export async function handleBotSelect(interaction: StringSelectMenuInteraction, client: Client): Promise<void> {
+  if (!isAllowedGuild(interaction.guildId)) {
+    await interaction.reply(unauthorized);
+    return;
+  }
+  if (interaction.customId !== HELP_JUMP_ID) {
+    return;
+  }
+  if (!(await canOpenBotPanel(interaction, "help"))) {
+    await interaction.reply(botAccessDenied("help"));
+    return;
+  }
+
+  await interaction.update(
+    await buildPanel("help", {
+      client,
+      createdTimestamp: interaction.createdTimestamp,
+      guildId: interaction.guildId,
+      commandId: botCommandIdFor(interaction.guildId),
+      helpPage: normalizeHelpPage(Number(interaction.values[0])),
     }),
   );
 }
