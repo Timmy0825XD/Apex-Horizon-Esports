@@ -165,8 +165,9 @@ export async function runResults(interaction: ChatInputCommandInteraction, bundl
       allowedMentions: { parse: [] },
     });
     const imageUrls = [...channelPost.attachments.values()].map((file) => file.url);
-    const next = await prisma.schedule.update({
-      where: { id: schedule.id },
+    // Store only if no other judge declared meanwhile; the loser's posts are removed below.
+    const stored = await prisma.schedule.updateMany({
+      where: { id: schedule.id, OR: [{ results: null }, { results: { isSet: false } }] },
       data: {
         results: {
           set: {
@@ -184,6 +185,13 @@ export async function runResults(interaction: ChatInputCommandInteraction, bundl
         },
       },
     });
+    if (stored.count === 0) {
+      await ticketPost.delete().catch(() => undefined);
+      await channelPost.delete().catch(() => undefined);
+      await replySchedule(interaction, scheduleNotice("error", "Result already posted", "Another judge declared this match a moment ago."));
+      return;
+    }
+    const next = await prisma.schedule.findUniqueOrThrow({ where: { id: schedule.id } });
     await paintSchedule(guild, bundle.channel, bundle.settings, bundle.tournament, bundle.match, next, false).catch((error) => {
       console.error("Schedule seat lock failed", error);
     });

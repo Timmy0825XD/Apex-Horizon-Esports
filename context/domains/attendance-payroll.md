@@ -6,7 +6,7 @@ La asistencia es el **libro de trabajo del staff**, no el acta del bracket.
 
 - Solo dentro del ticket.
 - Debe existir schedule y la hora ya debe haber llegado.
-- Un ticket solo puede tener una asistencia activa. Es la de ese partido.
+- Un ticket solo puede tener una asistencia activa. Es la de ese partido. Si dos personas la marcan a la vez, la segunda recibe *Attendance in progress* y no publica nada.
 - Judge y Recorder deben tener esos roles.
 - `remark = DW` (default win / DQ) es un atajo de autocomplete.
 - Un link de YouTube opcional cuenta como el primero de **hasta 7**.
