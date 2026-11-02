@@ -51,7 +51,9 @@ Respuesta en el canal (no efímera), **tres Components V2** con título grande, 
 2. Confirmación de que el canal se cerró y movió a categoría de archivados. Thumbnail: emoji `open_close`.
 3. Confirmación de que se generó el transcript, con enlace al mensaje del HTML. Thumbnail: emoji `transcript_thumnail`.
 
-Al publicar el transcript llama `attachResultsTranscript` con la URL de ese mensaje para enlazar el título de los embeds de `/schedule results` (ticket y canal de resultados). El siguiente ticket espera al reloj si auto-room está on. Log: **Score Upload**.
+Al publicar el transcript llama `attachResultsTranscript` con la URL de ese mensaje para enlazar el título de los embeds de `/schedule results` (ticket y canal de resultados). El siguiente ticket espera al reloj si auto-room está on. Log: **Score Upload**, publicado en cuanto Challonge acepta el marcador (antes de cerrar el ticket).
+
+Si Challonge ya aceptó el marcador y después falla un paso de Discord (categorías de archivados llenas, transcript), el comando **no** dice que la subida falló: avisa en privado de qué quedó pendiente (*Ticket not archived* o *Transcript not generated*) para terminarlo a mano. `/bracket dq_both` sigue la misma regla.
 
 ## `/bracket dq_both`
 
