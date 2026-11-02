@@ -68,6 +68,8 @@ model Tournament {
   ticketOpenCategoryIds  String[]
   autoRoomCapable        Boolean
   autoRoomRunning        Boolean  @default(false)
+  /// Last 00:00 / 12:00 UTC auto-room slot already handled (`YYYY-MM-DD-HH`).
+  autoRoomLastSlot       String?
   createdBy              String
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
