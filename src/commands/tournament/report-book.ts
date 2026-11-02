@@ -27,6 +27,10 @@ const COPPER_DEEP = "FF6E3E1C";
 const VIOLET = "FF4C3A78";
 const VIOLET_DEEP = "FF352858";
 const CLAY = "FF8E3D32";
+const CLAY_DEEP = "FF6B2C24";
+const SLATE = "FF2F5D7C";
+const SLATE_DEEP = "FF22465E";
+const STONE = "FF5B5045";
 const WIN = "FFE5F3EA";
 const TIE = "FFF8F0DC";
 const DW = "FFF8E6E3";
@@ -38,6 +42,7 @@ export type AttendanceLine = {
   stage: string;
   matchId: number;
   match: string;
+  ticket: string;
   judge: string;
   judgeId: string;
   recorder: string;
@@ -52,6 +57,7 @@ export type AttendanceLine = {
   defaultWin: boolean;
   recordings: string[];
   proof: string[];
+  resultDeclared: boolean;
   markedBy: string;
   markedAt: string;
 };
@@ -89,6 +95,8 @@ export type ResultLine = {
   declaredById: string;
   declaredAt: string;
   scheduledAt: string;
+  resultAfter: number | null;
+  attendanceMarked: boolean;
   notes: string;
   scheduleNote: string;
   transcript: string | null;
@@ -100,10 +108,62 @@ export type ConfigEntry =
   | { kind: "section"; title: string }
   | { kind: "field"; label: string; value: string; link?: string };
 
+export type OverviewKpi = { value: string; label: string };
+
+export type OverviewStage = {
+  stage: string;
+  matches: number;
+  complete: number;
+  open: number;
+  pending: number;
+  tickets: number;
+  attendance: number;
+  results: number;
+};
+
+export type OverviewBook = {
+  source: string;
+  kpis: OverviewKpi[];
+  stages: OverviewStage[];
+  totals: OverviewStage;
+  topStaff: Array<{ username: string; rounds: number; games: number }>;
+  schedules: Array<{ label: string; value: string }>;
+};
+
+export type TodoLine = {
+  priority: "high" | "medium" | "low";
+  check: string;
+  stage: string;
+  matchId: number;
+  match: string;
+  ticket: string;
+  fix: string;
+  detail: string;
+};
+
+export type ScheduleLine = {
+  stage: string;
+  matchId: number;
+  match: string;
+  status: "Completed" | "Overdue" | "Upcoming";
+  scheduledAt: string;
+  declaredAt: string;
+  resultAfter: number | null;
+  judge: string;
+  recorder: string;
+  confirmed: string;
+  score: string;
+  ticket: string;
+  note: string;
+};
+
 export type TournamentReportBook = {
   tournamentName: string;
   generatedLabel: string;
   payModeLabel: string;
+  overview: OverviewBook;
+  todo: TodoLine[];
+  schedules: ScheduleLine[];
   attendance: AttendanceLine[];
   work: WorkLine[];
   results: ResultLine[];
@@ -205,6 +265,33 @@ function mergeFill(sheet: Worksheet, row: number, columns: number, fill: string)
   }
 }
 
+/** Rows 1-4: title, subtitle, meta line and the gold rule. Shared by every sheet. */
+function banner(sheet: Worksheet, width: number, titleText: string, subtitleText: string, metaText: string): void {
+  mergeFill(sheet, 1, width, INK);
+  const title = sheet.getCell(1, 1);
+  title.value = titleText;
+  title.font = face(20, WHITE, true);
+  title.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
+  sheet.getRow(1).height = 36;
+
+  mergeFill(sheet, 2, width, INK_SOFT);
+  const subtitle = sheet.getCell(2, 1);
+  subtitle.value = subtitleText;
+  subtitle.font = face(10, "FFE7D7B8", false, true);
+  subtitle.alignment = { vertical: "middle", horizontal: "left", wrapText: true, indent: 1 };
+  sheet.getRow(2).height = 46;
+
+  mergeFill(sheet, 3, width, INK_SOFT);
+  const meta = sheet.getCell(3, 1);
+  meta.value = safeText(metaText);
+  meta.font = face(10, GOLD);
+  meta.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
+  sheet.getRow(3).height = 20;
+
+  mergeFill(sheet, 4, width, GOLD);
+  sheet.getRow(4).height = 6;
+}
+
 function prepare(workbook: Workbook, theme: Theme): { sheet: Worksheet; headerRow: number; firstDataRow: number } {
   const sheet = workbook.addWorksheet(theme.name, {
     properties: { defaultRowHeight: 20, showGridLines: false },
@@ -240,29 +327,7 @@ function prepare(workbook: Workbook, theme: Theme): { sheet: Worksheet; headerRo
     sheet.getColumn(index + 1).width = column.width;
   });
 
-  mergeFill(sheet, 1, width, INK);
-  const title = sheet.getCell(1, 1);
-  title.value = theme.title;
-  title.font = face(20, WHITE, true);
-  title.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
-  sheet.getRow(1).height = 36;
-
-  mergeFill(sheet, 2, width, INK_SOFT);
-  const subtitle = sheet.getCell(2, 1);
-  subtitle.value = theme.subtitle;
-  subtitle.font = face(10, "FFE7D7B8", false, true);
-  subtitle.alignment = { vertical: "middle", horizontal: "left", wrapText: true, indent: 1 };
-  sheet.getRow(2).height = 46;
-
-  mergeFill(sheet, 3, width, INK_SOFT);
-  const meta = sheet.getCell(3, 1);
-  meta.value = safeText(theme.meta);
-  meta.font = face(10, GOLD);
-  meta.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
-  sheet.getRow(3).height = 20;
-
-  mergeFill(sheet, 4, width, GOLD);
-  sheet.getRow(4).height = 6;
+  banner(sheet, width, theme.title, theme.subtitle, theme.meta);
 
   const groupRow = sheet.getRow(5);
   groupRow.height = 18;
@@ -367,10 +432,32 @@ function rowHeight(lines: number): number {
   return Math.min(64, Math.max(22, lines * 16));
 }
 
+/** Writes one row left to right, so adding a column never shifts hand-written indexes. */
+function rowWriter(sheet: Worksheet, rowNumber: number) {
+  let column = 0;
+  return () => {
+    column += 1;
+    return sheet.getCell(rowNumber, column);
+  };
+}
+
+function yesNo(cell: Cell, value: boolean, fill: string): void {
+  writeText(cell, value ? "Yes" : "No", value ? fill : DW, "center", value ? INK_TEXT : CLAY, !value);
+}
+
+function minutesCell(cell: Cell, minutes: number | null, fill: string): void {
+  if (minutes == null) {
+    writeText(cell, "—", fill, "center", MUTED);
+    return;
+  }
+  writeNumber(cell, minutes, fill);
+}
+
 const attendanceColumns: Column[] = [
   { group: "Match", header: "Stage", width: 22, align: "left" },
   { group: "Match", header: "Match ID", width: 12, align: "center" },
   { group: "Match", header: "Match", width: 38, align: "left" },
+  { group: "Match", header: "Ticket", width: 30, align: "left" },
   { group: "Staff", header: "Judge", width: 22, align: "left" },
   { group: "Staff", header: "Judge ID", width: 22, align: "left" },
   { group: "Staff", header: "Recorder", width: 22, align: "left" },
@@ -383,6 +470,7 @@ const attendanceColumns: Column[] = [
   { group: "Score", header: "Remark", width: 15, align: "center" },
   { group: "Record", header: "Recordings", width: 22, align: "left" },
   { group: "Record", header: "Score proof", width: 20, align: "left" },
+  { group: "Record", header: "Result declared", width: 15, align: "center" },
   { group: "Record", header: "Marked by", width: 22, align: "left" },
   { group: "Record", header: "Marked at", width: 22, align: "center" },
 ];
@@ -418,12 +506,283 @@ const resultColumns: Column[] = [
   { group: "Declaration", header: "Declared by ID", width: 22, align: "left" },
   { group: "Declaration", header: "Declared at", width: 22, align: "center" },
   { group: "Declaration", header: "Scheduled", width: 22, align: "center" },
+  { group: "Declaration", header: "Result after (min)", width: 16, align: "center" },
+  { group: "Declaration", header: "Attendance marked", width: 16, align: "center" },
   { group: "Declaration", header: "Notes", width: 36, align: "left" },
   { group: "Declaration", header: "Schedule note", width: 28, align: "left" },
   { group: "Evidence", header: "Transcript", width: 20, align: "left" },
   { group: "Evidence", header: "Recordings", width: 22, align: "left" },
   { group: "Evidence", header: "Proof", width: 18, align: "left" },
 ];
+
+const todoColumns: Column[] = [
+  { group: "Item", header: "Priority", width: 12, align: "center" },
+  { group: "Item", header: "Check", width: 44, align: "left" },
+  { group: "Match", header: "Stage", width: 22, align: "left" },
+  { group: "Match", header: "Match ID", width: 12, align: "center" },
+  { group: "Match", header: "Match", width: 36, align: "left" },
+  { group: "Match", header: "Ticket", width: 30, align: "left" },
+  { group: "Action", header: "Fix with", width: 20, align: "left" },
+  { group: "Action", header: "Detail", width: 46, align: "left" },
+];
+
+const scheduleColumns: Column[] = [
+  { group: "Match", header: "Stage", width: 22, align: "left" },
+  { group: "Match", header: "Match ID", width: 12, align: "center" },
+  { group: "Match", header: "Match", width: 36, align: "left" },
+  { group: "Match", header: "Status", width: 14, align: "center" },
+  { group: "Time", header: "Scheduled", width: 22, align: "center" },
+  { group: "Time", header: "Result declared", width: 22, align: "center" },
+  { group: "Time", header: "Result after (min)", width: 16, align: "center" },
+  { group: "Staff", header: "Judge", width: 22, align: "left" },
+  { group: "Staff", header: "Recorder", width: 22, align: "left" },
+  { group: "Staff", header: "Confirmed", width: 13, align: "center" },
+  { group: "Outcome", header: "Score", width: 11, align: "center" },
+  { group: "Outcome", header: "Ticket", width: 30, align: "left" },
+  { group: "Outcome", header: "Schedule note", width: 30, align: "left" },
+];
+
+const overviewColumns: Column[] = [
+  { group: "", header: "Stage", width: 24, align: "left" },
+  { group: "", header: "Matches", width: 11, align: "center" },
+  { group: "", header: "Complete", width: 11, align: "center" },
+  { group: "", header: "Open", width: 11, align: "center" },
+  { group: "", header: "Pending", width: 11, align: "center" },
+  { group: "", header: "Progress", width: 16, align: "left" },
+  { group: "", header: "Done", width: 10, align: "center" },
+  { group: "", header: "Tickets", width: 11, align: "center" },
+  { group: "", header: "Attendance", width: 13, align: "center" },
+  { group: "", header: "Results", width: 11, align: "center" },
+];
+
+function progressBar(done: number, total: number): string {
+  const filled = total === 0 ? 0 : Math.round((done / total) * 10);
+  return `${"█".repeat(filled)}${"░".repeat(10 - filled)}`;
+}
+
+function sectionBar(sheet: Worksheet, row: number, columns: number, title: string): void {
+  mergeFill(sheet, row, columns, INK);
+  const cell = sheet.getCell(row, 1);
+  cell.value = title.toUpperCase();
+  cell.font = face(10, GOLD, true);
+  cell.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
+  sheet.getRow(row).height = 22;
+}
+
+function tableHeader(sheet: Worksheet, row: number, headers: string[], accent: string): void {
+  headers.forEach((header, index) => {
+    const cell = sheet.getCell(row, index + 1);
+    cell.value = header;
+    cell.fill = solid(accent);
+    cell.font = face(10, WHITE, true);
+    cell.alignment = { vertical: "middle", horizontal: index === 0 ? "left" : "center", wrapText: true, indent: index === 0 ? 1 : 0 };
+    cell.border = { bottom: { style: "medium", color: { argb: GOLD } } };
+  });
+  sheet.getRow(row).height = 22;
+}
+
+function addOverview(workbook: Workbook, book: TournamentReportBook): void {
+  const width = overviewColumns.length;
+  const sheet = workbook.addWorksheet("Overview", {
+    properties: { defaultRowHeight: 20, showGridLines: false },
+    pageSetup: {
+      orientation: "landscape",
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      paperSize: 9,
+      horizontalCentered: true,
+      margins: { left: 0.4, right: 0.4, top: 0.7, bottom: 0.55, header: 0.28, footer: 0.28 },
+    },
+    headerFooter: {
+      oddHeader: `&L&8&K8C6A2FTournament overview&R&8&K6E655CApex Horizon`,
+      oddFooter: `&L&8Staff report&C&8Overview&R&8Page &P of &N`,
+    },
+    views: [{ state: "frozen", ySplit: 4, showGridLines: false, zoomScale: 110, activeCell: "A6" }],
+  });
+  sheet.properties.tabColor = { argb: INK };
+  overviewColumns.forEach((column, index) => {
+    sheet.getColumn(index + 1).width = column.width;
+  });
+  banner(
+    sheet,
+    width,
+    "Tournament overview",
+    "Where the bracket stands, what was recorded, and who carried the work. The To do sheet lists what still needs a hand.",
+    `${book.tournamentName}   ·   ${book.overview.source}   ·   ${book.generatedLabel}`,
+  );
+
+  // KPI tiles: two columns each, value on top, caption below.
+  book.overview.kpis.slice(0, 5).forEach((kpi, index) => {
+    const from = index * 2 + 1;
+    for (const [row, text, font] of [
+      [6, kpi.value, face(18, INK_TEXT, true)],
+      [7, kpi.label, face(9, MUTED)],
+    ] as const) {
+      sheet.mergeCells(row, from, row, from + 1);
+      const cell = sheet.getCell(row, from);
+      cell.value = safeText(text);
+      cell.font = font;
+      cell.alignment = { vertical: "middle", horizontal: "left", indent: 1, wrapText: true };
+      for (const column of [from, from + 1]) {
+        const part = sheet.getCell(row, column);
+        part.fill = solid(IVORY);
+        part.border = row === 6 ? { top: { style: "medium", color: { argb: GOLD } } } : { bottom: HAIR };
+      }
+    }
+  });
+  sheet.getRow(6).height = 32;
+  sheet.getRow(7).height = 20;
+
+  let row = 9;
+  sectionBar(sheet, row, width, "By stage");
+  row += 1;
+  tableHeader(sheet, row, overviewColumns.map((column) => column.header), TEAL);
+  row += 1;
+  const stageRows = [...book.overview.stages, book.overview.totals];
+  stageRows.forEach((stage, index) => {
+    const isTotal = index === stageRows.length - 1;
+    const fill = isTotal ? PAPER : index % 2 === 0 ? IVORY : WHITE;
+    const next = rowWriter(sheet, row);
+    writeText(next(), stage.stage, fill, "left", INK_TEXT, isTotal);
+    for (const value of [stage.matches, stage.complete, stage.open, stage.pending]) {
+      writeNumber(next(), value, fill, isTotal);
+    }
+    writeText(next(), progressBar(stage.complete, stage.matches), fill, "left", TEAL);
+    const done = next();
+    done.value = stage.matches === 0 ? 0 : stage.complete / stage.matches;
+    done.numFmt = "0%";
+    paint(done, fill, face(10, INK_TEXT, true), "center");
+    for (const value of [stage.tickets, stage.attendance, stage.results]) {
+      writeNumber(next(), value, fill, isTotal);
+    }
+    row += 1;
+  });
+  if (book.overview.stages.length === 0) {
+    emptyNote(sheet, row, width, "The bracket has no matches yet.");
+    row += 1;
+  }
+
+  row += 1;
+  sectionBar(sheet, row, width, "Most active staff");
+  row += 1;
+  tableHeader(sheet, row, ["Person", "Rounds", "Games"], COPPER);
+  row += 1;
+  if (book.overview.topStaff.length === 0) {
+    emptyNote(sheet, row, 3, "No staff work has been marked yet.");
+    row += 1;
+  }
+  book.overview.topStaff.forEach((person, index) => {
+    const fill = index % 2 === 0 ? IVORY : WHITE;
+    writeText(sheet.getCell(row, 1), person.username, fill, "left", INK_TEXT, true);
+    writeNumber(sheet.getCell(row, 2), person.rounds, fill);
+    writeNumber(sheet.getCell(row, 3), person.games, fill);
+    row += 1;
+  });
+
+  row += 1;
+  sectionBar(sheet, row, width, "Schedules");
+  row += 1;
+  book.overview.schedules.forEach((entry, index) => {
+    const fill = index % 2 === 0 ? IVORY : WHITE;
+    sheet.mergeCells(row, 1, row, 2);
+    const label = sheet.getCell(row, 1);
+    label.value = entry.label;
+    paint(label, PAPER, face(10, INK_TEXT, true), "left");
+    sheet.mergeCells(row, 3, row, 4);
+    writeText(sheet.getCell(row, 3), entry.value, fill, "center", INK_TEXT, true);
+    row += 1;
+  });
+}
+
+const priorityStyle: Record<TodoLine["priority"], { label: string; fill: string; color: string }> = {
+  high: { label: "High", fill: DW, color: CLAY },
+  medium: { label: "Medium", fill: TIE, color: COPPER },
+  low: { label: "Low", fill: IVORY, color: SLATE },
+};
+
+function addTodo(workbook: Workbook, book: TournamentReportBook): void {
+  const count = book.todo.length;
+  const high = book.todo.filter((item) => item.priority === "high").length;
+  const { sheet, headerRow, firstDataRow } = prepare(workbook, {
+    name: "To do",
+    title: "To do",
+    subtitle:
+      "Cases that need a hand, sorted by priority and then bracket order. Each row names the match, its ticket, and the command that settles it. Matches settled without a ticket (forfeits) are not asked for attendance.",
+    meta: `${book.tournamentName}   ·   ${count === 1 ? "1 item" : `${count} items`}   ·   ${high} high   ·   ${book.generatedLabel}`,
+    accent: CLAY,
+    accentDeep: CLAY_DEEP,
+    columns: todoColumns,
+    freezeColumns: 2,
+  });
+  if (count === 0) {
+    emptyNote(sheet, firstDataRow, todoColumns.length, "Nothing to fix. Every check passed.");
+    return;
+  }
+  book.todo.forEach((item, index) => {
+    const rowNumber = firstDataRow + index;
+    const fill = index % 2 === 0 ? IVORY : WHITE;
+    const style = priorityStyle[item.priority];
+    const next = rowWriter(sheet, rowNumber);
+    writeText(next(), style.label, style.fill, "center", style.color, true);
+    writeText(next(), item.check, fill, "left", INK_TEXT, true);
+    writeText(next(), item.stage, fill, "left");
+    writeNumber(next(), item.matchId, fill);
+    writeText(next(), item.match, fill, "left");
+    writeText(next(), item.ticket, fill, "left", item.ticket === "—" ? MUTED : INK_TEXT);
+    writeText(next(), item.fix, fill, "left", LINK);
+    writeText(next(), item.detail, fill, "left", MUTED);
+    sheet.getRow(rowNumber).height = rowHeight(Math.max(1, Math.ceil(item.detail.length / 46)));
+  });
+  finishTable(sheet, headerRow, firstDataRow + count - 1, todoColumns.length);
+}
+
+const statusStyle: Record<ScheduleLine["status"], { fill: string; color: string }> = {
+  Completed: { fill: WIN, color: INK_TEXT },
+  Overdue: { fill: DW, color: CLAY },
+  Upcoming: { fill: TIE, color: COPPER },
+};
+
+function addSchedules(workbook: Workbook, book: TournamentReportBook): void {
+  const count = book.schedules.length;
+  const tally = (status: ScheduleLine["status"]) => book.schedules.filter((line) => line.status === status).length;
+  const { sheet, headerRow, firstDataRow } = prepare(workbook, {
+    name: "Schedules",
+    title: "Schedules",
+    subtitle:
+      "Every schedule, with or without a result, in bracket order. Result after counts minutes from the scheduled time to the declaration. Confirmed shows who pressed Present before the match started.",
+    meta: `${book.tournamentName}   ·   ${count} schedules   ·   ${tally("Completed")} completed · ${tally("Overdue")} overdue · ${tally("Upcoming")} upcoming   ·   ${book.generatedLabel}`,
+    accent: SLATE,
+    accentDeep: SLATE_DEEP,
+    columns: scheduleColumns,
+    freezeColumns: 3,
+  });
+  if (count === 0) {
+    emptyNote(sheet, firstDataRow, scheduleColumns.length, "No schedules have been created for this tournament yet.");
+    return;
+  }
+  book.schedules.forEach((line, index) => {
+    const rowNumber = firstDataRow + index;
+    const fill = index % 2 === 0 ? IVORY : WHITE;
+    const style = statusStyle[line.status];
+    const next = rowWriter(sheet, rowNumber);
+    writeText(next(), line.stage, fill, "left");
+    writeNumber(next(), line.matchId, fill);
+    writeText(next(), line.match, fill, "left");
+    writeText(next(), line.status, style.fill, "center", style.color, true);
+    writeText(next(), line.scheduledAt, fill, "center");
+    writeText(next(), line.declaredAt, fill, "center", line.declaredAt === "—" ? MUTED : INK_TEXT);
+    minutesCell(next(), line.resultAfter, fill);
+    writeText(next(), line.judge, fill, "left", line.judge === "Open" ? CLAY : INK_TEXT);
+    writeText(next(), line.recorder, fill, "left", line.recorder === "Open" ? CLAY : INK_TEXT);
+    writeText(next(), line.confirmed, fill, "center", line.confirmed === "None" ? MUTED : INK_TEXT);
+    writeText(next(), line.score, fill, "center", line.score === "—" ? MUTED : INK_TEXT, line.score !== "—");
+    writeText(next(), line.ticket, fill, "left", line.ticket === "—" ? MUTED : INK_TEXT);
+    writeText(next(), line.note, fill, "left", line.note === "—" ? MUTED : INK_TEXT);
+    sheet.getRow(rowNumber).height = rowHeight(Math.max(1, Math.ceil(line.note.length / 30)));
+  });
+  finishTable(sheet, headerRow, firstDataRow + count - 1, scheduleColumns.length);
+}
 
 function addAttendance(workbook: Workbook, book: TournamentReportBook): void {
   const count = book.attendance.length;
@@ -444,34 +803,34 @@ function addAttendance(workbook: Workbook, book: TournamentReportBook): void {
     return;
   }
 
+  const scoreColumn = attendanceColumns.findIndex((column) => column.header === "Team 1") + 1;
   let team1 = 0;
   let team2 = 0;
   let games = 0;
   book.attendance.forEach((line, index) => {
     const rowNumber = firstDataRow + index;
-    const row = sheet.getRow(rowNumber);
     const fill = index % 2 === 0 ? IVORY : WHITE;
-    const dutyFill = line.bothSeats ? TIE : fill;
-    const winnerFill = line.tie ? TIE : WIN;
-    const remarkFill = line.defaultWin ? DW : fill;
-    writeText(sheet.getCell(rowNumber, 1), line.stage, fill, "left");
-    writeNumber(sheet.getCell(rowNumber, 2), line.matchId, fill);
-    writeText(sheet.getCell(rowNumber, 3), line.match, fill, "left");
-    writeText(sheet.getCell(rowNumber, 4), line.judge, fill, "left");
-    writeId(sheet.getCell(rowNumber, 5), line.judgeId, fill);
-    writeText(sheet.getCell(rowNumber, 6), line.recorder, fill, "left");
-    writeId(sheet.getCell(rowNumber, 7), line.recorderId, fill);
-    writeText(sheet.getCell(rowNumber, 8), line.bothSeats ? "Both seats" : "Split", dutyFill, "center", INK_TEXT, line.bothSeats);
-    writeNumber(sheet.getCell(rowNumber, 9), line.team1, fill);
-    writeNumber(sheet.getCell(rowNumber, 10), line.team2, fill);
-    writeNumber(sheet.getCell(rowNumber, 11), line.games, fill, true);
-    writeText(sheet.getCell(rowNumber, 12), line.winner, winnerFill, "left", INK_TEXT, !line.tie);
-    writeText(sheet.getCell(rowNumber, 13), line.remark, remarkFill, "center", line.defaultWin ? CLAY : MUTED, line.defaultWin);
-    const recordingLines = writeLinks(sheet.getCell(rowNumber, 14), line.recordings, "Open recording", fill);
-    const proofLines = writeLinks(sheet.getCell(rowNumber, 15), line.proof, "Open proof", fill);
-    writeText(sheet.getCell(rowNumber, 16), line.markedBy, fill, "left");
-    writeText(sheet.getCell(rowNumber, 17), line.markedAt, fill, "center");
-    row.height = rowHeight(Math.max(recordingLines, proofLines));
+    const next = rowWriter(sheet, rowNumber);
+    writeText(next(), line.stage, fill, "left");
+    writeNumber(next(), line.matchId, fill);
+    writeText(next(), line.match, fill, "left");
+    writeText(next(), line.ticket, fill, "left", line.ticket === "—" ? MUTED : INK_TEXT);
+    writeText(next(), line.judge, fill, "left");
+    writeId(next(), line.judgeId, fill);
+    writeText(next(), line.recorder, fill, "left");
+    writeId(next(), line.recorderId, fill);
+    writeText(next(), line.bothSeats ? "Both seats" : "Split", line.bothSeats ? TIE : fill, "center", INK_TEXT, line.bothSeats);
+    writeNumber(next(), line.team1, fill);
+    writeNumber(next(), line.team2, fill);
+    writeNumber(next(), line.games, fill, true);
+    writeText(next(), line.winner, line.tie ? TIE : WIN, "left", INK_TEXT, !line.tie);
+    writeText(next(), line.remark, line.defaultWin ? DW : fill, "center", line.defaultWin ? CLAY : MUTED, line.defaultWin);
+    const recordingLines = writeLinks(next(), line.recordings, "Open recording", fill);
+    const proofLines = writeLinks(next(), line.proof, "Open proof", fill);
+    yesNo(next(), line.resultDeclared, fill);
+    writeText(next(), line.markedBy, fill, "left");
+    writeText(next(), line.markedAt, fill, "center");
+    sheet.getRow(rowNumber).height = rowHeight(Math.max(recordingLines, proofLines));
     team1 += line.team1;
     team2 += line.team2;
     games += line.games;
@@ -481,18 +840,14 @@ function addAttendance(workbook: Workbook, book: TournamentReportBook): void {
   finishTable(sheet, headerRow, last, attendanceColumns.length);
   const total = last + 1;
   sheet.getRow(total).height = 24;
+  for (let column = 1; column <= attendanceColumns.length; column += 1) {
+    totalBlank(sheet.getCell(total, column));
+  }
   totalLabel(sheet.getCell(total, 1), "TOTAL");
-  totalBlank(sheet.getCell(total, 2));
   totalLabel(sheet.getCell(total, 3), count === 1 ? "1 mark" : `${count} marks`);
-  for (let column = 4; column <= 8; column += 1) {
-    totalBlank(sheet.getCell(total, column));
-  }
-  totalNumber(sheet.getCell(total, 9), team1);
-  totalNumber(sheet.getCell(total, 10), team2);
-  totalNumber(sheet.getCell(total, 11), games);
-  for (let column = 12; column <= attendanceColumns.length; column += 1) {
-    totalBlank(sheet.getCell(total, column));
-  }
+  totalNumber(sheet.getCell(total, scoreColumn), team1);
+  totalNumber(sheet.getCell(total, scoreColumn + 1), team2);
+  totalNumber(sheet.getCell(total, scoreColumn + 2), games);
 }
 
 function addWork(workbook: Workbook, book: TournamentReportBook): void {
@@ -594,30 +949,31 @@ function addResults(workbook: Workbook, book: TournamentReportBook): void {
   book.results.forEach((line, index) => {
     const rowNumber = firstDataRow + index;
     const fill = index % 2 === 0 ? IVORY : WHITE;
-    const winnerFill = line.tie ? TIE : WIN;
     const outcomeFill = line.defaultWin ? DW : line.tie ? TIE : fill;
-    const outcomeColor = line.defaultWin ? CLAY : INK_TEXT;
-    writeText(sheet.getCell(rowNumber, 1), line.stage, fill, "left");
-    writeNumber(sheet.getCell(rowNumber, 2), line.matchId, fill);
-    writeText(sheet.getCell(rowNumber, 3), line.match, fill, "left");
-    writeText(sheet.getCell(rowNumber, 4), line.state, fill, "center");
-    writeNumber(sheet.getCell(rowNumber, 5), line.team1, fill);
-    writeNumber(sheet.getCell(rowNumber, 6), line.team2, fill);
-    writeText(sheet.getCell(rowNumber, 7), line.winner, winnerFill, "left", INK_TEXT, !line.tie);
-    writeText(sheet.getCell(rowNumber, 8), line.outcome, outcomeFill, "center", outcomeColor, line.defaultWin || line.tie);
-    writeText(sheet.getCell(rowNumber, 9), line.judge, fill, "left");
-    writeId(sheet.getCell(rowNumber, 10), line.judgeId, fill);
-    writeText(sheet.getCell(rowNumber, 11), line.recorder, fill, "left");
-    writeId(sheet.getCell(rowNumber, 12), line.recorderId, fill);
-    writeText(sheet.getCell(rowNumber, 13), line.declaredBy, fill, "left");
-    writeId(sheet.getCell(rowNumber, 14), line.declaredById, fill);
-    writeText(sheet.getCell(rowNumber, 15), line.declaredAt, fill, "center");
-    writeText(sheet.getCell(rowNumber, 16), line.scheduledAt, fill, "center");
-    writeText(sheet.getCell(rowNumber, 17), line.notes, fill, "left");
-    writeText(sheet.getCell(rowNumber, 18), line.scheduleNote, fill, "left");
-    const transcriptLines = writeLinks(sheet.getCell(rowNumber, 19), line.transcript ? [line.transcript] : [], "Open transcript", fill);
-    const recordingLines = writeLinks(sheet.getCell(rowNumber, 20), line.recordings, "Open recording", fill);
-    const proofLines = writeLinks(sheet.getCell(rowNumber, 21), line.proof, "Open proof", fill);
+    const next = rowWriter(sheet, rowNumber);
+    writeText(next(), line.stage, fill, "left");
+    writeNumber(next(), line.matchId, fill);
+    writeText(next(), line.match, fill, "left");
+    writeText(next(), line.state, fill, "center");
+    writeNumber(next(), line.team1, fill);
+    writeNumber(next(), line.team2, fill);
+    writeText(next(), line.winner, line.tie ? TIE : WIN, "left", INK_TEXT, !line.tie);
+    writeText(next(), line.outcome, outcomeFill, "center", line.defaultWin ? CLAY : INK_TEXT, line.defaultWin || line.tie);
+    writeText(next(), line.judge, fill, "left");
+    writeId(next(), line.judgeId, fill);
+    writeText(next(), line.recorder, fill, "left");
+    writeId(next(), line.recorderId, fill);
+    writeText(next(), line.declaredBy, fill, "left");
+    writeId(next(), line.declaredById, fill);
+    writeText(next(), line.declaredAt, fill, "center");
+    writeText(next(), line.scheduledAt, fill, "center");
+    minutesCell(next(), line.resultAfter, fill);
+    yesNo(next(), line.attendanceMarked, fill);
+    writeText(next(), line.notes, fill, "left");
+    writeText(next(), line.scheduleNote, fill, "left");
+    const transcriptLines = writeLinks(next(), line.transcript ? [line.transcript] : [], "Open transcript", fill);
+    const recordingLines = writeLinks(next(), line.recordings, "Open recording", fill);
+    const proofLines = writeLinks(next(), line.proof, "Open proof", fill);
     const noteLines = Math.max(1, Math.ceil(line.notes.length / 36), Math.ceil(line.scheduleNote.length / 28));
     sheet.getRow(rowNumber).height = rowHeight(Math.max(transcriptLines, recordingLines, proofLines, noteLines));
   });
@@ -643,7 +999,7 @@ function addConfiguration(workbook: Workbook, book: TournamentReportBook): void 
     },
     views: [{ state: "frozen", ySplit: 4, showGridLines: false, zoomScale: 120, activeCell: "A5" }],
   });
-  sheet.properties.tabColor = { argb: CLAY };
+  sheet.properties.tabColor = { argb: STONE };
   sheet.getColumn(1).width = 32;
   sheet.getColumn(2).width = 78;
 
@@ -726,7 +1082,10 @@ export async function buildTournamentReport(book: TournamentReportBook): Promise
   workbook.modified = new Date();
   workbook.title = `${book.tournamentName} report`;
   workbook.subject = "Tournament operations report";
-  workbook.description = "Attendance, staff work, declared results, and configuration.";
+  workbook.description = "Overview, to do, schedules, attendance, staff work, declared results, and configuration.";
+  addOverview(workbook, book);
+  addTodo(workbook, book);
+  addSchedules(workbook, book);
   addAttendance(workbook, book);
   addWork(workbook, book);
   addResults(workbook, book);
