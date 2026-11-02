@@ -1,53 +1,16 @@
 import { ContainerBuilder } from "discord.js";
 import { embedColors } from "../../lib/embeds.js";
 import { formatHelpEntry } from "../../lib/formatters.js";
+import { commandIdFor } from "../../lib/register-slash.js";
 import { helpCatalog } from "./catalog.js";
 import { divider, helpPagerRow, textBlock, type BotViewContext } from "./view.js";
 
 function helpCommandId(slash: string, ctx: BotViewContext): string | undefined {
-  if (slash.startsWith("bot ")) {
+  const command = slash.split(" ")[0] ?? slash;
+  if (command === "bot") {
     return ctx.commandId;
   }
-  if (slash.startsWith("settings ")) {
-    return ctx.settingsCommandId;
-  }
-  if (slash.startsWith("server ")) {
-    return ctx.serverCommandId;
-  }
-  if (slash.startsWith("staff ")) {
-    return ctx.staffCommandId;
-  }
-  if (slash.startsWith("tournament ")) {
-    return ctx.tournamentCommandId;
-  }
-  if (slash.startsWith("sheet ")) {
-    return ctx.sheetCommandId;
-  }
-  if (slash.startsWith("team ")) {
-    return ctx.teamCommandId;
-  }
-  if (slash.startsWith("role ")) {
-    return ctx.roleCommandId;
-  }
-  if (slash.startsWith("user ")) {
-    return ctx.userCommandId;
-  }
-  if (slash.startsWith("utility ")) {
-    return ctx.utilityCommandId;
-  }
-  if (slash === "auto_room") {
-    return ctx.autoRoomCommandId;
-  }
-  if (slash.startsWith("room ")) {
-    return ctx.roomCommandId;
-  }
-  if (slash.startsWith("ticket ")) {
-    return ctx.ticketCommandId;
-  }
-  if (slash.startsWith("schedule ")) {
-    return ctx.scheduleCommandId;
-  }
-  return undefined;
+  return commandIdFor(ctx.guildId, command);
 }
 
 export function normalizeHelpPage(page: number | undefined): number {

@@ -6,7 +6,7 @@ import {
 } from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { actorMatches } from "../../lib/command-access.js";
-import { autoRoomCommandIdFor, botCommandIdFor, roleCommandIdFor, roomCommandIdFor, scheduleCommandIdFor, serverCommandIdFor, settingsCommandIdFor, sheetCommandIdFor, staffCommandIdFor, teamCommandIdFor, ticketCommandIdFor, tournamentCommandIdFor, userCommandIdFor, utilityCommandIdFor } from "../../lib/register-slash.js";
+import { botCommandIdFor } from "../../lib/register-slash.js";
 import { buildAboutContainer } from "./about.js";
 import { buildHelpContainer, normalizeHelpPage } from "./help.js";
 import { buildPingContainer } from "./ping.js";
@@ -61,20 +61,8 @@ export async function handleBotSlash(interaction: ChatInputCommandInteraction, c
     await buildPanel(panel, {
       client,
       createdTimestamp: interaction.createdTimestamp,
+      guildId: interaction.guildId,
       commandId: botCommandIdFor(interaction.guildId) ?? interaction.commandId,
-      settingsCommandId: settingsCommandIdFor(interaction.guildId),
-      serverCommandId: serverCommandIdFor(interaction.guildId),
-      staffCommandId: staffCommandIdFor(interaction.guildId),
-      tournamentCommandId: tournamentCommandIdFor(interaction.guildId),
-      sheetCommandId: sheetCommandIdFor(interaction.guildId),
-      teamCommandId: teamCommandIdFor(interaction.guildId),
-      roleCommandId: roleCommandIdFor(interaction.guildId),
-      userCommandId: userCommandIdFor(interaction.guildId),
-      utilityCommandId: utilityCommandIdFor(interaction.guildId),
-      autoRoomCommandId: autoRoomCommandIdFor(interaction.guildId),
-      roomCommandId: roomCommandIdFor(interaction.guildId),
-      ticketCommandId: ticketCommandIdFor(interaction.guildId),
-      scheduleCommandId: scheduleCommandIdFor(interaction.guildId),
       helpPage: 0,
     }),
   );
@@ -117,20 +105,8 @@ export async function handleBotButton(interaction: ButtonInteraction, client: Cl
     await buildPanel(panel, {
       client,
       createdTimestamp: interaction.createdTimestamp,
+      guildId: interaction.guildId,
       commandId: botCommandIdFor(interaction.guildId),
-      settingsCommandId: settingsCommandIdFor(interaction.guildId),
-      serverCommandId: serverCommandIdFor(interaction.guildId),
-      staffCommandId: staffCommandIdFor(interaction.guildId),
-      tournamentCommandId: tournamentCommandIdFor(interaction.guildId),
-      sheetCommandId: sheetCommandIdFor(interaction.guildId),
-      teamCommandId: teamCommandIdFor(interaction.guildId),
-      roleCommandId: roleCommandIdFor(interaction.guildId),
-      userCommandId: userCommandIdFor(interaction.guildId),
-      utilityCommandId: utilityCommandIdFor(interaction.guildId),
-      autoRoomCommandId: autoRoomCommandIdFor(interaction.guildId),
-      roomCommandId: roomCommandIdFor(interaction.guildId),
-      ticketCommandId: ticketCommandIdFor(interaction.guildId),
-      scheduleCommandId: scheduleCommandIdFor(interaction.guildId),
       helpPage,
     }),
   );

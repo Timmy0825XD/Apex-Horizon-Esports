@@ -61,126 +61,32 @@ function stripFalseRequired(value: unknown): unknown {
   return value;
 }
 
-export const botCommandIds = new Map<string, string>();
-export const settingsCommandIds = new Map<string, string>();
-export const serverCommandIds = new Map<string, string>();
-export const staffCommandIds = new Map<string, string>();
-export const tournamentCommandIds = new Map<string, string>();
-export const sheetCommandIds = new Map<string, string>();
-export const teamCommandIds = new Map<string, string>();
-export const roleCommandIds = new Map<string, string>();
-export const userCommandIds = new Map<string, string>();
-export const utilityCommandIds = new Map<string, string>();
-export const autoRoomCommandIds = new Map<string, string>();
-export const roomCommandIds = new Map<string, string>();
-export const ticketCommandIds = new Map<string, string>();
-export const bracketCommandIds = new Map<string, string>();
-export const scheduleCommandIds = new Map<string, string>();
+// Command IDs per guild, filled on registration. Mentions like </attendance mark:ID> need them
+// to be clickable; without an ID the text falls back to plain code.
+const commandIds = new Map<string, Map<string, string>>();
 
-export function botCommandIdFor(guildId: string | null | undefined): string | undefined {
+export function commandIdFor(guildId: string | null | undefined, name: string): string | undefined {
   if (!guildId) {
     return undefined;
   }
-  return botCommandIds.get(guildId);
+  return commandIds.get(guildId)?.get(name);
 }
 
-export function settingsCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return settingsCommandIds.get(guildId);
-}
-
-export function serverCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return serverCommandIds.get(guildId);
-}
-
-export function staffCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return staffCommandIds.get(guildId);
-}
-
-export function tournamentCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return tournamentCommandIds.get(guildId);
-}
-
-export function sheetCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return sheetCommandIds.get(guildId);
-}
-
-export function teamCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return teamCommandIds.get(guildId);
-}
-
-export function roleCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return roleCommandIds.get(guildId);
-}
-
-export function userCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return userCommandIds.get(guildId);
-}
-
-export function utilityCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return utilityCommandIds.get(guildId);
-}
-
-export function autoRoomCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return autoRoomCommandIds.get(guildId);
-}
-
-export function roomCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return roomCommandIds.get(guildId);
-}
-
-export function ticketCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return ticketCommandIds.get(guildId);
-}
-
-export function bracketCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return bracketCommandIds.get(guildId);
-}
-
-export function scheduleCommandIdFor(guildId: string | null | undefined): string | undefined {
-  if (!guildId) {
-    return undefined;
-  }
-  return scheduleCommandIds.get(guildId);
-}
+export const botCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "bot");
+export const settingsCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "settings");
+export const serverCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "server");
+export const staffCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "staff");
+export const tournamentCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "tournament");
+export const sheetCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "sheet");
+export const teamCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "team");
+export const roleCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "role");
+export const userCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "user");
+export const utilityCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "utility");
+export const autoRoomCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "auto_room");
+export const roomCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "room");
+export const ticketCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "ticket");
+export const bracketCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "bracket");
+export const scheduleCommandIdFor = (guildId: string | null | undefined) => commandIdFor(guildId, "schedule");
 
 export async function registerSlashCommands(): Promise<void> {
   const rest = new REST({ version: "10" }).setToken(env.discordToken);
@@ -189,80 +95,6 @@ export async function registerSlashCommands(): Promise<void> {
     const registered = (await rest.put(Routes.applicationGuildCommands(env.discordClientId, guildId), {
       body: slashCommands,
     })) as Array<{ id: string; name: string }>;
-
-    const bot = registered.find((command) => command.name === "bot");
-    if (bot) {
-      botCommandIds.set(guildId, bot.id);
-    }
-
-    const settings = registered.find((command) => command.name === "settings");
-    if (settings) {
-      settingsCommandIds.set(guildId, settings.id);
-    }
-
-    const server = registered.find((command) => command.name === "server");
-    if (server) {
-      serverCommandIds.set(guildId, server.id);
-    }
-
-    const staff = registered.find((command) => command.name === "staff");
-    if (staff) {
-      staffCommandIds.set(guildId, staff.id);
-    }
-
-    const tournament = registered.find((command) => command.name === "tournament");
-    if (tournament) {
-      tournamentCommandIds.set(guildId, tournament.id);
-    }
-
-    const sheet = registered.find((command) => command.name === "sheet");
-    if (sheet) {
-      sheetCommandIds.set(guildId, sheet.id);
-    }
-
-    const team = registered.find((command) => command.name === "team");
-    if (team) {
-      teamCommandIds.set(guildId, team.id);
-    }
-
-    const role = registered.find((command) => command.name === "role");
-    if (role) {
-      roleCommandIds.set(guildId, role.id);
-    }
-
-    const user = registered.find((command) => command.name === "user");
-    if (user) {
-      userCommandIds.set(guildId, user.id);
-    }
-
-    const utility = registered.find((command) => command.name === "utility");
-    if (utility) {
-      utilityCommandIds.set(guildId, utility.id);
-    }
-
-    const autoRoom = registered.find((command) => command.name === "auto_room");
-    if (autoRoom) {
-      autoRoomCommandIds.set(guildId, autoRoom.id);
-    }
-
-    const room = registered.find((command) => command.name === "room");
-    if (room) {
-      roomCommandIds.set(guildId, room.id);
-    }
-
-    const ticket = registered.find((command) => command.name === "ticket");
-    if (ticket) {
-      ticketCommandIds.set(guildId, ticket.id);
-    }
-
-    const bracket = registered.find((command) => command.name === "bracket");
-    if (bracket) {
-      bracketCommandIds.set(guildId, bracket.id);
-    }
-
-    const schedule = registered.find((command) => command.name === "schedule");
-    if (schedule) {
-      scheduleCommandIds.set(guildId, schedule.id);
-    }
+    commandIds.set(guildId, new Map(registered.map((command) => [command.name, command.id])));
   }
 }
