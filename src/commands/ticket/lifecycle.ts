@@ -93,9 +93,6 @@ export async function reopenTicket(
 
 export async function deleteTicket(channel: TextChannel, roomId: string): Promise<void> {
   await channel.delete("Battle ticket deleted");
-  try {
-    await prisma.room.delete({ where: { id: roomId } });
-  } catch {
-    await prisma.room.delete({ where: { id: roomId } });
-  }
+  // Idempotent: a row already gone is not an error once the channel is deleted.
+  await prisma.room.deleteMany({ where: { id: roomId } });
 }
