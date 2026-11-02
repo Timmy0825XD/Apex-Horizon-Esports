@@ -9,6 +9,7 @@ import {
   handleBracketButtonInteraction,
   handleBracketSlash,
 } from "./commands/bracket/handle.js";
+import { handleBanAnnouncement, handleBanWatchButton, handleBanWatchSelect } from "./commands/ban-watch/handle.js";
 import { handleBotButton, handleBotSlash } from "./commands/bot/handle.js";
 import { handleRoomAuto, handleRoomButton, handleRoomSlash } from "./commands/room/handle.js";
 import { handleScheduleButton } from "./commands/schedule/buttons.js";
@@ -74,6 +75,13 @@ client.once(Events.ClientReady, async (readyClient) => {
   startAutoRoomWorker(readyClient);
   startScheduleWorker(readyClient);
   console.log(`Ready as ${readyClient.user.tag}`);
+});
+
+// Ban announcements: the configured bans channel turns each Discord ID into a card to decide.
+client.on(Events.MessageCreate, (message) => {
+  void handleBanAnnouncement(message).catch((error) => {
+    console.error("Ban announcement handling failed", error);
+  });
 });
 
 client.on(Events.GuildCreate, async (guild) => {
@@ -259,6 +267,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.isButton() && interaction.customId.startsWith("schedule:")) {
       await handleScheduleButton(interaction);
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith("banwatch:")) {
+      await handleBanWatchButton(interaction);
+      return;
+    }
+
+    if (interaction.isStringSelectMenu() && interaction.customId.startsWith("banwatch:")) {
+      await handleBanWatchSelect(interaction);
     }
   } catch (error) {
     console.error("Interaction failed", error);

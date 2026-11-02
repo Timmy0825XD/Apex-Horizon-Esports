@@ -9,6 +9,8 @@ El bot no “entra y sale” de Discord en cada comando. Mantiene una **sesión 
 
 Los cortes de red transitorios (`ECONNRESET`, DNS, timeouts) se cuentan: al **4.º seguido** el proceso se detiene para que el host lo reinicie. Cada reconexión sana (`ShardReady` / `ShardResume`) pone el contador a cero, así que cortes aislados a lo largo de semanas no apagan el bot.
 
+Además de interacciones, el bot escucha los **mensajes nuevos** del `bans_channel` de cada servidor para los avisos de baneo ([../domains/moderation.md](../domains/moderation.md)). Necesita el intent privilegiado **Message Content**.
+
 Si el WebSocket se cae, el bot deja de oír al servidor aunque los datos sigan existiendo. Si el almacén se cae, oye pero no puede operar torneos. `/bot ping` enseña las dos mitades.
 
 ## Relacionado

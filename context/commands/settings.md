@@ -19,7 +19,7 @@ Solo **Administrator** de Discord (aún no existe `admin_role`). Si el servidor 
 | bracket_admin | ROLE | Sí | Operación de bracket a nivel servidor |
 | schedules_channel | CHANNEL | Sí | Publicación de horarios y urgencias T-0 |
 | thumbnail_channel | CHANNEL | Sí | Miniaturas de schedule |
-| bans_channel | CHANNEL | Sí | Avisos de bans |
+| bans_channel | CHANNEL | Sí | Avisos de bans: el canal que sigue las publicaciones oficiales de baneos. El bot lee cada mensaje y pide al Organiser que lo aplique ([moderation.md](../domains/moderation.md)) |
 | challonge_logs | CHANNEL | Sí | Logs de bracket y scores |
 | bot_logs | CHANNEL | Sí | Logs generales |
 

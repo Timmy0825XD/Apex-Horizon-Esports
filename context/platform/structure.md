@@ -56,7 +56,8 @@ src/
     ticket/            # /ticket close|reopen|delete
     team/              # /team info|list
     role/              # /role user|add all|remove all|list
-    user/              # /user ban|unban
+    user/              # /user ban|unban (y la lógica de ban que reusa ban-watch)
+    ban-watch/         # avisos de baneo en bans_channel: lector, tarjetas y botones
     utility/           # /utility clear, utc, embed, v2, …
     schedule/          # /schedule y todo lo suyo (cuando exista)
     ...
