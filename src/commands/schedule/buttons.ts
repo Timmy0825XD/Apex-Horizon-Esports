@@ -131,7 +131,9 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
     guild,
     settings,
     actor: interaction.user,
-    description: `A ${seat} claimed a schedule in **${tournament.name}**.`,
+    action: "updated",
+    title: "Seat claimed",
+    summary: `A ${seat} took a seat in **${tournament.name}**.`,
     details: [ticketLine(guild, ticket.id), peopleLine(next.judgeId, next.recorderId)],
   });
 }

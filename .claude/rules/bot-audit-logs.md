@@ -17,9 +17,9 @@ Se publica **después de que la mutación tenga éxito**. Fallar el log no desha
 
 ## Cómo
 
-Publicar por **webhook de Discord** en el canal de logs configurado. El **título** (nombre visible del webhook / título del embed) **es el tipo de log**, no un rótulo genérico.
+Publicar por **webhook de Discord** en el canal de logs configurado, como **Components V2** (`publishAudit` en `src/lib/audit.ts`). El **nombre visible del webhook es el módulo** que genera el log (el tipo de log), no un rótulo genérico. El **título de la tarjeta es la acción** y no repite ese nombre. El color dice si se creó, modificó o borró algo.
 
-Ejemplos de título: `Bot Logs`, `Ticket System`, `Challonge Logs`, `Score Upload`.
+Módulos: `Server Config`, `Staff`, `Moderation`, `Tournaments`, `Rooms`, `Schedules`, `Attendance`, `Utility`, `Ticket System`, `Challonge Logs`, `Score Upload`.
 
 Si nace un tipo de log nuevo, actualiza `context/platform/audit.md` en el mismo cambio.
 

@@ -11,7 +11,7 @@ Un solo comando. Organiser.
 | tournament | STRING (Autocomplete) | Sí |
 | status | BOOLEAN | Sí |
 
-`status` true enciende la automatización. Si venía de off, abre en ese momento los partidos `open` sin sala y publica en el canal el mismo reporte que `/room create`. Los que se abran después esperan a **00:00 UTC** o **12:00 UTC**. `status` false apaga el escaneo y no cierra tickets. Ya encendido, apagado, y el error si el bracket no se puede leer, siguen efímeros. Si el bracket no se puede leer al encender, auto-room **sigue off**. Audita en **Bot Logs**.
+`status` true enciende la automatización. Si venía de off, abre en ese momento los partidos `open` sin sala y publica en el canal el mismo reporte que `/room create`. Los que se abran después esperan a **00:00 UTC** o **12:00 UTC**. `status` false apaga el escaneo y no cierra tickets. Ya encendido, apagado, y el error si el bracket no se puede leer, siguen efímeros. Si el bracket no se puede leer al encender, auto-room **sigue off**. Audita en **Rooms**.
 
 ## `/room create`
 
@@ -21,7 +21,7 @@ Un solo comando. Organiser.
 | group | STRING (Autocomplete) | No |
 | round | STRING (Autocomplete) | No |
 
-Abre la cola pendiente de ese torneo ahora. Sin `group` ni `round`, abre toda. Con uno o ambos, solo los partidos de ese grupo y/o esa ronda. Las opciones salen del bracket de **ese** torneo. No exige que auto-room esté encendido y **no cambia** el flag: si estaba off, sigue off. Misma tubería que el encendido y que el worker. Audita en **Bot Logs**.
+Abre la cola pendiente de ese torneo ahora. Sin `group` ni `round`, abre toda. Con uno o ambos, solo los partidos de ese grupo y/o esa ronda. Las opciones salen del bracket de **ese** torneo. No exige que auto-room esté encendido y **no cambia** el flag: si estaba off, sigue off. Misma tubería que el encendido y que el worker. Audita en **Rooms**.
 
 La respuesta se publica en el canal (no efímera). V2 con **Created**, **Succeeded** y **Errors**, el cupo de las categorías abiertas (slots libres antes y después; si la cola no cabe, cuántos partidos siguen esperando) y, al final, **Issues**: capitán que no está en el servidor como `- @capitán (**tag** / **equipo**)`, o tag y equipo cuando el Discord ID es inválido o falta. No lista los canales creados.
 

@@ -23,7 +23,7 @@ Solo **Administrator** de Discord (aún no existe `admin_role`). Si el servidor 
 | challonge_logs | CHANNEL | Sí | Logs de bracket y scores |
 | bot_logs | CHANNEL | Sí | Logs generales |
 
-Canales: texto o announcement. **Relación:** prerrequisito de casi toda mutación auditable. Complementa `/staff config` (no pisa roles de staff). Audita en **Bot Logs**.
+Canales: texto o announcement. **Relación:** prerrequisito de casi toda mutación auditable. Complementa `/staff config` (no pisa roles de staff). Audita en **Server Config**.
 
 ## `/settings edit`
 

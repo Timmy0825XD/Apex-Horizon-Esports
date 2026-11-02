@@ -1,6 +1,6 @@
 import type { GuildSettings } from "@prisma/client";
 import type { ButtonInteraction, ChatInputCommandInteraction, Guild, User } from "discord.js";
-import { auditLogTitles, publishAudit } from "../../lib/audit.js";
+import { fact, listWithOverflow, publishAudit } from "../../lib/audit.js";
 import { formatCategory, formatChannel, formatRole, formatSheetLink } from "../../lib/formatters.js";
 import {
   optionalTextChannelFields,
@@ -15,51 +15,51 @@ function worldDetails(guild: Guild, tournament: TournamentRecord, changed?: stri
   const lines: string[] = [];
 
   if (include("name")) {
-    lines.push(`**Name:** **${tournament.name}**`);
+    lines.push(`**Name** **${tournament.name}**`);
   }
   if (include("challongeId")) {
-    lines.push(`**Bracket:** \`${tournament.challongeId}\``);
+    lines.push(`**Bracket** \`${tournament.challongeId}\``);
   }
   if (include("format")) {
-    lines.push(`**Format:** \`${tournament.format}\``);
+    lines.push(`**Format** \`${tournament.format}\``);
   }
   if (include("additionalFieldCount")) {
-    lines.push(`**Extra columns:** \`${tournament.additionalFieldCount}\``);
+    lines.push(`**Extra columns** \`${tournament.additionalFieldCount}\``);
   }
   if (include("sheetLink")) {
-    lines.push(`**Sheet:** ${formatSheetLink(tournament.sheetLink)}`);
+    lines.push(`**Sheet** ${formatSheetLink(tournament.sheetLink)}`);
   }
   if (include("key")) {
-    lines.push("**API key:** *Updated (encrypted)*");
+    lines.push("**API key** *Updated (encrypted)*");
   }
 
   for (const field of roleFields) {
     if (include(field.key)) {
-      lines.push(`**${field.label}:** ${formatRole(guild, tournament[field.key])}`);
+      lines.push(`**${field.label}** ${formatRole(guild, tournament[field.key])}`);
     }
   }
   for (const field of textChannelFields) {
     if (include(field.key)) {
-      lines.push(`**${field.label}:** ${formatChannel(guild, tournament[field.key])}`);
+      lines.push(`**${field.label}** ${formatChannel(guild, tournament[field.key])}`);
     }
   }
   for (const field of optionalTextChannelFields) {
     if (include(field.key)) {
       const id = tournament[field.key];
-      lines.push(`**${field.label}:** ${id ? formatChannel(guild, id) : "*Not configured*"}`);
+      lines.push(`**${field.label}** ${id ? formatChannel(guild, id) : "*Not configured*"}`);
     }
   }
   if (include("closedTicketCategoryId")) {
-    lines.push(`**Closed Tickets:** ${formatCategory(guild, tournament.closedTicketCategoryId)}`);
+    lines.push(`**Closed Tickets** ${formatCategory(guild, tournament.closedTicketCategoryId)}`);
   }
   if (include("closeTicketCategory2Id")) {
     lines.push(
-      `**Closed Tickets 2:** ${tournament.closeTicketCategory2Id ? formatCategory(guild, tournament.closeTicketCategory2Id) : "*Not configured*"}`,
+      `**Closed Tickets 2** ${tournament.closeTicketCategory2Id ? formatCategory(guild, tournament.closeTicketCategory2Id) : "*Not configured*"}`,
     );
   }
   if (include("ticketOpenCategoryIds")) {
     tournament.ticketOpenCategoryIds.forEach((id, index) => {
-      lines.push(`**Open Tickets ${index + 1}:** ${formatCategory(guild, id)}`);
+      lines.push(`**Open Tickets ${index + 1}** ${formatCategory(guild, id)}`);
     });
   }
 
@@ -72,21 +72,24 @@ export async function auditTournamentAdd(
   settings: GuildSettings,
   tournament: TournamentRecord,
 ): Promise<void> {
-  const details = worldDetails(guild, tournament);
   await publishAudit({
     guild,
     channelId: settings.botLogsChannelId,
-    title: auditLogTitles.botLogs,
-    description: `Tournament **${tournament.name}** was registered.`,
-    details,
+    module: "tournaments",
+    action: "created",
+    title: "Tournament registered",
+    summary: `**${tournament.name}** was registered and is ready to run.`,
+    groups: [{ label: "Setup", lines: worldDetails(guild, tournament) }],
     actor: interaction.user,
   });
   await publishAudit({
     guild,
     channelId: settings.challongeLogsChannelId,
-    title: auditLogTitles.challongeLogs,
-    description: `Bracket identity **${tournament.name}** was linked as \`${tournament.challongeId}\`.`,
-    details: [`**Tournament:** **${tournament.name}**`, `**Bracket:** \`${tournament.challongeId}\``],
+    module: "challonge",
+    action: "created",
+    title: "Bracket linked",
+    summary: `**${tournament.name}** was linked to its Challonge bracket.`,
+    groups: [{ lines: [fact("Bracket", `\`${tournament.challongeId}\``)] }],
     actor: interaction.user,
   });
 }
@@ -103,18 +106,22 @@ export async function auditTournamentEdit(
   await publishAudit({
     guild,
     channelId: settings.botLogsChannelId,
-    title: auditLogTitles.botLogs,
-    description: `Tournament **${tournament.name}** was edited.`,
-    details: worldDetails(guild, tournament, flags),
+    module: "tournaments",
+    action: "updated",
+    title: "Tournament edited",
+    summary: `**${flags.length}** ${flags.length === 1 ? "setting" : "settings"} of **${tournament.name}** changed.`,
+    groups: [{ label: "New values", lines: worldDetails(guild, tournament, flags) }],
     actor: interaction.user,
   });
   if (keyChanged) {
     await publishAudit({
       guild,
       channelId: settings.challongeLogsChannelId,
-      title: auditLogTitles.challongeLogs,
-      description: `Bracket credentials for **${tournament.name}** were replaced.`,
-      details: [`**Tournament:** **${tournament.name}**`, `**Bracket:** \`${tournament.challongeId}\``],
+      module: "challonge",
+      action: "updated",
+      title: "Bracket key replaced",
+      summary: `The Challonge credentials of **${tournament.name}** were replaced.`,
+      groups: [{ lines: [fact("Bracket", `\`${tournament.challongeId}\``)] }],
       actor: interaction.user,
     });
   }
@@ -131,15 +138,22 @@ export async function auditTournamentDelete(
   await publishAudit({
     guild,
     channelId: settings.botLogsChannelId,
-    title: auditLogTitles.botLogs,
-    description: `Tournament **${name}** was deleted. Related bot records were wiped; the stored sheet remains historical.`,
-    details: [
-      `**Name:** **${name}**`,
-      `**Bracket:** \`${challongeId}\``,
-      `**Matches deleted:** \`${related.matches}\``,
-      `**Rooms deleted:** \`${related.rooms}\``,
-      `**Schedules deleted:** \`${related.schedules}\``,
-      `**Attendance deleted:** \`${related.attendances}\``,
+    module: "tournaments",
+    action: "deleted",
+    title: "Tournament deleted",
+    summary: `**${name}** was removed. Its bot records were wiped; the stored sheet stays as history.`,
+    groups: [
+      { lines: [fact("Bracket", `\`${challongeId}\``)] },
+      {
+        label: "Records removed",
+        lines: [
+          `\`${related.matches}\` matches`,
+          `\`${related.rooms}\` rooms`,
+          `\`${related.schedules}\` schedules`,
+          `\`${related.attendances}\` attendance`,
+        ],
+        inline: true,
+      },
     ],
     actor: interaction.user,
   });
@@ -157,17 +171,11 @@ export async function auditTournamentRole(
   await publishAudit({
     guild,
     channelId: settings.botLogsChannelId,
-    title: auditLogTitles.botLogs,
-    description:
-      assigned === 1
-        ? `A tournament role was assigned for **${tournamentName}**.`
-        : `Tournament roles were assigned for **${tournamentName}**.`,
-    details: [
-      `**Tournament:** **${tournamentName}**`,
-      `**Role:** ${formatRole(guild, roleId)}`,
-      `**Scope:** **${scope}**`,
-      `**Players granted:** \`${assigned}\``,
-    ],
+    module: "tournaments",
+    action: "created",
+    title: "Tournament role assigned",
+    summary: `${formatRole(guild, roleId)} was given to \`${assigned}\` ${assigned === 1 ? "player" : "players"} of **${tournamentName}**.`,
+    groups: [{ lines: [fact("Scope", `**${scope}**`)] }],
     actor: interaction.user,
   });
 }
@@ -184,49 +192,51 @@ export async function auditValidationTickets(
   if (created.length === 0) {
     return;
   }
-  const shown = created.slice(0, 15).map((ticket) => formatChannel(guild, ticket.channelId));
-  const extra = created.length - shown.length;
-  if (extra > 0) {
-    shown.push(`*And **${extra}** more.*`);
-  }
-  const details = [
-    `**Tournament:** **${tournamentName}**`,
-    `**Tickets opened:** \`${created.length}\``,
-    `**Transcripts:** ${formatChannel(guild, transcriptChannelId)}`,
-    ...shown,
-  ];
+  const extra = [fact("Transcripts in", formatChannel(guild, transcriptChannelId))];
   if (notOpened > 0) {
-    details.push(`**Not opened:** \`${notOpened}\``);
+    extra.push(fact("Not opened", `\`${notOpened}\``));
   }
   await publishAudit({
     guild,
     channelId: settings.botLogsChannelId,
-    title: auditLogTitles.botLogs,
-    description:
+    module: "tournaments",
+    action: "created",
+    title: created.length === 1 ? "Validation ticket opened" : "Validation tickets opened",
+    summary:
       created.length === 1
         ? `A group validation ticket was opened for **${tournamentName}**.`
-        : `Group validation tickets were opened for **${tournamentName}**.`,
-    details,
+        : `\`${created.length}\` group validation tickets were opened for **${tournamentName}**.`,
+    groups: [
+      {
+        label: `Tickets opened · ${created.length}`,
+        lines: listWithOverflow(created.map((ticket) => formatChannel(guild, ticket.channelId))),
+        inline: true,
+      },
+      { lines: extra },
+    ],
     actor,
   });
 }
 
+/** `sheets` is how many sheets were archived; `lines` may spend more than one line per sheet. */
 export async function auditAddSheet(
   interaction: ChatInputCommandInteraction,
   guild: Guild,
   settings: GuildSettings,
-  details: string[],
+  sheets: number,
+  lines: string[],
 ): Promise<void> {
-  const count = details.length;
   await publishAudit({
     guild,
     channelId: settings.botLogsChannelId,
-    title: auditLogTitles.botLogs,
-    description:
-      count === 1
-        ? "A participant sheet was archived into the global player search."
-        : `**${count}** participant sheets were archived into the global player search.`,
-    details,
+    module: "tournaments",
+    action: "created",
+    title: sheets === 1 ? "Sheet archived" : "Sheets archived",
+    summary:
+      sheets === 1
+        ? "A participant sheet joined the global player search."
+        : `\`${sheets}\` participant sheets joined the global player search.`,
+    groups: [{ lines: listWithOverflow(lines) }],
     actor: interaction.user,
   });
 }

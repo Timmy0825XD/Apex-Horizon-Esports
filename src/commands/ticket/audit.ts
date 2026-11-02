@@ -1,6 +1,6 @@
 import type { GuildSettings } from "@prisma/client";
 import type { ChatInputCommandInteraction, Guild } from "discord.js";
-import { auditLogTitles, publishAudit } from "../../lib/audit.js";
+import { fact, publishAudit } from "../../lib/audit.js";
 import { formatChannel, formatCategory } from "../../lib/formatters.js";
 
 export async function auditValidationClose(
@@ -14,12 +14,17 @@ export async function auditValidationClose(
   await publishAudit({
     guild,
     channelId: settings.botLogsChannelId,
-    title: auditLogTitles.ticketSystem,
-    description: `A group validation ticket for **${tournamentName}** was archived and deleted.`,
-    details: [
-      `**Tournament:** **${tournamentName}**`,
-      `**Ticket:** ${formatChannel(guild, channelId)}`,
-      `**Transcripts:** ${formatChannel(guild, transcriptChannelId)}`,
+    module: "ticketSystem",
+    action: "deleted",
+    title: "Validation ticket closed",
+    summary: `A group validation ticket for **${tournamentName}** was archived and deleted.`,
+    groups: [
+      {
+        lines: [
+          fact("Ticket", formatChannel(guild, channelId)),
+          fact("Transcript in", formatChannel(guild, transcriptChannelId)),
+        ],
+      },
     ],
     actor: interaction.user,
   });
@@ -35,21 +40,20 @@ export async function auditTicket(
   matchId: number,
   categoryId?: string,
 ): Promise<void> {
-  const verb = action === "closed" ? "closed" : action === "reopened" ? "reopened" : "deleted";
   const details = [
-    `**Tournament:** **${tournamentName}**`,
-    `**Match ID:** \`${matchId}\``,
-    `**Ticket:** ${formatChannel(guild, channelId)}`,
+    `${fact("Ticket", formatChannel(guild, channelId))} · ${fact("Match ID", `\`${matchId}\``)}`,
   ];
   if (categoryId) {
-    details.push(`**Category:** ${formatCategory(guild, categoryId)}`);
+    details.push(fact(action === "reopened" ? "Moved back to" : "Moved to", formatCategory(guild, categoryId)));
   }
   await publishAudit({
     guild,
     channelId: settings.botLogsChannelId,
-    title: auditLogTitles.ticketSystem,
-    description: `Battle ticket for **${tournamentName}** was ${verb}.`,
-    details,
+    module: "ticketSystem",
+    action: action === "deleted" ? "deleted" : "updated",
+    title: action === "closed" ? "Ticket closed" : action === "reopened" ? "Ticket reopened" : "Ticket deleted",
+    summary: `A battle ticket in **${tournamentName}** was ${action}.`,
+    groups: [{ lines: details }],
     actor: interaction.user,
   });
 }

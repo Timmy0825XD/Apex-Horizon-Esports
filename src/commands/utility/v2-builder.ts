@@ -521,13 +521,18 @@ async function publishV2(interaction: ButtonInteraction, guild: Guild, session: 
     asMessageEdit(utilitySuccess(session.edit ? "Components V2 updated" : "Components V2 published", copy, false)),
   );
 
-  await auditUtility(
-    interaction,
-    guild,
-    session.edit ? "A Components V2 message was rewritten." : "A Components V2 message was published.",
-    [
-      `**Channel:** ${formatChannel(guild, channel.id)}`,
-      session.edit ? `**Message:** \`${session.edit.messageId}\`` : `**Blocks:** ${session.draft.blocks.length}`,
+  await auditUtility(interaction, guild, {
+    action: session.edit ? "updated" : "created",
+    title: session.edit ? "Components V2 rewritten" : "Components V2 published",
+    summary: session.edit
+      ? `A Components V2 message was rewritten in ${formatChannel(guild, channel.id)}.`
+      : `A Components V2 message was published in ${formatChannel(guild, channel.id)}.`,
+    groups: [
+      {
+        lines: [
+          session.edit ? `**Message** \`${session.edit.messageId}\`` : `**Blocks** \`${session.draft.blocks.length}\``,
+        ],
+      },
     ],
-  );
+  });
 }

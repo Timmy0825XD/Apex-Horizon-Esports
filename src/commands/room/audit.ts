@@ -1,16 +1,11 @@
 import type { GuildSettings } from "@prisma/client";
 import type { ChatInputCommandInteraction, Guild, User } from "discord.js";
-import { auditLogTitles, publishAudit } from "../../lib/audit.js";
+import { fact, listWithOverflow, publishAudit } from "../../lib/audit.js";
 import { formatChannel } from "../../lib/formatters.js";
 import type { CreatedTicket } from "./open.js";
 
 function ticketLines(guild: Guild, created: CreatedTicket[]): string[] {
-  const shown = created.slice(0, 15).map((ticket) => formatChannel(guild, ticket.channelId));
-  const extra = created.length - shown.length;
-  if (extra > 0) {
-    shown.push(`*And **${extra}** more.*`);
-  }
-  return shown;
+  return listWithOverflow(created.map((ticket) => formatChannel(guild, ticket.channelId)));
 }
 
 export async function auditRoomsCreated(
@@ -24,23 +19,20 @@ export async function auditRoomsCreated(
   if (created.length === 0) {
     return;
   }
-  const details = [
-    `**Tournament:** **${tournamentName}**`,
-    `**Tickets created:** \`${created.length}\``,
-    ...ticketLines(guild, created),
-  ];
-  if (failed > 0) {
-    details.push(`**Not created:** \`${failed}\``);
-  }
   await publishAudit({
     guild,
     channelId: settings.botLogsChannelId,
-    title: auditLogTitles.botLogs,
-    description:
+    module: "rooms",
+    action: "created",
+    title: created.length === 1 ? "Battle ticket opened" : "Battle tickets opened",
+    summary:
       created.length === 1
-        ? `A battle ticket was created for **${tournamentName}**.`
-        : `Battle tickets were created for **${tournamentName}**.`,
-    details,
+        ? `A battle ticket was opened for **${tournamentName}**.`
+        : `\`${created.length}\` battle tickets were opened for **${tournamentName}**.`,
+    groups: [
+      { label: `Tickets opened · ${created.length}`, lines: ticketLines(guild, created), inline: true },
+      ...(failed > 0 ? [{ lines: [fact("Not opened", `\`${failed}\``)] }] : []),
+    ],
     actor,
   });
 }
@@ -53,22 +45,19 @@ export async function auditAutoRoom(
   running: boolean,
   created: CreatedTicket[],
 ): Promise<void> {
-  const details = [
-    `**Tournament:** **${tournamentName}**`,
-    `**Auto-room:** ${running ? "On" : "Off"}`,
-  ];
-  if (running) {
-    details.push(`**Tickets created:** \`${created.length}\``);
-    details.push(...ticketLines(guild, created));
-  }
   await publishAudit({
     guild,
     channelId: settings.botLogsChannelId,
-    title: auditLogTitles.botLogs,
-    description: running
-      ? `Auto-room was turned on for **${tournamentName}**.`
-      : `Auto-room was turned off for **${tournamentName}**.`,
-    details,
+    module: "rooms",
+    action: "updated",
+    title: running ? "Auto-room turned on" : "Auto-room turned off",
+    summary: running
+      ? `**${tournamentName}** opens battle tickets at 00:00 and 12:00 UTC.`
+      : `**${tournamentName}** stopped opening battle tickets on its own.`,
+    groups:
+      running && created.length > 0
+        ? [{ label: `Tickets opened now · ${created.length}`, lines: ticketLines(guild, created), inline: true }]
+        : [],
     actor: interaction.user,
   });
 }

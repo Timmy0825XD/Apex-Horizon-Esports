@@ -15,24 +15,41 @@ Solo se auditan mutaciones. Extraer o visualizar información **no** genera log.
 | **Borrar** | Sí | `/tournament delete`, `/ticket delete`, `/attendance delete`, `/user unban` |
 | **Leer / listar / extraer** | No | `/bot ping`, `/settings show`, `/tournament list`, `/sheet find_player`, `/sheet get`, `/sheet validate`, `/team info`, `/team list`, `/staff work`, `/server banlist` |
 
-- Se escribe el embed de log **después de que la mutación tenga éxito**.
+- Se escribe el log **después de que la mutación tenga éxito**.
 - Fallar al loguear **nunca deshace** el comando. El log es testigo, no parte de la transacción.
 
-## Cómo viaja el log (webhook + título = tipo)
+## Cómo viaja el log (webhook + nombre = módulo)
 
-El bot no habla “como el bot” en esos canales si puede evitarlo. Crea o reutiliza un **webhook del canal** (hace falta permiso de gestionar webhooks). El **título** del envío (nombre visible del webhook) **representa el tipo de log**, no un rótulo genérico. El **icono** del webhook es siempre el del bot:
+El bot no habla “como el bot” en esos canales si puede evitarlo. Usa **un webhook propio por canal** (lo crea o reutiliza; hace falta permiso de gestionar webhooks) y en cada envío cambia el **nombre visible**: ese nombre es el **módulo** que generó el log, es decir, el tipo de log. Un solo webhook por canal evita el límite de Discord de 15 webhooks por canal. El **icono** es siempre el del bot.
 
 | Canal configurado | Nombre que aparece | Para qué |
 |---|---|---|
-| Bot logs | **Bot Logs** | Config, staff, roles, salas, schedules, asistencia, bans, utilidades de mutación |
+| Bot logs | **Server Config** | `/settings` set/edit, `/staff` set/edit (roles y canales del servidor y del staff) |
+| Bot logs | **Staff** | Recruit, fire |
+| Bot logs | **Moderation** | `/role` individual y masivo, `/user` ban/unban |
+| Bot logs | **Tournaments** | Alta, edición y baja de torneo; `/sheet add`; `/tournament role`; `/tournament validate` |
+| Bot logs | **Rooms** | `/room create`, `/auto_room`, franjas de auto-room (incluida la recuperada) |
+| Bot logs | **Schedules** | Crear, actualizar, borrar, refresh, resign, puesto tomado, resultado declarado o borrado |
+| Bot logs | **Attendance** | Marcar, borrar, añadir o borrar links |
+| Bot logs | **Utility** | Purga, wipe de categoría, emoji, embed y Components V2 publicados o reescritos |
 | Bot logs | **Ticket System** | Cerrar / reabrir / borrar ticket |
-| Challonge logs | **Challonge Logs** | Vincular o cambiar credenciales/identidad de bracket |
-| Challonge logs | **Score Upload** | `/bracket upload`, `/bracket dq_both` y `/bracket correct` |
+| Challonge logs | **Challonge Logs** | Vincular el bracket o reemplazar sus credenciales |
+| Challonge logs | **Score Upload** | `/bracket upload`, `/bracket dq_both`, `/bracket correct` y forfeits automáticos |
 | Transcript logs | **Transcripts** | Archivo HTML (no es auditoría de “quién pulsó qué”) |
 
-Si el webhook no se puede crear o falló el envío, se **reintenta** y, si sigue fallando, el mensaje lo manda el propio bot. Nadie es mencionado desde un log (`allowed mentions` vacío).
+Si el webhook no se puede crear o falló el envío, se **reintenta** y, si sigue fallando, el mismo log lo manda el propio bot. Nadie es mencionado desde un log (`allowed mentions` vacío).
 
-Cada embed de auditoría, en inglés, lleva al menos: **qué pasó**, **Triggered By**, **hora UTC**, y las entidades tocadas (persona, rol, canal, torneo, partido) en formato mencionable. El avatar de quien disparó la acción va de **miniatura** cuando existe.
+## Formato del log (Components V2)
+
+Cada log es un **contenedor de Components V2**, en inglés:
+
+1. **Franja de color según la acción**: verde = se creó algo, dorado = se modificó, rojo = se borró (o se baneó, despidió, purgó, descalificó).
+2. **Título = la acción** (`Tournament deleted`, `Seat claimed`…), precedido del emoji del módulo desde `emojis.ts`. Nunca repite el nombre del módulo, que ya firma el mensaje.
+3. **Resumen de una frase** con las entidades en negrita o mencionables. El avatar de quien disparó la acción va de miniatura al lado.
+4. **Grupos** separados por una línea: cada uno con un rótulo pequeño opcional (`Records removed`, `Changes`, `Match`…). Los datos van como `**Etiqueta** valor`; los contadores y listas cortas, en una sola línea unida con `·`; los cambios, como `viejo → nuevo`.
+5. **Pie en texto pequeño**: `By @persona · AAAA-MM-DD HH:MM UTC · hace X`. La hora UTC va como texto (las marcas `<t:…>` de Discord se ven en la hora local de quien lee); la relativa sí es `<t:…:R>`.
+
+Las listas largas (tickets abiertos, hojas archivadas) muestran **15** y cierran con *And N more*. Si un log no cabe en el límite de 4000 caracteres de Components V2, los últimos grupos se resumen en *And N more sections not shown*.
 
 ## Qué se audita
 

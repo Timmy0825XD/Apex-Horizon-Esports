@@ -1,6 +1,6 @@
 import type { GuildSettings } from "@prisma/client";
 import type { ChatInputCommandInteraction, Guild } from "discord.js";
-import { auditLogTitles, publishAudit } from "../../lib/audit.js";
+import { fact, publishAudit } from "../../lib/audit.js";
 import { formatChannel, formatRole } from "../../lib/formatters.js";
 import { settingFields, type SettingsInput } from "./fields.js";
 
@@ -12,7 +12,7 @@ function fieldDetail(guild: Guild, settings: SettingsInput, key: keyof SettingsI
   const mention = field.key.endsWith("RoleId")
     ? formatRole(guild, settings[key])
     : formatChannel(guild, settings[key]);
-  return `**${field.label}:** ${mention}`;
+  return fact(field.label, mention);
 }
 
 export async function auditSettingsMutation(
@@ -30,12 +30,14 @@ export async function auditSettingsMutation(
   await publishAudit({
     guild,
     channelId: settings.botLogsChannelId,
-    title: auditLogTitles.botLogs,
-    description:
+    module: "serverConfig",
+    action: action === "set" ? "created" : "updated",
+    title: action === "set" ? "Server settings configured" : "Server settings edited",
+    summary:
       action === "set"
-        ? "Server settings were configured for the first time."
-        : "Server settings were edited.",
-    details,
+        ? "The bot's roles and channels for this server were set for the first time."
+        : `**${details.length}** server ${details.length === 1 ? "setting was" : "settings were"} changed.`,
+    groups: [{ label: action === "set" ? "Settings" : "New values", lines: details }],
     actor: interaction.user,
   });
 }

@@ -231,8 +231,10 @@ export async function runResults(interaction: ChatInputCommandInteraction, bundl
     guild,
     settings: bundle.settings,
     actor: interaction.user,
-    description: `A schedule result was declared for **${bundle.tournament.name}**.`,
-    details: [ticketLine(guild, bundle.channel.id), `**Score:** \`${team1}\` - \`${team2}\``],
+    action: "created",
+    title: "Result declared",
+    summary: `A schedule result was declared for **${bundle.tournament.name}**.`,
+    details: [ticketLine(guild, bundle.channel.id), `**Score** \`${team1} - ${team2}\``],
   });
 }
 
@@ -265,13 +267,15 @@ export async function runResultsDelete(interaction: ChatInputCommandInteraction,
   await replySchedule(interaction, scheduleNotice("success", "Result removed", "The declaration is gone from the ticket and the result channel. The schedule itself is still active."));
   const details = [ticketLine(guild, bundle.channel.id)];
   if (reason) {
-    details.push(`**Reason:** ${reason}`);
+    details.push(`**Reason** ${reason}`);
   }
   await auditSchedule({
     guild,
     settings: bundle.settings,
     actor: interaction.user,
-    description: `A schedule result was removed for **${bundle.tournament.name}**.`,
+    action: "deleted",
+    title: "Result removed",
+    summary: `A schedule result was removed for **${bundle.tournament.name}**.`,
     details,
   });
 }

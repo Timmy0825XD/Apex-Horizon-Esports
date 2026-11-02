@@ -1,6 +1,6 @@
 import type { Client } from "discord.js";
 import { isAllowedGuild } from "../lib/allowed-guilds.js";
-import { auditLogTitles, publishAudit } from "../lib/audit.js";
+import { fact, listWithOverflow, publishAudit } from "../lib/audit.js";
 import { formatChannel } from "../lib/formatters.js";
 import { openPendingTickets } from "../commands/room/open.js";
 import { loadGuildSettings } from "../commands/settings/store.js";
@@ -70,27 +70,19 @@ async function flushSlot(client: Client): Promise<void> {
         if (!settings) {
           continue;
         }
-        const shown = result.created.slice(0, 15).map((ticket) => formatChannel(guild, ticket.channelId));
-        const extra = result.created.length - shown.length;
-        if (extra > 0) {
-          shown.push(`*And **${extra}** more.*`);
-        }
+        const tickets = listWithOverflow(result.created.map((ticket) => formatChannel(guild, ticket.channelId)));
         await publishAudit({
           guild,
           channelId: settings.botLogsChannelId,
-          title: auditLogTitles.botLogs,
-          description: late
-            ? `Auto-room recovered a missed slot and opened battle tickets for **${tournament.name}**.`
-            : result.created.length === 1
-              ? `Auto-room opened a battle ticket for **${tournament.name}**.`
-              : `Auto-room opened battle tickets for **${tournament.name}**.`,
-          details: [
-            `**Tournament:** **${tournament.name}**`,
-            `**Tickets created:** \`${result.created.length}\``,
-            ...shown,
-            late
-              ? `**Slot:** \`${slotLabel(slot.startsAt)}\` *(recovered after the bot was offline)*`
-              : `**Slot:** \`${slotLabel(slot.startsAt)}\``,
+          module: "rooms",
+          action: "created",
+          title: late ? "Missed slot recovered" : "Auto-room slot opened",
+          summary: late
+            ? `The bot was offline at **${slotLabel(slot.startsAt)}**, so it opened that slot when it came back.`
+            : `The **${slotLabel(slot.startsAt)}** slot opened the waiting queue.`,
+          groups: [
+            { lines: [fact("Tournament", `**${tournament.name}**`)] },
+            { label: `Tickets opened · ${result.created.length}`, lines: tickets, inline: true },
           ],
           actor,
         });

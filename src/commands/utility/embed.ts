@@ -573,13 +573,18 @@ async function publishEmbed(interaction: ButtonInteraction, guild: Guild, sessio
     components: [],
   });
 
-  await auditUtility(
-    interaction,
-    guild,
-    session.edit ? "A bot embed was rewritten." : "An embed was published.",
-    [
-      `**Channel:** ${formatChannel(guild, channel.id)}`,
-      session.edit ? `**Message:** \`${session.edit.messageId}\`` : `**Title:** ${session.draft.title ?? "*none*"}`,
+  await auditUtility(interaction, guild, {
+    action: session.edit ? "updated" : "created",
+    title: session.edit ? "Embed rewritten" : "Embed published",
+    summary: session.edit
+      ? `A bot embed was rewritten in ${formatChannel(guild, channel.id)}.`
+      : `An embed was published in ${formatChannel(guild, channel.id)}.`,
+    groups: [
+      {
+        lines: [
+          session.edit ? `**Message** \`${session.edit.messageId}\`` : `**Title** ${session.draft.title ?? "*none*"}`,
+        ],
+      },
     ],
-  );
+  });
 }

@@ -174,13 +174,15 @@ export async function runUpdate(interaction: ChatInputCommandInteraction, bundle
   await replySchedule(interaction, scheduleNotice("success", "Schedule updated", [ticketLine(guild, bundle.channel.id), peopleLine(judgeId, recorderId)].join("\n")));
   const details = [ticketLine(guild, bundle.channel.id), peopleLine(judgeId, recorderId)];
   if (reason) {
-    details.push(`**Reason:** ${reason}`);
+    details.push(`**Reason** ${reason}`);
   }
   await auditSchedule({
     guild,
     settings: bundle.settings,
     actor: interaction.user,
-    description: `A schedule was updated for **${bundle.tournament.name}**.`,
+    action: "updated",
+    title: "Schedule updated",
+    summary: `A schedule was updated for **${bundle.tournament.name}**.`,
     details,
   });
 }
@@ -261,7 +263,9 @@ export async function runRefresh(interaction: ChatInputCommandInteraction): Prom
     guild,
     settings,
     actor: interaction.user,
-    description: `A schedule post was refreshed for **${tournament.name}**.`,
-    details: [ticketLine(guild, ticket.id), `**Link:** ${boardUrl}`],
+    action: "updated",
+    title: "Schedule refreshed",
+    summary: `The posts and claim buttons were renewed for **${tournament.name}**.`,
+    details: [ticketLine(guild, ticket.id), `**Link** ${boardUrl}`],
   });
 }

@@ -82,7 +82,7 @@ Resuelve por Discord ID (snowflake). Omite y reporta: IDs inválidos o vacíos, 
 
 ## `/tournament validate`
 
-**Para qué:** Comprobar que cada slot del formato está en el servidor y tiene el `verified_role` de `/settings`. **Organiser**. Lee la hoja **viva**. Si abre al menos un ticket, audita (**Bot Logs**).
+**Para qué:** Comprobar que cada slot del formato está en el servidor y tiene el `verified_role` de `/settings`. **Organiser**. Lee la hoja **viva**. Si abre al menos un ticket, audita (**Tournaments**).
 
 | Campo | Tipo | Obligatorio | Uso |
 |---|---|---|---|

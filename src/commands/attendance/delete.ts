@@ -64,13 +64,15 @@ export async function handleAttendanceDelete(interaction: ChatInputCommandIntera
     guild,
     settings: bundle.settings,
     actor: interaction.user,
-    description: "Attendance Deleted",
+    action: "deleted",
+    title: "Attendance deleted",
+    summary: `An attendance record was removed in **${bundle.tournament.name}**.`,
     details: attendanceAuditDetails({
       tournamentName: bundle.tournament.name,
       channelId: bundle.channel.id,
       judgeId: rows[0].judgeId,
       recorderId: rows[0].recorderId,
-      extra: reason ? [`**Reason:** ${escapeDiscord(reason)}`] : [],
+      extra: reason ? [`**Reason** ${escapeDiscord(reason)}`] : [],
     }),
   });
 

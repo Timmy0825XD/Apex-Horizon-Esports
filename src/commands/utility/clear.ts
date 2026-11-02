@@ -137,11 +137,12 @@ export async function handleClear(interaction: ChatInputCommandInteraction, guil
   );
 
   if (deleted > 0) {
-    await auditUtility(interaction, guild, "Messages were purged from a channel.", [
-      `**Channel:** ${formatChannel(guild, channel.id)}`,
-      `**Deleted:** ${deleted}`,
-      number != null ? `**Number requested:** ${number}` : `**Days requested:** ${days}`,
-    ]);
+    await auditUtility(interaction, guild, {
+      action: "deleted",
+      title: "Channel purged",
+      summary: `\`${deleted}\` ${deleted === 1 ? "message was" : "messages were"} deleted from ${formatChannel(guild, channel.id)}.`,
+      groups: [{ lines: [number != null ? `**Number requested** \`${number}\`` : `**Days requested** \`${days}\``] }],
+    });
   }
 }
 
@@ -259,10 +260,11 @@ export async function handleClearCategoryButton(interaction: ButtonInteraction):
   );
 
   if (deleted > 0) {
-    await auditUtility(interaction, guild, "Every child channel under a category was deleted.", [
-      `**Category:** ${formatCategory(guild, category.id)}`,
-      `**Deleted:** ${deleted}`,
-      `**Failed:** ${failed}`,
-    ]);
+    await auditUtility(interaction, guild, {
+      action: "deleted",
+      title: "Category wiped",
+      summary: `Every channel under ${formatCategory(guild, category.id)} was deleted.`,
+      groups: [{ lines: [`\`${deleted}\` deleted`, `\`${failed}\` failed`], inline: true }],
+    });
   }
 }
