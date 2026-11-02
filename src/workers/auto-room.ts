@@ -4,12 +4,13 @@ import { auditLogTitles, publishAudit } from "../lib/audit.js";
 import { formatChannel } from "../lib/formatters.js";
 import { openPendingTickets } from "../commands/room/open.js";
 import { loadGuildSettings } from "../commands/settings/store.js";
-import { listRunningAutoRooms } from "../commands/tournament/store.js";
+import { isLateSlot, latestSlot } from "../commands/auto-room/slot.js";
+import { claimAutoRoomSlot, listRunningAutoRooms } from "../commands/tournament/store.js";
 
-const SLOT_HOURS = new Set([0, 12]);
 let timer: ReturnType<typeof setInterval> | null = null;
-let lastSlot = "";
 let flushing = false;
+// Slot already swept by this process. Empty after a restart, so the first sweep recovers a missed slot.
+let sweptSlot = "";
 
 export function startAutoRoomWorker(client: Client): void {
   if (timer) {
@@ -29,29 +30,31 @@ export function stopAutoRoomWorker(): void {
   }
 }
 
-function slotKey(now: Date): string | null {
-  const hour = now.getUTCHours();
-  if (!SLOT_HOURS.has(hour)) {
-    return null;
-  }
-  return `${now.toISOString().slice(0, 10)}-${String(hour).padStart(2, "0")}`;
-}
-
+// Each tournament stores the last slot it handled, so a slot missed while the bot was down
+// is opened once when it comes back (only the latest one, never a backlog).
 async function flushSlot(client: Client): Promise<void> {
-  const key = slotKey(new Date());
   const actor = client.user;
-  if (!key || key === lastSlot || flushing || !actor) {
+  if (flushing || !actor) {
     return;
   }
-  lastSlot = key;
   flushing = true;
   try {
+    const now = new Date();
+    const slot = latestSlot(now);
+    if (slot.key === sweptSlot) {
+      return;
+    }
+    const late = isLateSlot(slot, now);
     const tournaments = await listRunningAutoRooms();
     for (const tournament of tournaments) {
       if (!isAllowedGuild(tournament.guildId)) {
         continue;
       }
       try {
+        // Claim before opening: a failed run is not retried every minute, as before.
+        if ((await claimAutoRoomSlot(tournament.id, slot.key)) !== "claimed") {
+          continue;
+        }
         const guild =
           client.guilds.cache.get(tournament.guildId) ?? (await client.guilds.fetch(tournament.guildId));
         const result = await openPendingTickets(guild, tournament, undefined, actor);
@@ -76,15 +79,18 @@ async function flushSlot(client: Client): Promise<void> {
           guild,
           channelId: settings.botLogsChannelId,
           title: auditLogTitles.botLogs,
-          description:
-            result.created.length === 1
+          description: late
+            ? `Auto-room recovered a missed slot and opened battle tickets for **${tournament.name}**.`
+            : result.created.length === 1
               ? `Auto-room opened a battle ticket for **${tournament.name}**.`
               : `Auto-room opened battle tickets for **${tournament.name}**.`,
           details: [
             `**Tournament:** **${tournament.name}**`,
             `**Tickets created:** \`${result.created.length}\``,
             ...shown,
-            `**When:** \`00:00 / 12:00 UTC\``,
+            late
+              ? `**Slot:** \`${slotLabel(slot.startsAt)}\` *(recovered after the bot was offline)*`
+              : `**Slot:** \`${slotLabel(slot.startsAt)}\``,
           ],
           actor,
         });
@@ -93,7 +99,12 @@ async function flushSlot(client: Client): Promise<void> {
         console.error(`Auto-room flush failed for ${tournament.name}: ${message}`, error);
       }
     }
+    sweptSlot = slot.key;
   } finally {
     flushing = false;
   }
+}
+
+function slotLabel(startsAt: Date): string {
+  return `${startsAt.toISOString().slice(0, 10)} ${String(startsAt.getUTCHours()).padStart(2, "0")}:00 UTC`;
 }

@@ -1,5 +1,6 @@
 import type { Prisma, Tournament as TournamentRow } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
+import { latestSlot } from "../auto-room/slot.js";
 import { isTeamFormat, type TeamFormat, type TournamentRecord, type TournamentWorld } from "./fields.js";
 import type { ParsedSheet, ExtraField, SheetTeam } from "./sheet.js";
 
@@ -151,9 +152,29 @@ export async function findTournamentByName(guildId: string, name: string): Promi
 export async function setAutoRoomRunning(id: string, running: boolean): Promise<TournamentRecord> {
   const row = await prisma.tournament.update({
     where: { id },
-    data: { autoRoomRunning: running },
+    // Turning on opens the queue right away, so the slot already under way counts as handled.
+    data: running ? { autoRoomRunning: true, autoRoomLastSlot: latestSlot(new Date()).key } : { autoRoomRunning: false },
   });
   return toRecord(row);
+}
+
+/**
+ * Take this slot for one tournament. Only one caller wins, so a slot never opens twice.
+ * Returns "first-seen" for rows that predate slot tracking: they are stamped without opening.
+ */
+export async function claimAutoRoomSlot(id: string, slotKey: string): Promise<"claimed" | "first-seen" | "taken"> {
+  const firstSeen = await prisma.tournament.updateMany({
+    where: { id, autoRoomRunning: true, OR: [{ autoRoomLastSlot: null }, { autoRoomLastSlot: { isSet: false } }] },
+    data: { autoRoomLastSlot: slotKey },
+  });
+  if (firstSeen.count === 1) {
+    return "first-seen";
+  }
+  const claimed = await prisma.tournament.updateMany({
+    where: { id, autoRoomRunning: true, NOT: { autoRoomLastSlot: slotKey } },
+    data: { autoRoomLastSlot: slotKey },
+  });
+  return claimed.count === 1 ? "claimed" : "taken";
 }
 
 export async function listRunningAutoRooms(): Promise<TournamentRecord[]> {
