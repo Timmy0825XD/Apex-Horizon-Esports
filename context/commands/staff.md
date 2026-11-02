@@ -2,7 +2,7 @@
 
 Actores: [../product/actors.md](../product/actors.md). Nómina: [../domains/attendance-payroll.md](../domains/attendance-payroll.md).
 
-Slash: comando `staff`. Grupo `config` (`set` · `edit` · `view`) más subcomandos `recruit` · `fire` · `work`.
+Slash: comando `staff`. Grupos `config` (`set` · `edit` · `view`) e `info` (`add` · `edit` · `export`), más subcomandos `recruit` · `fire` · `work`.
 
 `config set` / `edit` / `view` son paneles **Components V2**. `recruit` y `fire` responden en V2; el welcome de recruit en staff chat también es V2 (mención + panel). `work` se publica en el canal: un Components V2.
 
@@ -28,7 +28,7 @@ Admin (Administrator de Discord **o** `admin_role`). Si ya hay config, usar `edi
 | staffchat_channel | CHANNEL | Sí | Bienvenida al reclutar |
 | staff_announcement_channel | CHANNEL | Sí | Enlace en welcome |
 | staff_rules_channel | CHANNEL | Sí | Enlace en welcome |
-| staff_details_channel | CHANNEL | Sí | Enlace en welcome |
+| staff_details_channel | CHANNEL | Sí | Enlace en welcome y tarjetas de `/staff info` |
 
 Canales: texto o announcement. Los paneles de `set` y `edit` llevan el **icono del bot** como thumbnail. Audita en bot_logs. No toca `/settings`.
 
@@ -41,6 +41,31 @@ Mismos campos, todos opcionales; al menos uno, y tiene que cambiar el valor guar
 ## `/staff config view`
 
 Solo lectura de la jerarquía (menciones; marca roles/canales que ya no existen; T1/T2 *Not configured* si faltan). No audita. Admin.
+
+## `/staff info add`
+
+**Para qué:** Directorio del staff con Discord ID, Discord Tag, Game ID y Game Name, para no tener que pedirlos cada vez.
+
+Solo `staff_role`. Sin opciones: el slash abre un **modal** con dos campos, **Game ID** y **Game Name**. Discord ID y tag (username) los pone el bot desde quien ejecuta. Requiere `/staff config set`. Si la persona ya tiene registro, responde con error y enlaza `/staff info edit`; no abre el modal.
+
+| Campo del modal | Regla |
+|---|---|
+| Game ID | Hex de **8–16** caracteres. Se quitan espacios y se guarda en mayúsculas (misma regla que `/sheet validate`). Único por servidor. |
+| Game Name | 1–32 caracteres, texto libre. |
+
+Al enviar: guarda el registro (`StaffInfo`, uno por persona y servidor), publica en `staff_details_channel` una tarjeta **Components V2** *Staff Member Info* (mención sin ping y avatar; bloques **Discord** (ID, tag) y **Game** (ID, nombre); **Staff Roles** con un rol por línea; pie con fechas) y guarda el id del mensaje. Responde **efímero** en V2 con lo guardado y dónde quedó la tarjeta. Si la tarjeta no se puede publicar, el registro se queda y la respuesta lo avisa. Audita (**Staff**, *Staff info registered*).
+
+## `/staff info edit`
+
+Solo `staff_role`, y solo su propia info. Mismo modal con los valores actuales precargados. Al menos un valor tiene que cambiar. Mismas reglas de Game ID y Game Name; el tag se refresca. **Reescribe** la tarjeta ya publicada; si la borraron, publica una nueva. Responde efímero. Audita (**Staff**, *Staff info updated*, valor viejo → nuevo).
+
+## `/staff info export`
+
+Solo Organiser. Lectura: no audita. Responde efímero con un V2 y un `.xlsx` (`staff-info-AAAA-MM-DD.xlsx`, hoja *Staff Info*, cabecera fija y autofiltro).
+
+Columnas: # · Discord Tag · Discord ID · Game Name · Game ID · Staff Roles · Status · Registered · Updated. Tag y roles se leen de Discord **al exportar** (si la persona ya no está, se usa el tag guardado). Status: *Active* (tiene `staff_role`), *No staff role* o *Left server*. Orden: por Status y luego por tag. Si no hay registros, responde un V2 de info sin archivo.
+
+`/staff fire` **no** borra el registro; el export lo marca por Status.
 
 ## `/staff recruit`
 

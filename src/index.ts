@@ -19,7 +19,7 @@ import { handleTicketSlash } from "./commands/ticket/handle.js";
 import { handleRoleSlash } from "./commands/role/handle.js";
 import { handleServerSlash } from "./commands/server/handle.js";
 import { handleSettingsSlash } from "./commands/settings/handle.js";
-import { handleStaffAuto, handleStaffSlash } from "./commands/staff/handle.js";
+import { handleStaffAuto, handleStaffModal, handleStaffSlash } from "./commands/staff/handle.js";
 import { handleSheetAuto, handleSheetSlash } from "./commands/sheet/handle.js";
 import { handleTeamAuto, handleTeamSlash } from "./commands/team/handle.js";
 import { handleTournamentAuto, handleTournamentButton, handleTournamentSlash } from "./commands/tournament/handle.js";
@@ -252,6 +252,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.isModalSubmit() && interaction.customId.startsWith("utility:")) {
       await handleUtilityModal(interaction);
+      return;
+    }
+
+    if (interaction.isModalSubmit() && interaction.customId.startsWith("staff:")) {
+      await handleStaffModal(interaction);
       return;
     }
 

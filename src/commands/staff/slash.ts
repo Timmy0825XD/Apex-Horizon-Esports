@@ -85,6 +85,20 @@ export const staffSlash = new SlashCommandBuilder()
         subcommand.setName("view").setDescription("Show staff roles and channels"),
       ),
   )
+  .addSubcommandGroup((group) =>
+    group
+      .setName("info")
+      .setDescription("Staff game IDs and names")
+      .addSubcommand((subcommand) =>
+        subcommand.setName("add").setDescription("Register your game ID and game name"),
+      )
+      .addSubcommand((subcommand) =>
+        subcommand.setName("edit").setDescription("Change your registered game ID or game name"),
+      )
+      .addSubcommand((subcommand) =>
+        subcommand.setName("export").setDescription("Download every staff member's info as a spreadsheet"),
+      ),
+  )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("recruit")

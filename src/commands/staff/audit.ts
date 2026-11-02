@@ -1,7 +1,8 @@
-import type { GuildSettings } from "@prisma/client";
-import type { ChatInputCommandInteraction, Guild } from "discord.js";
+import type { GuildSettings, StaffInfo } from "@prisma/client";
+import type { ChatInputCommandInteraction, Guild, ModalSubmitInteraction } from "discord.js";
 import { fact, publishAudit } from "../../lib/audit.js";
 import { formatChannel, formatRole, formatUser } from "../../lib/formatters.js";
+import { escapeDiscord } from "../room/labels.js";
 import { staffFields, type StaffInput } from "./fields.js";
 
 function fieldDetail(guild: Guild, staff: StaffInput, key: keyof StaffInput): string {
@@ -67,6 +68,39 @@ export async function auditStaffMembership(
         ? `${formatUser(targetId)} joined the staff as **${post}**.`
         : `${formatUser(targetId)} was removed from **${post}**.`,
     groups: [{ label: action === "recruit" ? "Roles given" : "Roles removed", lines: roleLines, inline: true }],
+    actor: interaction.user,
+  });
+}
+
+export async function auditStaffInfo(
+  interaction: ModalSubmitInteraction,
+  guild: Guild,
+  settings: GuildSettings,
+  before: StaffInfo | null,
+  after: StaffInfo,
+): Promise<void> {
+  const lines = before
+    ? [
+        before.gameId !== after.gameId ? fact("Game ID", `\`${before.gameId}\` → \`${after.gameId}\``) : "",
+        before.gameName !== after.gameName
+          ? fact("Game Name", `${escapeDiscord(before.gameName)} → ${escapeDiscord(after.gameName)}`)
+          : "",
+      ]
+    : [fact("Game ID", `\`${after.gameId}\``), fact("Game Name", escapeDiscord(after.gameName))];
+
+  await publishAudit({
+    guild,
+    channelId: settings.botLogsChannelId,
+    module: "staff",
+    action: before ? "updated" : "created",
+    title: before ? "Staff info updated" : "Staff info registered",
+    summary: before
+      ? `${formatUser(after.userId)} changed their staff info.`
+      : `${formatUser(after.userId)} registered their game ID and game name.`,
+    groups: [
+      { lines: [fact("Discord ID", `\`${after.userId}\``), fact("Discord Tag", escapeDiscord(after.discordTag))] },
+      { label: before ? "Changes" : "Game info", lines },
+    ],
     actor: interaction.user,
   });
 }

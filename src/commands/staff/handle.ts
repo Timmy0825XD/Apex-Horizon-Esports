@@ -1,10 +1,17 @@
-import { MessageFlags, type AutocompleteInteraction, type ChatInputCommandInteraction } from "discord.js";
+import {
+  MessageFlags,
+  type AutocompleteInteraction,
+  type ChatInputCommandInteraction,
+  type ModalSubmitInteraction,
+} from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { actorMatches } from "../../lib/command-access.js";
 import { staffCommandIdFor } from "../../lib/register-slash.js";
 import { handleStaffAutocomplete } from "./autocomplete.js";
 import { handleStaffConfigEdit } from "./edit.js";
 import { handleStaffFire } from "./fire.js";
+import { handleStaffInfoModal, handleStaffInfoOpen, STAFF_INFO_MODAL_PREFIX } from "./info.js";
+import { handleStaffInfoExport } from "./info-export.js";
 import { handleStaffRecruit } from "./recruit.js";
 import { handleStaffConfigSet } from "./set.js";
 import { handleStaffConfigView } from "./show.js";
@@ -40,6 +47,17 @@ export async function handleStaffSlash(interaction: ChatInputCommandInteraction)
     return;
   }
 
+  if (group === "info") {
+    if (sub === "add" || sub === "edit") {
+      await handleStaffInfoOpen(interaction, sub);
+      return;
+    }
+    if (sub === "export") {
+      await handleStaffInfoExport(interaction);
+    }
+    return;
+  }
+
   if (sub === "recruit") {
     await handleStaffRecruit(interaction, commandId);
     return;
@@ -69,5 +87,15 @@ export async function handleStaffAuto(interaction: AutocompleteInteraction): Pro
     if (!interaction.responded) {
       await interaction.respond([]).catch(() => undefined);
     }
+  }
+}
+
+export async function handleStaffModal(interaction: ModalSubmitInteraction): Promise<void> {
+  if (!isAllowedGuild(interaction.guildId)) {
+    await interaction.reply(unauthorized);
+    return;
+  }
+  if (interaction.customId.startsWith(STAFF_INFO_MODAL_PREFIX)) {
+    await handleStaffInfoModal(interaction);
   }
 }

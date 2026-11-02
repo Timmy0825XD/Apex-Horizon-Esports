@@ -184,6 +184,47 @@ Ninguna.
 
 - Hace falta que `/settings set` ya exista.
 
+### `/staff info add`
+
+- [ ] Admin
+- [ ] Organiser
+- [ ] Helper
+- [x] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
+
+- Solo `staff_role`. Administrator, `admin_role` o `manager_role` sin `staff_role` no entran.
+- Solo registra la info de quien ejecuta.
+- Hace falta que `/staff config set` ya exista.
+- Si quien ejecuta ya tiene registro, no se vuelve a usar.
+
+### `/staff info edit`
+
+- [ ] Admin
+- [ ] Organiser
+- [ ] Helper
+- [x] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
+
+- Solo `staff_role`. Solo cambia la info de quien ejecuta.
+- Hace falta un registro previo con `/staff info add`.
+- El envío del formulario repite el mismo control de acceso.
+
+### `/staff info export`
+
+- [ ] Admin
+- [x] Organiser
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
+
+- Organiser (`manager_role` o Administrator). `admin_role` no entra.
+
 ## Tournament
 
 ### `/tournament add`

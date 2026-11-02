@@ -38,11 +38,11 @@ function tagKey(value: string): string {
   return value.trim().replace(/^@+/, "").replace(/[\u200B-\u200D\uFEFF]/g, "").toLowerCase();
 }
 
-function gameKey(value: string): string {
+export function gameKey(value: string): string {
   return value.replace(/[\s\u200B-\u200D\uFEFF]/g, "").toUpperCase();
 }
 
-function isHexGameId(value: string): boolean {
+export function isHexGameId(value: string): boolean {
   return /^[0-9A-F]{8,16}$/.test(gameKey(value));
 }
 
