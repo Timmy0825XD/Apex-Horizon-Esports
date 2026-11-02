@@ -9,7 +9,7 @@ import {
   handleBracketSlash,
 } from "./commands/bracket/handle.js";
 import { handleBanAnnouncement, handleBanWatchButton, handleBanWatchSelect } from "./commands/ban-watch/handle.js";
-import { handleBotButton, handleBotSlash } from "./commands/bot/handle.js";
+import { handleBotButton, handleBotSelect, handleBotSlash } from "./commands/bot/handle.js";
 import { handleRoomAuto, handleRoomButton, handleRoomSlash } from "./commands/room/handle.js";
 import { handleScheduleButton } from "./commands/schedule/buttons.js";
 import { handleScheduleSlash } from "./commands/schedule/handle.js";
@@ -256,6 +256,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.isButton() && interaction.customId.startsWith("bot:")) {
       await handleBotButton(interaction, client);
+      return;
+    }
+
+    if (interaction.isStringSelectMenu() && interaction.customId.startsWith("bot:")) {
+      await handleBotSelect(interaction, client);
       return;
     }
 

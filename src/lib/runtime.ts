@@ -27,6 +27,44 @@ export function formatDuration(totalSeconds: number): string {
   return `${days}d ${hours}h ${minutes}m ${seconds}s`;
 }
 
+/** Short uptime for footers: `45s`, `1m 7s`, `3h 12m`, `2d 4h`. */
+export function compactDuration(totalSeconds: number): string {
+  const seconds = Math.floor(totalSeconds % 60);
+  const minutes = Math.floor(totalSeconds / 60) % 60;
+  const hours = Math.floor(totalSeconds / 3600) % 24;
+  const days = Math.floor(totalSeconds / 86400);
+  if (days > 0) {
+    return `${days}d ${hours}h`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+  return `${seconds}s`;
+}
+
+/** Memory the bot process uses, without the host total. */
+export function processMemory(): string {
+  return formatBytes(process.memoryUsage().rss);
+}
+
+export function hostMemory(): string {
+  return formatBytes(os.totalmem());
+}
+
+/** CPU model without vendor noise: "AMD EPYC 7763 64-Core Processor" → "AMD EPYC 7763". */
+export function shortCpuModel(): string {
+  return cpuModel()
+    .replace(/\((R|TM)\)/gi, "")
+    .replace(/\s+\d+-Core Processor/i, "")
+    .replace(/\s+CPU\s+@.*$/i, "")
+    .replace(/\s+Processor$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function memoryLine(): string {
   return `${formatBytes(process.memoryUsage().rss)} / ${formatBytes(os.totalmem())}`;
 }

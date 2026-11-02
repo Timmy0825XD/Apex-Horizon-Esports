@@ -7,7 +7,7 @@ Las mismas reglas de permiso y de “un partido / un schedule” aplican. Ver [.
 | Asignarse Judge / Recorder | Post del schedule | Da acceso al ticket; actualiza embeds |
 | Confirmed (T-10) | Recordatorio en el ticket | Evita expulsión a T-0 |
 | About / Help / Ping | Paneles de `/bot` | Cambia de vista en el mismo mensaje |
-| Paginación de help | `/bot help` | Previous / Next por familia de comandos |
+| Paginación de help | `/bot help` | Flechas ◀ ▶ por familia de comandos y menú **Jump to a section** para saltar a cualquiera. Mismo acceso que `/bot help` |
 | Paginación de salas | `/room available` | Previous / Next, 20 partidos por página |
 | Confirmar corrección de bracket | `/bracket correct` cuando hay tickets aguas abajo | Components V2 con logo de Challonge y la lista de tickets. Sin Aceptar no se borra ni se recrea nada |
 | Confirmar borrar categoría | `/utility clear category` | Sin confirmación no se borra nada |
