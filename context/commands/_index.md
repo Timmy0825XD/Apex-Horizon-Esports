@@ -32,6 +32,7 @@ Las **opciones** siguen en `snake_case` (`sheet_link`, `team1_score`, `discord_t
 | Tickets | [tickets.md](tickets.md) | `/ticket close` · `reopen` · `delete` |
 | Roles | [roles.md](roles.md) | `/role user` · `add all` · `remove all` · `list` |
 | Server y usuario | [server-user.md](server-user.md) | `/server info` · `banlist` · `tree` · `invites` · `/user ban` · `unban` |
+| Panel | [panel.md](panel.md) | `/panel tutorial` |
 | Utility | [utility.md](utility.md) | `/utility clear messages` · `clear category` · `emoji steal` · `random` · `utc` · `discord tag` · `avatar` · `toss` · `enlarge` · `embed create` · `embed edit` · `v2 create` · `v2 edit` |
 | Interacciones | [interactions.md](interactions.md) | Botones y menús (no slash) |
 | Acceso | [access.md](access.md) | Quién puede usar cada comando. Manda sobre el código |

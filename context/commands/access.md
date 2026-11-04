@@ -1089,3 +1089,19 @@ Ninguna.
 
 - Admin u Organiser.
 - Solo reescribe un mensaje V2 de este bot.
+
+## Panel
+
+### `/panel tutorial`
+
+- [x] Admin
+- [ ] Organiser
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
+
+- Admin es el `admin_role` de `/settings` o el permiso Administrator.
+- Los menús y botones del panel vuelven a comprobar que quien los pulsa es Admin.
+- Publica en el canal donde se ejecuta; el bot necesita poder enviar mensajes ahí.

@@ -59,6 +59,7 @@ src/
     ban-watch/         # avisos de baneo en bans_channel: lector, tarjetas y botones
     utility/           # /utility clear messages, utc, embed, v2, …
     schedule/          # /schedule y todo lo suyo (cuando exista)
+    panel/             # /panel tutorial: panel de selección, vista de guía y guides/ con el texto de cada comando
     ...
   workers/
 ```

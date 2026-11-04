@@ -15,6 +15,8 @@ Solo se auditan mutaciones. Extraer o visualizar información **no** genera log.
 | **Borrar** | Sí | `/tournament delete`, `/ticket delete`, `/attendance delete`, `/user unban` |
 | **Leer / listar / extraer** | No | `/bot ping`, `/settings show`, `/tournament list`, `/sheet find player`, `/sheet get`, `/sheet validate`, `/team info`, `/team list`, `/staff work`, `/server banlist` |
 
+`/panel tutorial` publica mensajes pero **no** audita: las guías son material informativo, no un cambio del servidor.
+
 - Se escribe el log **después de que la mutación tenga éxito**.
 - Fallar al loguear **nunca deshace** el comando. El log es testigo, no parte de la transacción.
 

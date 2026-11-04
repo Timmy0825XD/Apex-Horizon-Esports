@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "prisma generate && tsc",
-    "test": "tsx --test test/transcript.test.ts test/deadline.test.ts test/auto-room-slot.test.ts test/audit-card.test.ts test/report-checks.test.ts test/ban-watch.test.ts test/role-mass-view.test.ts test/bot-panels.test.ts",
+    "test": "tsx --test test/transcript.test.ts test/deadline.test.ts test/auto-room-slot.test.ts test/audit-card.test.ts test/report-checks.test.ts test/ban-watch.test.ts test/role-mass-view.test.ts test/bot-panels.test.ts test/panel-guides.test.ts",
     "thumbnail:preview": "tsx scripts/thumbnail-preview.ts",
     "start": "node dist/index.js",
     "postinstall": "prisma generate"

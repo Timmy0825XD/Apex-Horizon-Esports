@@ -8,6 +8,7 @@ import { attendanceSlash } from "../commands/attendance/slash.js";
 import { botSlash } from "../commands/bot/slash.js";
 import { getSlash } from "../commands/get/slash.js";
 import { linkSlash } from "../commands/link/slash.js";
+import { panelSlash } from "../commands/panel/slash.js";
 import { bracketSlash } from "../commands/bracket/slash.js";
 import { roomSlash } from "../commands/room/slash.js";
 import { ticketSlash } from "../commands/ticket/slash.js";
@@ -24,7 +25,7 @@ import { utilitySlash } from "../commands/utility/slash.js";
 import { env } from "./env.js";
 import { formatHelpEntry } from "./formatters.js";
 
-const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
+export const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
   botSlash.toJSON(),
   settingsSlash.toJSON(),
   serverSlash.toJSON(),
@@ -42,6 +43,7 @@ const slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
   attendanceSlash.toJSON(),
   linkSlash.toJSON(),
   getSlash.toJSON(),
+  panelSlash.toJSON(),
 ].map(omitOptionalRequired);
 
 function omitOptionalRequired(value: RESTPostAPIChatInputApplicationCommandsJSONBody): RESTPostAPIChatInputApplicationCommandsJSONBody {

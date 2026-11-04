@@ -10,6 +10,7 @@ import {
 } from "./commands/bracket/handle.js";
 import { handleBanAnnouncement, handleBanWatchButton, handleBanWatchSelect } from "./commands/ban-watch/handle.js";
 import { handleBotButton, handleBotSelect, handleBotSlash } from "./commands/bot/handle.js";
+import { handlePanelButton, handlePanelSelect, handlePanelSlash } from "./commands/panel/handle.js";
 import { handleRoomAuto, handleRoomButton, handleRoomSlash } from "./commands/room/handle.js";
 import { handleScheduleButton } from "./commands/schedule/buttons.js";
 import { handleScheduleSlash } from "./commands/schedule/handle.js";
@@ -174,6 +175,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    if (interaction.isChatInputCommand() && interaction.commandName === "panel") {
+      await handlePanelSlash(interaction);
+      return;
+    }
+
     if (interaction.isAutocomplete() && interaction.commandName === "staff") {
       await handleStaffAuto(interaction);
       return;
@@ -261,6 +267,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith("bot:")) {
       await handleBotSelect(interaction, client);
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId.startsWith("panel:")) {
+      await handlePanelButton(interaction);
+      return;
+    }
+
+    if (interaction.isStringSelectMenu() && interaction.customId.startsWith("panel:")) {
+      await handlePanelSelect(interaction);
       return;
     }
 
