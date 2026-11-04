@@ -1,37 +1,12 @@
-import type { Attendance, Match } from "@prisma/client";
 import type { ChatInputCommandInteraction } from "discord.js";
 import { actorMatches } from "../../lib/command-access.js";
-import { watchButtons } from "../attendance/buttons.js";
-import { hasRecordingLink, isDefaultWin } from "../attendance/payroll.js";
+import { v2Flags } from "../../lib/v2.js";
+import { watchPanelButtons } from "../attendance/buttons.js";
 import { deferPublic, editAttendance } from "../attendance/respond.js";
 import { findGuildTournament, listUserAttendance, matchesById } from "../attendance/store.js";
-import { attendanceError, historyEmbed, matchSummary, pagerRow, roleLabel } from "../attendance/view.js";
+import { attendanceError, historyEntry, historyMessage } from "../attendance/view.js";
 
 const PAGE = 5;
-
-function relative(date: Date): string {
-  return `<t:${Math.floor(date.getTime() / 1000)}:R>`;
-}
-
-function linkStatus(row: Attendance): string {
-  if (hasRecordingLink(row.links)) {
-    return `${row.links.length} link(s)`;
-  }
-  if (isDefaultWin(row.remark)) {
-    return "Link not required";
-  }
-  return "Missing links";
-}
-
-function line(userId: string, row: Attendance, match: Match | undefined): string {
-  const links = linkStatus(row);
-  const dw = isDefaultWin(row.remark) ? " · `DW`" : "";
-  return [
-    matchSummary(match ?? null, row.challongeMatchId),
-    `**${roleLabel(userId, row.judgeId, row.recorderId)}** · \`${row.team1Score}\` - \`${row.team2Score}\` · ${links}${dw}`,
-    relative(row.createdAt),
-  ].join("\n");
-}
 
 export async function handleGetAttendance(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = interaction.guild;
@@ -75,32 +50,42 @@ export async function handleGetAttendance(interaction: ChatInputCommandInteracti
   );
   const pages = Math.max(1, Math.ceil(rows.length / PAGE));
   let page = 0;
-  const view = () => {
-    const slice = rows.slice(page * PAGE, page * PAGE + PAGE);
-    return {
-      embeds: [
-        historyEmbed({
-          tournamentName: tournament.name,
-          page,
-          pages: rows.length === 0 ? 1 : pages,
-          lines: rows.length === 0 ? ["*No attendance records for this member.*"] : slice.map((row) => line(user.id, row, faces.get(row.challongeMatchId))),
-        }),
-      ],
-      components: rows.length > PAGE ? [pagerRow("att:hist", page, pages)] : [],
-    };
-  };
-  const first = view();
-  const message = await interaction.editReply({ ...first, allowedMentions: { parse: [] } });
-  if (first.components.length === 0) {
+  const view = (disabled = false) =>
+    historyMessage({
+      userId: user.id,
+      avatarUrl: user.displayAvatarURL({ extension: "png", size: 256 }),
+      tournamentName: tournament.name,
+      total: rows.length,
+      page,
+      pages,
+      lines: rows
+        .slice(page * PAGE, page * PAGE + PAGE)
+        .map((row) => historyEntry(user.id, row, faces.get(row.challongeMatchId))),
+      disabled,
+    });
+  const opened = view();
+  const message = await interaction.editReply({
+    content: null,
+    embeds: [],
+    components: opened.components,
+    flags: v2Flags,
+    allowedMentions: { parse: [] },
+  });
+  if (pages <= 1) {
     return;
   }
-  await watchButtons(interaction, message, first.components, (customId) => {
-    if (customId.endsWith(":prev")) {
-      page = Math.max(0, page - 1);
-    }
-    if (customId.endsWith(":next")) {
-      page = Math.min(pages - 1, page + 1);
-    }
-    return view();
-  });
+  await watchPanelButtons(
+    interaction,
+    message,
+    (customId) => {
+      if (customId.endsWith(":prev")) {
+        page = Math.max(0, page - 1);
+      }
+      if (customId.endsWith(":next")) {
+        page = Math.min(pages - 1, page + 1);
+      }
+      return view();
+    },
+    () => view(true),
+  );
 }
