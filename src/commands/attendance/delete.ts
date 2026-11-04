@@ -9,7 +9,7 @@ import { attachResultsLinks } from "../schedule/results.js";
 import { loadTicket } from "../schedule/ticket.js";
 import { attendanceAuditDetails, auditAttendance } from "./audit.js";
 import { v2Flags } from "../../lib/v2.js";
-import { deletedMessage } from "./view.js";
+import { deletedMessage, stageLabel } from "./view.js";
 import { deferPublic } from "./respond.js";
 import { listActiveAttendance } from "./store.js";
 
@@ -79,7 +79,16 @@ export async function handleAttendanceDelete(interaction: ChatInputCommandIntera
   const removed = deletedMessage({
     tournamentName: bundle.tournament.name,
     channelId: bundle.channel.id,
+    stage: stageLabel(bundle.match),
+    leftName: bundle.match.player1Name,
+    rightName: bundle.match.player2Name,
+    team1Score: rows[0].team1Score,
+    team2Score: rows[0].team2Score,
+    judgeId: rows[0].judgeId,
+    recorderId: rows[0].recorderId,
     reason,
+    deletedBy: interaction.user.id,
+    deletedAt: new Date(),
   });
   await interaction.editReply({
     content: null,

@@ -8,7 +8,7 @@ type AttendanceTournament = {
 import type { Guild, Message, TextChannel } from "discord.js";
 import { textChannel } from "../schedule/channel.js";
 import { v2Flags } from "../../lib/v2.js";
-import { eventsLinksText, markedMessage } from "./view.js";
+import { eventsLinksText, markedMessage, stageLabel } from "./view.js";
 
 const silent = { allowedMentions: { parse: [] as const } };
 
@@ -35,6 +35,7 @@ export async function postMarkedPair(
   const card = markedMessage({
     tournamentName: tournament.name,
     channelId: ticket.id,
+    stage: stageLabel(match),
     leftName: match.player1Name,
     rightName: match.player2Name,
     ...input,
@@ -92,6 +93,7 @@ export async function repaintAttendance(
   const card = markedMessage({
     tournamentName: tournament.name,
     channelId,
+    stage: stageLabel(match),
     judgeId: attendance.judgeId,
     recorderId: attendance.recorderId,
     team1Score: attendance.team1Score,

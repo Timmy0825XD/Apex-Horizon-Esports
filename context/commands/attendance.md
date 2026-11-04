@@ -15,7 +15,7 @@ Reglas: [../domains/attendance-payroll.md](../domains/attendance-payroll.md).
 | remark | STRING (Autocomplete) | No | `DW` |
 | link | STRING | No | YouTube, varias URLs separadas por espacios |
 
-Requiere schedule y hora alcanzada. Un activo por partido. Empate permitido. El mismo Components V2 queda en el ticket y en el canal de asistencia, sin thumbnail. Debajo del título van el marcador y **Tournament:**. Un separador, y después **Judge**, **Recorder** y **Channel**, cada etiqueta con su emoji y el valor en la línea siguiente. El footer es `Uploaded by` con mención y la fecha y hora. `Recording Link` solo entra si hay URLs. `Remark` solo si es `DW`. Si hay links y el torneo tiene `events_links`, publica un texto con partido, marcador y links, sin el nombre del torneo, y guarda su id. La respuesta del slash se borra. Audita `Attendance Marked`. Si el partido ya tiene `/schedule results add`, llama `attachResultsLinks` con esos links.
+Requiere schedule y hora alcanzada. Un activo por partido. Empate permitido. El mismo Components V2 verde queda en el ticket y en el canal de asistencia, sin thumbnail. Título `## Attendance Marked` y debajo, en `-#`, la fase (`Group X · Round N`, `Losers Round N`; sin grupo, solo la ronda). El marcador va en `###` con el emoji `winner` en el ganador, y debajo el torneo y la mención del ticket en una línea. Un separador, y después **Judge** y **Recorder** con su emoji y la mención al lado; si es la misma persona, una sola línea **Judge & Recorder**. `Remark` solo si es `DW`, con la nota de que no hace falta grabación. Los links son botones de enlace `Recording 1…N` (`Recording` si hay uno), 5 por fila, y solo entran si hay URLs. Separador y footer `Uploaded by` con mención y la fecha y hora. Si hay links y el torneo tiene `events_links`, publica un texto con partido, marcador y links, sin el nombre del torneo, y guarda su id. La respuesta del slash se borra. Audita `Attendance Marked`. Si el partido ya tiene `/schedule results add`, llama `attachResultsLinks` con esos links.
 
 ## `/attendance delete`
 
@@ -26,7 +26,7 @@ Requiere schedule y hora alcanzada. Un activo por partido. Empate permitido. El 
 | confirm | BOOLEAN | Sí |
 | reason | STRING | No |
 
-Creador, admin u organiser. `confirm` tiene que ser true. Soft-delete de todas las activas de ese ticket. Se borran el aviso del ticket y el del canal de asistencia. Los posts de `events_links` no se tocan. La respuesta del comando, en el canal, es el Components V2 rojo `Attendance Deleted`. Los errores siguen efímeros. Llama `attachResultsLinks` con la lista vacía. Audita `Attendance Deleted`.
+Creador, admin u organiser. `confirm` tiene que ser true. Soft-delete de todas las activas de ese ticket. Se borran el aviso del ticket y el del canal de asistencia. Los posts de `events_links` no se tocan. La respuesta del comando, en el canal, es el Components V2 rojo `Attendance Deleted` con el mismo layout que el de `mark` (fase, marcador, torneo y ticket, judge y recorder del registro borrado), el `reason` en cita solo si lo hay, y el footer `Deleted by` con mención y la fecha y hora. Los errores siguen efímeros. Llama `attachResultsLinks` con la lista vacía. Audita `Attendance Deleted`.
 
 ## `/attendance report`
 
@@ -37,7 +37,7 @@ Ficha de **una persona**. Sustituye a `/work_done` y usa la misma lectura: no es
 | tournament | STRING (Autocomplete) | Sí |
 | user | USER | No | Por defecto, quien ejecuta |
 
-La propia ficha: staff, judge, recorder, helper, admin u organiser. La de otro: solo admin u organiser. Cualquier canal. Respuesta pública. Incluye los DW. La tarifa sale del formato guardado del torneo (`4vs4`/`5vs5` por game, el resto por partido; sin formato, por partido). Empieza en ArtCoin. Components V2 con acento amarillo neón: botones **GOLD** y **AC**, separador, título grande con `stats` y el avatar, torneo y tipo en una línea, **Judge** y **Recorder** con su emoji y la cifra al lado, **Both Roles**, separador y **Total** con el emoji de la moneda elegida. Los botones duran 2 minutos. No audita.
+La propia ficha: staff, judge, recorder, helper, admin u organiser. La de otro: solo admin u organiser. Cualquier canal. Respuesta pública. Incluye los DW. La tarifa sale del formato guardado del torneo (`4vs4`/`5vs5` por game, el resto por partido; sin formato, por partido). Empieza en ArtCoin. Components V2 con acento amarillo neón: section con `## Salary Report` (emoji `stats`), la mención de la persona y el torneo con el tipo (`Per game` / `Per match`), y su avatar como thumbnail. Separador, y **Judge**, **Recorder** y **Both Roles** con su emoji, la cifra y cuántos partidos suma (y games si es por game). Separador, **Total** en `##` con el emoji y la unidad de la moneda elegida, y debajo en `-#` las tarifas del tipo en esa moneda. Los botones **GOLD** y **AC** van al final y duran 2 minutos. No audita.
 
 ## `/get attendance`
 
@@ -70,7 +70,7 @@ Solo el recorder de esa asistencia, y con permiso de herramientas de asistencia.
 
 ## `/link delete`
 
-Mismos `tournament` + `match`. Recorder de esa asistencia, admin u organiser. Si no hay links, no borra nada y responde con un Components V2 de aviso. Si hay, vacía todos, reescribe los dos V2 sin la línea de recording, borra los posts guardados de `events_links` y llama `attachResultsLinks` con la lista vacía. La respuesta es un Components V2 rojo con el conteo, el torneo y el partido. Audita `Recording Links Deleted` solo cuando sí borra.
+Mismos `tournament` + `match`. Recorder de esa asistencia, admin u organiser. Si no hay links, no borra nada y responde con un Components V2 de aviso. Si hay, vacía todos, reescribe los dos V2 sin los botones de grabación, borra los posts guardados de `events_links` y llama `attachResultsLinks` con la lista vacía. La respuesta es un Components V2 rojo con el conteo, el torneo y el partido. Audita `Recording Links Deleted` solo cuando sí borra.
 
 ## `/link missing`
 
