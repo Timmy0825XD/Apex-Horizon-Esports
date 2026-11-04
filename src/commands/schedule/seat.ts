@@ -1,8 +1,10 @@
 import type { Prisma } from "@prisma/client";
-import type { TextChannel } from "discord.js";
+import { ContainerBuilder, type TextChannel } from "discord.js";
 import { prisma } from "../../lib/prisma.js";
 import { emojis } from "../../emojis.js";
 import { formatUser } from "../../lib/formatters.js";
+import { textBlock, v2Flags } from "../../lib/v2.js";
+import { toneColor } from "./respond.js";
 
 export type Seat = "judge" | "recorder";
 
@@ -67,9 +69,14 @@ export function seatResignedLine(seat: Seat, userId: string): string {
   return `${emoji} ${formatUser(userId)} resigned as **${label}** for this match ${emojis.resign}`;
 }
 
-export async function postSeatLine(channel: TextChannel, line: string, userId: string): Promise<string> {
+/**
+ * Posts a seat notice in the ticket as a one-line Components V2: green when someone takes a seat,
+ * orange when a seat is left. The member is pinged.
+ */
+export async function postSeatLine(channel: TextChannel, line: string, userId: string, tone: "success" | "warning" = "success"): Promise<string> {
   const message = await channel.send({
-    content: line,
+    components: [new ContainerBuilder().setAccentColor(toneColor[tone]).addTextDisplayComponents(textBlock(line))],
+    flags: v2Flags,
     allowedMentions: { users: [userId], parse: [] },
   });
   return message.id;

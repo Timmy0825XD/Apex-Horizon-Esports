@@ -1,11 +1,12 @@
 import type { ChatInputCommandInteraction } from "discord.js";
-import { escapeDiscord } from "../room/labels.js";
+import { emojis } from "../../emojis.js";
+import { formatUser } from "../../lib/formatters.js";
+import { slashMention } from "../../lib/register-slash.js";
 import { prisma } from "../../lib/prisma.js";
 import { auditSchedule, peopleLine, ticketLine } from "./audit.js";
 import { revokeTicket } from "./channel.js";
 import { paintSchedule } from "./live.js";
-import { replySchedule, scheduleNotice } from "./respond.js";
-import { seatResignedLine } from "./seat.js";
+import { cardPayload, matchEyebrow, matchName, quote, replySchedule, scheduleCard, scheduleNotice, stampFooter } from "./respond.js";
 import type { TicketBundle } from "./ticket.js";
 
 export async function runResign(interaction: ChatInputCommandInteraction, bundle: TicketBundle): Promise<void> {
@@ -58,20 +59,28 @@ export async function runResign(interaction: ChatInputCommandInteraction, bundle
   await paintSchedule(guild, bundle.channel, bundle.settings, bundle.tournament, bundle.match, next, regenerate);
   const rawReason = interaction.options.getString("reason")?.trim() || null;
   const privateReason = rawReason === ".";
-  const dropped: string[] = [];
-  if (dropJudge && holdsJudge) {
-    dropped.push(seatResignedLine("judge", userId));
-  }
-  if (dropRecorder && holdsRecorder) {
-    dropped.push(seatResignedLine("recorder", userId));
-  }
+  const seats = [dropJudge && holdsJudge ? "**Judge**" : null, dropRecorder && holdsRecorder ? "**Recorder**" : null].filter(Boolean);
+  const blocks = [
+    `${formatUser(userId)} left the ${seats.join(" and ")} seat${seats.length > 1 ? "s" : ""} for ${matchName(bundle.match.player1Name, bundle.match.player2Name)}.`,
+  ];
   if (rawReason && !privateReason) {
-    dropped.push(`**Reason:** ${escapeDiscord(rawReason)}`);
+    blocks.push(quote(rawReason));
   }
-  await replySchedule(interaction, {
-    content: dropped.join("\n"),
-    allowedMentions: { users: [userId], parse: [] },
-  });
+  blocks.push(`-# ${seats.length > 1 ? "Both seats are" : "The seat is"} open again and show${seats.length > 1 ? "" : "s"} up in ${slashMention(guild.id, "schedule unassigned")}.`);
+  await replySchedule(
+    interaction,
+    cardPayload(
+      scheduleCard({
+        tone: "warning",
+        emoji: emojis.resign,
+        eyebrow: matchEyebrow(bundle.tournament.name, bundle.match),
+        title: "Seat released",
+        blocks,
+        footer: stampFooter(null),
+      }),
+      [userId],
+    ),
+  );
   const details = [ticketLine(guild, bundle.channel.id), peopleLine(judgeId, recorderId)];
   if (privateReason) {
     details.push("**Reason** *private*");

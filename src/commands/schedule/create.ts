@@ -1,5 +1,5 @@
 import { MessageFlags, type ChatInputCommandInteraction, type Guild, type Message } from "discord.js";
-import { formatRole, formatUser } from "../../lib/formatters.js";
+import { formatUser } from "../../lib/formatters.js";
 import { prisma } from "../../lib/prisma.js";
 import { memberIsOrganiser } from "../../lib/organiser.js";
 import type { StaffInput } from "../staff/fields.js";
@@ -11,13 +11,13 @@ import { bookedAround, fullMinuteBody, fullMinuteTitle, minuteIsFull, staffBusyB
 import { grantTicket, markTicket, revokeTicket, textChannel } from "./channel.js";
 import { within } from "./deadline.js";
 import { attachmentUrl, deleteTracked, postBoardSchedule, postTicketSchedule, publishThumbnail } from "./messages.js";
-import { replySchedule, scheduleNotice } from "./respond.js";
+import { legacyNotice, replySchedule, scheduleNotice } from "./respond.js";
 import { createScheduleEvent } from "./event.js";
 import { bothSeatsAssignedLine, postSeatLine, seatAssignedLine } from "./seat.js";
 import { presentFace } from "./store.js";
 import { loadThumbnailFace, renderScheduleThumbnail } from "./thumbnail.js";
 import type { TicketBundle } from "./ticket.js";
-import type { ScheduleFace } from "./view.js";
+import { newSchedulePayload, type ScheduleFace } from "./view.js";
 
 export async function runCreate(interaction: ChatInputCommandInteraction, bundle: TicketBundle): Promise<void> {
   const { guild } = interaction;
@@ -170,7 +170,7 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
 
     boardMessageId = await within(
       15_000,
-      postBoardSchedule(guild, bundle.settings.schedulesChannelId, created.id, face),
+      postBoardSchedule(guild, bundle.settings.schedulesChannelId, created.id, face, created.claimsOpenUntil ?? null),
       "Schedules channel post",
       deleteLate,
     );
@@ -215,7 +215,7 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
   const staff = bundle.staff;
   const [pinged, audited] = await Promise.all([
     notify && staff
-      ? pingStaffChat(guild, staff, bundle.settings.schedulesChannelId, boardMessageId, when, Boolean(judgeId), Boolean(recorderId)).then(
+      ? pingStaffChat(guild, staff, bundle.settings.schedulesChannelId, boardMessageId, face, Boolean(judgeId), Boolean(recorderId)).then(
           () => true,
           (error: unknown) => {
             console.error("Schedule staff ping failed", error);
@@ -240,11 +240,11 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
     warnings.push("The audit log could not be written.");
   }
 
-  await replySchedule(interaction, scheduleNotice("success", "Schedule created", "Match scheduled successfully. Thumbnail generated."));
+  await replySchedule(interaction, legacyNotice("success", "Schedule created", "Match scheduled successfully. Thumbnail generated."));
   if (warnings.length) {
     await interaction
       .followUp({
-        ...scheduleNotice("info", "Finish manually", warnings.map((line) => `- ${line}`).join("\n")),
+        ...legacyNotice("info", "Finish manually", warnings.map((line) => `- ${line}`).join("\n")),
         flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral],
       })
       .catch(() => undefined);
@@ -293,14 +293,12 @@ async function rollback(guild: Guild, bundle: TicketBundle, published: Published
   }
 }
 
-const NEW_SCHEDULE_GIF = "https://tenor.com/view/check-schedule-f1livegp-gif-25992214";
-
 async function pingStaffChat(
   guild: Guild,
   staff: StaffInput,
   schedulesChannelId: string,
   messageId: string,
-  when: Date,
+  face: ScheduleFace,
   judgeAssigned: boolean,
   recorderAssigned: boolean,
 ): Promise<void> {
@@ -315,17 +313,17 @@ async function pingStaffChat(
     judgeAssigned ? null : staff.judgeRoleId,
     recorderAssigned ? null : staff.recorderRoleId,
   ].filter((id): id is string => Boolean(id));
-  const url = `https://discord.com/channels/${guild.id}/${schedulesChannelId}/${messageId}`;
-  const day = String(when.getUTCDate()).padStart(2, "0");
-  const month = String(when.getUTCMonth() + 1).padStart(2, "0");
-  const hour = String(when.getUTCHours()).padStart(2, "0");
-  const minute = String(when.getUTCMinutes()).padStart(2, "0");
+  const openSeats = [judgeAssigned ? null : ("judge" as const), recorderAssigned ? null : ("recorder" as const)].filter(
+    (seat): seat is "judge" | "recorder" => seat !== null,
+  );
+  const roleIds = [...new Set(roles)];
   await chat.send({
-    content: [
-      `[New Schedule](${NEW_SCHEDULE_GIF}) Take on role ${roles.map((id) => formatRole(guild, id)).join(" ")}.`,
-      `**Details:** ${day}-${month}-${when.getUTCFullYear()} - ${hour}:${minute} UTC`,
-      `**Link:** ${url}`,
-    ].join("\n"),
-    allowedMentions: { roles: [...new Set(roles)], parse: [] },
+    ...newSchedulePayload({
+      face,
+      roleIds,
+      openSeats,
+      boardUrl: `https://discord.com/channels/${guild.id}/${schedulesChannelId}/${messageId}`,
+    }),
+    allowedMentions: { roles: roleIds, parse: [] },
   });
 }

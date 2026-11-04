@@ -1,4 +1,4 @@
-import type { ChatInputCommandInteraction } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, type ChatInputCommandInteraction } from "discord.js";
 import { prisma } from "../../lib/prisma.js";
 import { loadGuildSettings } from "../settings/store.js";
 import { findTournamentById } from "../tournament/store.js";
@@ -10,7 +10,20 @@ import { isAtLeastTenMinutesAhead, utcFromParts, type ClockParts } from "./clock
 import { grantTicket, revokeTicket, ticketChannel } from "./channel.js";
 import { deleteTracked } from "./messages.js";
 import { paintSchedule } from "./live.js";
-import { replySchedule, scheduleNotice } from "./respond.js";
+import {
+  cardPayload,
+  legacyNotice,
+  linkButton,
+  matchEyebrow,
+  matchName,
+  replySchedule,
+  scheduleCard,
+  scheduleNotice,
+  shortUtc,
+  staffInline,
+  stampFooter,
+} from "./respond.js";
+import { emojis } from "../../emojis.js";
 import { closedSeatBody, closedSeatTitle, postSeatLine, seatAssignedLine, seatClashLine, seatResignedLine, seatsAreClosed, type Seat } from "./seat.js";
 import { bookedAround, fullMinuteBody, fullMinuteTitle, minuteIsFull, staffBusyBody, staffBusyTitle, staffClash } from "./conflicts.js";
 import { formatUser } from "../../lib/formatters.js";
@@ -202,21 +215,21 @@ export async function runUpdate(interaction: ChatInputCommandInteraction, bundle
   await paintSchedule(guild, bundle.channel, bundle.settings, bundle.tournament, bundle.match, next, regenerate || resetReminders, "staff");
   if (previousJudge && previousJudge !== judgeId) {
     const line = freedFrom("judge") ? seatClashLine("judge", previousJudge) : seatResignedLine("judge", previousJudge);
-    await postSeatLine(bundle.channel, line, previousJudge);
+    await postSeatLine(bundle.channel, line, previousJudge, "warning");
   }
   if (judgeId && judgeId !== previousJudge) {
     await postSeatLine(bundle.channel, seatAssignedLine("judge", judgeId), judgeId);
   }
   if (previousRecorder && previousRecorder !== recorderId) {
     const line = freedFrom("recorder") ? seatClashLine("recorder", previousRecorder) : seatResignedLine("recorder", previousRecorder);
-    await postSeatLine(bundle.channel, line, previousRecorder);
+    await postSeatLine(bundle.channel, line, previousRecorder, "warning");
   }
   if (recorderId && recorderId !== previousRecorder) {
     await postSeatLine(bundle.channel, seatAssignedLine("recorder", recorderId), recorderId);
   }
-  const updated = scheduleNotice("success", "Schedule updated", [ticketLine(guild, bundle.channel.id), peopleLine(judgeId, recorderId)].join("\n"));
+  const updated = legacyNotice("success", "Schedule updated", [ticketLine(guild, bundle.channel.id), peopleLine(judgeId, recorderId)].join("\n"));
   if (freed.length) {
-    const replacement = scheduleNotice("error", "Find a replacement", replacementBody(guild.id, freed));
+    const replacement = legacyNotice("error", "Find a replacement", replacementBody(guild.id, freed));
     updated.components = [...(updated.components ?? []), ...(replacement.components ?? [])];
   }
   await replySchedule(interaction, updated);
@@ -302,12 +315,23 @@ export async function runRefresh(interaction: ChatInputCommandInteraction): Prom
   });
   const painted = await paintSchedule(guild, ticket, settings, tournament, match, opened, false);
   const boardUrl = `https://discord.com/channels/${guild.id}/${settings.schedulesChannelId}/${painted.messages.scheduleChannelMessageId}`;
+  const openUntil = Math.floor((opened.claimsOpenUntil?.getTime() ?? Date.now()) / 1000);
   await replySchedule(
     interaction,
-    scheduleNotice(
-      "info",
-      "Schedule refreshed",
-      `The posts and claim buttons were renewed. The time did not change.\n**Link:** ${boardUrl}`,
+    cardPayload(
+      scheduleCard({
+        tone: "info",
+        emoji: emojis.open_close,
+        eyebrow: matchEyebrow(tournament.name, match),
+        title: "Claim buttons reopened",
+        blocks: [
+          `${matchName(match.player1Name, match.player2Name)} · \`${shortUtc(opened.scheduledAt)}\``,
+          `Assign stays open until <t:${openUntil}:t> (<t:${openUntil}:R>). The match time did not change.`,
+          staffInline(opened.judgeId, opened.recorderId),
+          new ActionRowBuilder<ButtonBuilder>().addComponents(linkButton("Go to schedule post", boardUrl)),
+        ],
+        footer: stampFooter("Refreshed", interaction.user.id),
+      }),
     ),
   );
   await auditSchedule({

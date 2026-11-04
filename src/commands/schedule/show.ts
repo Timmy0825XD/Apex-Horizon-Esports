@@ -2,32 +2,45 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ContainerBuilder,
   MessageFlags,
+  SectionBuilder,
   type ButtonInteraction,
   type ChatInputCommandInteraction,
   type Guild,
   type InteractionReplyOptions,
 } from "discord.js";
 import type { Schedule } from "@prisma/client";
-import { emojis, numberEmojis } from "../../emojis.js";
+import { emojis } from "../../emojis.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { customEmoji } from "../../lib/custom-emoji.js";
-import { embedColors } from "../../lib/embeds.js";
-import { formatChannel, formatUser } from "../../lib/formatters.js";
+import { formatUser } from "../../lib/formatters.js";
 import { prisma } from "../../lib/prisma.js";
-import { divider, textBlock, v2Flags } from "../../lib/v2.js";
-import { escapeDiscord, roundLabel } from "../room/labels.js";
+import { textBlock } from "../../lib/v2.js";
+import { escapeDiscord, roundTitle, scoreLine } from "../room/labels.js";
 import { loadGuildSettings } from "../settings/store.js";
 import { findTournamentById, objectIdLike } from "../tournament/store.js";
 import { actorMatches } from "../../lib/command-access.js";
 import { thumbnailImageUrl } from "./messages.js";
-import { replySchedule, scheduleNotice } from "./respond.js";
+import {
+  cardPayload,
+  channelUrl,
+  linkButton,
+  matchEyebrow,
+  quote,
+  replySchedule,
+  scheduleCard,
+  scheduleNotice,
+  seatEmoji,
+  shortUtc,
+  staffInline,
+  stampFooter,
+  type CardBlock,
+  type CardTone,
+} from "./respond.js";
 import { presentFace } from "./store.js";
 import { slashMention } from "../../lib/register-slash.js";
 
 const PAGE_SIZE = 5;
-const PENDING_COLOR = 0xf1c40f;
 const SHOW_FILTERS = ["all", "pending", "past", "overdue"] as const;
 
 export type ShowFilter = (typeof SHOW_FILTERS)[number];
@@ -43,6 +56,7 @@ type Listed = {
   schedule: Schedule;
   left: string;
   right: string;
+  round: number;
   tournamentName: string;
   status: ScheduleStatus;
 };
@@ -61,9 +75,22 @@ const STATUS_EMOJI: Record<ScheduleStatus, string> = {
 };
 
 const STATUS_LABEL: Record<ScheduleStatus, string> = {
-  pending: "PENDING",
-  completed: "COMPLETED",
-  overdue: "RESULT PENDING",
+  pending: "Pending",
+  completed: "Completed",
+  overdue: "Result pending",
+};
+
+const STATUS_TONE: Record<ScheduleStatus, CardTone> = {
+  pending: "pending",
+  completed: "success",
+  overdue: "danger",
+};
+
+const FILTER_TONE: Record<ShowFilter, CardTone> = {
+  all: "info",
+  pending: "pending",
+  past: "success",
+  overdue: "danger",
 };
 
 export function scheduleStatus(row: { results: unknown; scheduledAt: Date }, now = Date.now()): ScheduleStatus {
@@ -129,53 +156,6 @@ function parseShowCustomId(customId: string): { page: number; query: ShowQuery }
   };
 }
 
-function listStamp(when: Date): string {
-  const month = String(when.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(when.getUTCDate()).padStart(2, "0");
-  const hour = String(when.getUTCHours()).padStart(2, "0");
-  const minute = String(when.getUTCMinutes()).padStart(2, "0");
-  return `${when.getUTCFullYear()}-${month}-${day} ${hour}:${minute} UTC`;
-}
-
-function clockStamp(when: Date): string {
-  const day = String(when.getUTCDate()).padStart(2, "0");
-  const month = String(when.getUTCMonth() + 1).padStart(2, "0");
-  const hour = String(when.getUTCHours()).padStart(2, "0");
-  const minute = String(when.getUTCMinutes()).padStart(2, "0");
-  return `${day}-${month}-${when.getUTCFullYear()} ${hour}:${minute} UTC`;
-}
-
-function person(id: string | null | undefined): string {
-  return id ? formatUser(id) : "*Unassigned*";
-}
-
-function listAccent(filter: ShowFilter): number {
-  if (filter === "pending") {
-    return PENDING_COLOR;
-  }
-  if (filter === "overdue") {
-    return embedColors.error;
-  }
-  if (filter === "past") {
-    return embedColors.success;
-  }
-  return embedColors.info;
-}
-
-function statusAccent(status: ScheduleStatus): number {
-  if (status === "completed") {
-    return embedColors.success;
-  }
-  if (status === "overdue") {
-    return embedColors.error;
-  }
-  return PENDING_COLOR;
-}
-
-function payload(container: ContainerBuilder): InteractionReplyOptions {
-  return { components: [container], flags: v2Flags, allowedMentions: { parse: [] } };
-}
-
 function emptyCopy(query: ShowQuery, tournamentName: string | null): { title: string; body: string } {
   const who = query.userId ? formatUser(query.userId) : null;
   const event = tournamentName ? `**${escapeDiscord(tournamentName)}**` : null;
@@ -212,45 +192,6 @@ function emptyCopy(query: ShowQuery, tournamentName: string | null): { title: st
     title: "No schedules",
     body: phrase ? `No active tournament has ${phrase}.` : "No active tournament has a schedule.",
   };
-}
-
-function seatLine(schedule: { judgeId: string | null; recorderId: string | null }): string | null {
-  const parts: string[] = [];
-  if (schedule.judgeId) {
-    parts.push(`${emojis.judge} **J** ${formatUser(schedule.judgeId)}`);
-  }
-  if (schedule.recorderId) {
-    parts.push(`${emojis.recorder} **R** ${formatUser(schedule.recorderId)}`);
-  }
-  return parts.length > 0 ? parts.join("  ") : null;
-}
-
-function itemBlock(index: number, row: Listed): string {
-  const unix = Math.floor(row.schedule.scheduledAt.getTime() / 1000);
-  const badge = numberEmojis[index] ?? `**${index + 1}.**`;
-  const lines = [
-    `${badge} ${STATUS_EMOJI[row.status]} **${escapeDiscord(row.left)} vs ${escapeDiscord(row.right)}**`,
-    `<t:${unix}:R> (\`${listStamp(row.schedule.scheduledAt)}\`)`,
-    `${escapeDiscord(row.tournamentName)} | ${STATUS_LABEL[row.status]} | ${emojis.id} \`${row.schedule.challongeMatchId}\``,
-  ];
-  const staff = seatLine(row.schedule);
-  if (staff) {
-    lines.push(staff);
-  }
-  return lines.join("\n");
-}
-
-function listBody(rows: Listed[]): string {
-  const parts: string[] = [];
-  let previous: ScheduleStatus | null = null;
-  rows.forEach((row, index) => {
-    if (row.status !== previous) {
-      parts.push(`## ${STATUS_EMOJI[row.status]} ${STATUS_LABEL[row.status]}`);
-      previous = row.status;
-    }
-    parts.push(itemBlock(index, row));
-  });
-  return parts.join("\n\n");
 }
 
 function pager(page: number, pages: number, query: ShowQuery): ActionRowBuilder<ButtonBuilder> {
@@ -324,6 +265,7 @@ async function loadListed(
       schedule,
       left: match.player1Name,
       right: match.player2Name,
+      round: match.round,
       tournamentName: tournament.name,
       status,
     });
@@ -331,43 +273,69 @@ async function loadListed(
   return { rows, tournamentName };
 }
 
-function listMessage(query: ShowQuery, rows: Listed[], tournamentName: string | null, page: number): InteractionReplyOptions {
+function countsLine(rows: Listed[]): string {
+  const order: ScheduleStatus[] = ["pending", "completed", "overdue"];
+  return order
+    .map((status) => [status, rows.filter((row) => row.status === status).length] as const)
+    .filter(([, count]) => count > 0)
+    .map(([status, count]) => `**${count}** ${STATUS_LABEL[status].toLowerCase()}`)
+    .join(" · ");
+}
+
+function rowSection(guildId: string, row: Listed, showTournament: boolean): SectionBuilder {
+  const unix = Math.floor(row.schedule.scheduledAt.getTime() / 1000);
+  const where = [`<t:${unix}:R>`, `\`${shortUtc(row.schedule.scheduledAt)}\``, roundTitle(row.round)];
+  if (showTournament) where.push(escapeDiscord(row.tournamentName));
+  return new SectionBuilder()
+    .addTextDisplayComponents(
+      textBlock(
+        [
+          `**${escapeDiscord(row.left)} vs ${escapeDiscord(row.right)}**`,
+          where.join(" · "),
+          staffInline(row.schedule.judgeId ?? null, row.schedule.recorderId ?? null),
+        ].join("\n"),
+      ),
+    )
+    .setButtonAccessory(linkButton("Ticket", channelUrl(guildId, row.schedule.channelId)));
+}
+
+function listMessage(guildId: string, actorId: string, query: ShowQuery, rows: Listed[], tournamentName: string | null, page: number): InteractionReplyOptions {
+  const eyebrow = [`Filter: ${FILTER_LABEL[query.filter]}`];
+  if (tournamentName) eyebrow.push(`Tournament: ${escapeDiscord(tournamentName)}`);
+  if (query.userId) eyebrow.push(`Staff: ${formatUser(query.userId)}`);
   if (rows.length === 0) {
     const copy = emptyCopy(query, tournamentName);
-    return payload(
-      new ContainerBuilder()
-        .setAccentColor(embedColors.info)
-        .addTextDisplayComponents(textBlock(`# ${emojis.info} ${copy.title}`), textBlock(copy.body)),
-    );
+    return cardPayload(scheduleCard({ tone: "info", eyebrow: eyebrow.join(" · "), title: copy.title, blocks: [copy.body] }));
   }
 
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const safePage = Math.min(page, pages - 1);
   const slice = rows.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
-  const header = [
-    `${emojis.calendar} **Page:** \`${safePage + 1}/${pages}\``,
-    `${emojis.stats} **Schedules:** \`${rows.length}\``,
-    `${emojis.info} **Filter:** ${FILTER_LABEL[query.filter]}`,
-  ];
-  if (tournamentName) {
-    header.push(`${emojis.torneo} **Tournament:** ${escapeDiscord(tournamentName)}`);
+  const blocks: CardBlock[] = [countsLine(rows)];
+  let previous: ScheduleStatus | null = null;
+  for (const row of slice) {
+    if (row.status !== previous) {
+      blocks.push("divider", `### ${STATUS_EMOJI[row.status]} ${STATUS_LABEL[row.status]}`);
+      previous = row.status;
+    }
+    blocks.push(rowSection(guildId, row, !tournamentName));
   }
-  if (query.userId) {
-    header.push(`${emojis.judge_recorder} **Staff:** ${formatUser(query.userId)}`);
-  }
-
-  const container = new ContainerBuilder()
-    .setAccentColor(listAccent(query.filter))
-    .addTextDisplayComponents(textBlock(`# ${emojis.calendar} Schedules`), textBlock(header.join("\n")))
-    .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(listBody(slice)));
   if (pages > 1) {
-    container.addSeparatorComponents(divider()).addActionRowComponents(pager(safePage, pages, query));
+    blocks.push("divider", pager(safePage, pages, query));
   }
-  return payload(container);
+  return cardPayload(
+    scheduleCard({
+      tone: FILTER_TONE[query.filter],
+      emoji: emojis.calendar,
+      eyebrow: eyebrow.join(" · "),
+      title: "Schedules",
+      blocks,
+      footer: stampFooter("Requested", actorId),
+    }),
+  );
 }
 
-async function listPayload(guildId: string, query: ShowQuery, page: number): Promise<InteractionReplyOptions> {
+async function listPayload(guildId: string, actorId: string, query: ShowQuery, page: number): Promise<InteractionReplyOptions> {
   const loaded = await loadListed(guildId, query);
   if (loaded === "bad-tour") {
     return scheduleNotice("error", "Unknown tournament", "Pick a tournament from the list.");
@@ -375,68 +343,20 @@ async function listPayload(guildId: string, query: ShowQuery, page: number): Pro
   if (loaded === "inactive") {
     return scheduleNotice("error", "Tournament inactive", "That tournament is no longer active, so its schedules stay hidden.");
   }
-  return listMessage(query, loaded.rows, loaded.tournamentName, page);
+  return listMessage(guildId, actorId, query, loaded.rows, loaded.tournamentName, page);
 }
 
-function clockLines(kind: "result" | "schedule", when: Date): string {
-  const unix = Math.floor(when.getTime() / 1000);
-  const prefix = kind === "result" ? "Result " : "";
-  return [`**${prefix}UTC Time:** \`${clockStamp(when)}\``, `**${prefix}Local Time:** <t:${unix}:F> (<t:${unix}:R>)`].join("\n");
+function isHttp(url: string | null | undefined): url is string {
+  return Boolean(url && /^https:\/\//i.test(url.trim()));
 }
 
-function resultLine(leftName: string, rightName: string, team1: number, team2: number): string {
-  const left = `**${escapeDiscord(leftName.toUpperCase())}**`;
-  const right = `**${escapeDiscord(rightName.toUpperCase())}**`;
-  const leftShown = team1 > team2 ? `${emojis.winner} ${left}` : left;
-  const rightShown = team2 > team1 ? `${emojis.winner} ${right}` : right;
-  return `${emojis.scoreboard} ${leftShown} \`${team1}\` ${emojis.vs} \`${team2}\` ${rightShown}`;
+function seatState(seat: "judge" | "recorder", userId: string | null, confirmed: boolean): string {
+  const label = seat === "judge" ? "Judge" : "Recorder";
+  if (!userId) return `${seatEmoji(seat)} ${label} · *Open*`;
+  return `${seatEmoji(seat)} ${label} · ${formatUser(userId)}${confirmed ? " · confirmed" : ""}`;
 }
 
-function linkLines(links: string[]): string | null {
-  const usable = links.map((link) => link.trim()).filter((link) => /^https?:\/\//i.test(link));
-  if (usable.length === 0) {
-    return null;
-  }
-  return usable.map((link, index) => `${emojis.link} [Link ${index + 1}](${link})`).join("\n");
-}
-
-function galleryUrls(thumbnail: string | undefined, proofs: string[]): string[] {
-  const seen = new Set<string>();
-  const urls: string[] = [];
-  for (const raw of [thumbnail, ...proofs]) {
-    const url = raw?.trim() ?? "";
-    if (!isGalleryUrl(url) || seen.has(url)) {
-      continue;
-    }
-    seen.add(url);
-    urls.push(url);
-    if (urls.length === 10) {
-      break;
-    }
-  }
-  return urls;
-}
-
-function isGalleryUrl(url: string): boolean {
-  if (!/^https:\/\//i.test(url)) {
-    return false;
-  }
-  const path = url.split("?")[0]?.toLowerCase() ?? "";
-  if (/\.(png|jpe?g|gif|webp)$/.test(path)) {
-    return true;
-  }
-  return path.includes("cdn.discordapp.com/") || path.includes("media.discordapp.net/");
-}
-
-function messageUrl(guildId: string, channelId: string, messageId: string): string {
-  return `https://discord.com/channels/${guildId}/${channelId}/${messageId}`;
-}
-
-function linkButton(label: string, url: string): ButtonBuilder {
-  return new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel(label).setURL(url).setEmoji(customEmoji(emojis.link));
-}
-
-async function detailPayload(guild: Guild, scheduleId: string): Promise<InteractionReplyOptions> {
+async function detailPayload(guild: Guild, actorId: string, scheduleId: string): Promise<InteractionReplyOptions> {
   if (!objectIdLike(scheduleId)) {
     return scheduleNotice("error", "Unknown match", "Pick a match from the list.");
   }
@@ -461,90 +381,62 @@ async function detailPayload(guild: Guild, scheduleId: string): Promise<Interact
     : undefined;
   const face = await presentFace(guild, tournament, match, schedule, imageUrl);
   const status = scheduleStatus(schedule);
-  const when = schedule.results?.declaredAt ?? schedule.scheduledAt;
-  const meta = [`${emojis.torneo} **Tournament:** ${escapeDiscord(tournament.name)}`];
-  if (match.group) {
-    meta.push(`${emojis.challonge} **Group:** ${escapeDiscord(match.group)}`);
+  const results = schedule.results;
+
+  const statusParts = [`${STATUS_EMOJI[status]} **${STATUS_LABEL[status]}**`];
+  if (results) {
+    statusParts.push(`result <t:${Math.floor(results.declaredAt.getTime() / 1000)}:f>`);
+    if (results.uploadedBy) statusParts.push(`by ${formatUser(results.uploadedBy)}`);
+  } else {
+    const unix = Math.floor(schedule.scheduledAt.getTime() / 1000);
+    statusParts.push(`<t:${unix}:F> (<t:${unix}:R>)`);
   }
-  meta.push(
-    `${emojis.challonge} **Round:** ${roundLabel(match.round)}`,
-    `${emojis.textChannel} **Channel:** ${formatChannel(guild, schedule.channelId)}`,
-    `${emojis.id} **Match ID:** \`${schedule.challongeMatchId}\``,
+  statusParts.push(`Match \`${schedule.challongeMatchId}\``);
+
+  const after: CardBlock[] = [statusParts.join(" · "), { gallery: isHttp(imageUrl) ? [imageUrl] : [] }];
+  if (results) {
+    const outcome = [`### ${emojis.winner} Result`, scoreLine(match.player1Name, match.player2Name, results.team1Score, results.team2Score)];
+    if (results.notes) outcome.push(quote(results.notes));
+    after.push("divider", outcome.join("\n"));
+  } else if (schedule.remark) {
+    after.push("divider", ["### Remark", quote(schedule.remark)].join("\n"));
+  }
+  const captains = [face.captain1Id, face.captain2Id].map((id) => (id ? formatUser(id) : "*Unknown*")).join(" · ");
+  after.push(
+    "divider",
+    [
+      "### People",
+      `${emojis.captains} Captains · ${captains}`,
+      seatState("judge", schedule.judgeId ?? null, schedule.confirmations.judge),
+      seatState("recorder", schedule.recorderId ?? null, schedule.confirmations.recorder),
+    ].join("\n"),
   );
 
-  const people = [
-    `**Captain 1:** ${person(face.captain1Id)}`,
-    `**Captain 2:** ${person(face.captain2Id)}`,
-    "",
-    "**Staffs:**",
-    `${emojis.judge} **Judge:** ${person(schedule.judgeId)}`,
-    `${emojis.recorder} **Recorder:** ${person(schedule.recorderId)}`,
-  ].join("\n");
-
-  const outcome: string[] = [];
-  if (schedule.results) {
-    outcome.push("**Results:**", resultLine(match.player1Name, match.player2Name, schedule.results.team1Score, schedule.results.team2Score));
-    if (schedule.results.notes) {
-      outcome.push("", `**Remarks:** ${escapeDiscord(schedule.results.notes)}`);
-    }
-    const links = linkLines(schedule.results.links ?? []);
-    if (links) {
-      outcome.push("", "**Links:**", links);
-    }
-    if (schedule.results.transcriptUrl && /^https?:\/\//i.test(schedule.results.transcriptUrl)) {
-      outcome.push("", `${emojis.transcript} **Transcript:** ${emojis.link} [Click here](${schedule.results.transcriptUrl})`);
-    }
-  } else if (schedule.remark) {
-    outcome.push(`**Remark:** ${escapeDiscord(schedule.remark)}`);
-  }
-
-  const container = new ContainerBuilder()
-    .setAccentColor(statusAccent(status))
-    .addTextDisplayComponents(
-      textBlock(
-        `# ${emojis.torneo} ${escapeDiscord(match.player1Name.toUpperCase())} ${emojis.vs} ${escapeDiscord(match.player2Name.toUpperCase())}`,
-      ),
-      textBlock(`${STATUS_EMOJI[status]} **${STATUS_LABEL[status]}**`),
-      textBlock(clockLines(schedule.results ? "result" : "schedule", when)),
-    )
-    .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(meta.join("\n")))
-    .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(people));
-
-  if (outcome.length > 0) {
-    container.addSeparatorComponents(divider()).addTextDisplayComponents(textBlock(outcome.join("\n")));
-  }
-
-  const images = galleryUrls(imageUrl, schedule.results?.imageUrls ?? []);
-  if (images.length > 0) {
-    container.addMediaGalleryComponents((gallery) => {
-      for (const url of images) {
-        gallery.addItems((item) => item.setURL(url));
-      }
-      return gallery;
-    });
-  }
-
-  const footerId = schedule.results?.uploadedBy ?? schedule.createdBy;
-  const footerWhen = schedule.results?.declaredAt ?? schedule.createdAt;
-  if (footerId) {
-    const unix = Math.floor(footerWhen.getTime() / 1000);
-    const label = schedule.results?.uploadedBy ? "Uploaded by" : "Created by";
-    container.addTextDisplayComponents(textBlock(`-# ${label} ${formatUser(footerId)} · <t:${unix}:f>`));
-  }
-
-  const links: ButtonBuilder[] = [];
-  if (schedule.results?.messageId) {
-    links.push(linkButton("Result Post", messageUrl(guild.id, tournament.resultChannelId, schedule.results.messageId)));
-  }
+  const links: ButtonBuilder[] = [linkButton("Ticket", channelUrl(guild.id, schedule.channelId))];
   if (settings?.schedulesChannelId && schedule.messages.scheduleChannelMessageId) {
-    links.push(linkButton("Schedule Post", messageUrl(guild.id, settings.schedulesChannelId, schedule.messages.scheduleChannelMessageId)));
+    links.push(linkButton("Schedule post", channelUrl(guild.id, settings.schedulesChannelId, schedule.messages.scheduleChannelMessageId)));
   }
-  if (links.length > 0) {
-    container.addActionRowComponents(new ActionRowBuilder<ButtonBuilder>().addComponents(links));
+  if (results?.messageId) {
+    links.push(linkButton("Results post", channelUrl(guild.id, tournament.resultChannelId, results.messageId)));
   }
-  return payload(container);
+  if (isHttp(results?.transcriptUrl)) {
+    links.push(linkButton("Transcript", results.transcriptUrl.trim()));
+  }
+  (results?.links ?? []).filter(isHttp).forEach((url, index) => links.push(linkButton(`Recording ${index + 1}`, url.trim())));
+  after.push("divider");
+  for (let index = 0; index < links.length; index += 5) {
+    after.push(new ActionRowBuilder<ButtonBuilder>().addComponents(links.slice(index, index + 5)));
+  }
+
+  return cardPayload(
+    scheduleCard({
+      tone: STATUS_TONE[status],
+      eyebrow: matchEyebrow(tournament.name, match),
+      title: `${escapeDiscord(match.player1Name)} vs ${escapeDiscord(match.player2Name)}`,
+      blocks: after,
+      footer: stampFooter("Requested", actorId),
+    }),
+  );
 }
 
 export async function runShow(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -568,7 +460,7 @@ export async function runShow(interaction: ChatInputCommandInteraction): Promise
   }
   const matchId = interaction.options.getString("match");
   if (matchId) {
-    await replySchedule(interaction, await detailPayload(guild, matchId));
+    await replySchedule(interaction, await detailPayload(guild, interaction.user.id, matchId));
     return;
   }
   const query: ShowQuery = {
@@ -576,7 +468,7 @@ export async function runShow(interaction: ChatInputCommandInteraction): Promise
     tournamentId: interaction.options.getString("tour"),
     userId: interaction.options.getUser("user")?.id ?? null,
   };
-  await replySchedule(interaction, await listPayload(guild.id, query, 0));
+  await replySchedule(interaction, await listPayload(guild.id, interaction.user.id, query, 0));
 }
 
 export async function handleShowButton(interaction: ButtonInteraction): Promise<void> {
@@ -609,7 +501,7 @@ export async function handleShowButton(interaction: ButtonInteraction): Promise<
   }
   await interaction.deferUpdate();
   try {
-    const next = await listPayload(guild.id, parsed.query, parsed.page);
+    const next = await listPayload(guild.id, interaction.user.id, parsed.query, parsed.page);
     await interaction.editReply({
       components: next.components,
       allowedMentions: { parse: [] },

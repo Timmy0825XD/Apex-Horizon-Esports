@@ -1,41 +1,35 @@
-import { AttachmentBuilder, type Guild, type Message, type NewsChannel, type TextChannel } from "discord.js";
+import { AttachmentBuilder, MessageFlags, type Guild, type Message, type NewsChannel, type TextChannel } from "discord.js";
 import type { Schedule, ScheduleMessages } from "@prisma/client";
-import { emojis } from "../../emojis.js";
-import { formatRole, formatUser } from "../../lib/formatters.js";
 import { loadGuildStaffState } from "../staff/store.js";
 import { textChannel } from "./channel.js";
 import { seatsAreClosed } from "./seat.js";
-import { claimRow, claimsAreOpen, scheduleEmbed, urgentScheduleEmbed, type ScheduleFace } from "./view.js";
+import { boardPostPayload, claimRow, claimsAreOpen, postMentionIds, ticketPostPayload, urgentPayload, type ScheduleFace } from "./view.js";
 
 type PostChannel = TextChannel | NewsChannel;
 
 export type SchedulePing = "captains" | "staff" | "keep";
 
-function pingUsers(face: ScheduleFace, includeStaff: boolean): string[] {
-  const ids = [face.captain1Id, face.captain2Id];
-  if (includeStaff) {
-    ids.push(face.judgeId, face.recorderId);
-  }
-  const users: string[] = [];
-  for (const id of ids) {
-    if (id && !users.includes(id)) {
-      users.push(id);
+type PostBody = ReturnType<typeof ticketPostPayload> & { allowedMentions: { users?: string[]; parse: [] } };
+
+/**
+ * Edit a post in place when it is already Components V2. A post from before the V2 redesign (embed)
+ * cannot take the V2 layout through an edit, so it is replaced by a new message.
+ */
+async function sendOrEdit(channel: PostChannel, messageId: string | null, body: PostBody): Promise<string> {
+  if (messageId) {
+    const existing = await channel.messages.fetch(messageId).catch(() => null);
+    if (existing?.flags.has(MessageFlags.IsComponentsV2)) {
+      await existing.edit(body);
+      return existing.id;
+    }
+    if (existing) {
+      const sent = await channel.send(body);
+      await existing.delete().catch(() => undefined);
+      return sent.id;
     }
   }
-  return users;
-}
-
-function mentionLine(users: string[]): string | undefined {
-  return users.length ? users.map((id) => formatUser(id)).join(" ") : undefined;
-}
-
-function boardBody(face: ScheduleFace, scheduleId: string, unlocked: boolean, content?: string) {
-  return {
-    ...(content === undefined ? {} : { content }),
-    embeds: [scheduleEmbed(face)],
-    components: [claimRow(scheduleId, face.judgeId, face.recorderId, unlocked)],
-    allowedMentions: { parse: [] as const },
-  };
+  const sent = await channel.send(body);
+  return sent.id;
 }
 
 async function upsertBoard(
@@ -44,31 +38,27 @@ async function upsertBoard(
   face: ScheduleFace,
   scheduleId: string,
   unlocked: boolean,
-  content?: string,
+  openUntil: Date | null,
 ): Promise<string> {
-  const body = boardBody(face, scheduleId, unlocked, content);
-  if (messageId) {
-    const existing = await channel.messages.fetch(messageId).catch(() => null);
-    if (existing) {
-      await existing.edit(body);
-      return existing.id;
-    }
-  }
-  const sent = await channel.send(body);
-  return sent.id;
+  const body = {
+    ...boardPostPayload({ face, guildId: channel.guild.id, scheduleId, unlocked, openUntil }),
+    allowedMentions: { parse: [] as [] },
+  };
+  return sendOrEdit(channel, messageId, body);
 }
 
+/**
+ * The ticket post. A ping (captains on create, captains and staff on update) needs a new message,
+ * because Discord never notifies mentions added by an edit; the previous post is then removed.
+ */
 async function upsertTicket(channel: PostChannel, messageId: string | null, face: ScheduleFace, ping: SchedulePing): Promise<string> {
-  const users = ping === "keep" ? [] : pingUsers(face, ping === "staff");
-  const content = ping === "keep" ? undefined : mentionLine(users);
-  const notify = Boolean(content);
+  const users = ping === "keep" ? [] : postMentionIds(face, ping === "staff");
+  const shown = ping === "keep" ? postMentionIds(face, true) : users;
   const body = {
-    ...(content === undefined ? {} : { content }),
-    embeds: [scheduleEmbed(face)],
-    components: [],
-    allowedMentions: notify ? { users, parse: [] as const } : { parse: [] as const },
+    ...ticketPostPayload(face, shown),
+    allowedMentions: users.length ? { users, parse: [] as [] } : { parse: [] as [] },
   };
-  if (notify) {
+  if (users.length) {
     const sent = await channel.send(body);
     if (messageId) {
       const previous = await channel.messages.fetch(messageId).catch(() => null);
@@ -78,15 +68,7 @@ async function upsertTicket(channel: PostChannel, messageId: string | null, face
     }
     return sent.id;
   }
-  if (messageId) {
-    const existing = await channel.messages.fetch(messageId).catch(() => null);
-    if (existing) {
-      await existing.edit(body);
-      return existing.id;
-    }
-  }
-  const sent = await channel.send(body);
-  return sent.id;
+  return sendOrEdit(channel, messageId, body);
 }
 
 /** First ticket post of a new schedule: pings only the two captains. */
@@ -95,12 +77,18 @@ export async function postTicketSchedule(ticket: TextChannel, face: ScheduleFace
 }
 
 /** First schedules-channel post of a new schedule: names the captains without pinging them. */
-export async function postBoardSchedule(guild: Guild, schedulesChannelId: string, scheduleId: string, face: ScheduleFace): Promise<string> {
+export async function postBoardSchedule(
+  guild: Guild,
+  schedulesChannelId: string,
+  scheduleId: string,
+  face: ScheduleFace,
+  openUntil: Date | null,
+): Promise<string> {
   const board = await textChannel(guild, schedulesChannelId);
   if (!board) {
     throw new Error("The schedules channel is missing or is not a text channel.");
   }
-  return upsertBoard(board, null, face, scheduleId, true, mentionLine(pingUsers(face, false)));
+  return upsertBoard(board, null, face, scheduleId, true, openUntil);
 }
 
 export async function publishThumbnail(
@@ -149,9 +137,15 @@ export async function syncPosts(
     throw new Error("The schedules channel is missing or is not a text channel.");
   }
   const unlocked = claimsAreOpen(schedule.claimsOpenUntil) && !(await seatsAreClosed(schedule, roomStatus));
-  const line = ping === "keep" ? undefined : mentionLine(pingUsers(face, ping === "staff"));
   const ticketMessageId = await upsertTicket(ticket, schedule.messages.ticketMessageId, face, ping);
-  const scheduleChannelMessageId = await upsertBoard(board, schedule.messages.scheduleChannelMessageId, face, schedule.id, unlocked, line);
+  const scheduleChannelMessageId = await upsertBoard(
+    board,
+    schedule.messages.scheduleChannelMessageId,
+    face,
+    schedule.id,
+    unlocked,
+    schedule.claimsOpenUntil ?? null,
+  );
   const messages = { ...schedule.messages, ticketMessageId, scheduleChannelMessageId };
   if (messages.t0MessageId && face.alert) {
     await editUrgent(board, messages.t0MessageId, face, schedule.id, unlocked);
@@ -174,11 +168,8 @@ export async function publishUrgent(guild: Guild, schedulesChannelId: string, sc
       roleIds.push(staff.recorderRoleId);
     }
   }
-  const mentions = roleIds.map((id) => formatRole(guild, id)).join(" ");
   const sent = await board.send({
-    content: `${mentions} ${emojis.alert} **URGENT STAFF REPLACEMENT NEEDED!**`.trim(),
-    embeds: [urgentScheduleEmbed(face)],
-    components: [claimRow(scheduleId, face.judgeId, face.recorderId, true)],
+    ...urgentPayload({ face, scheduleId, unlocked: true, roleIds }),
     allowedMentions: { roles: roleIds, parse: [] },
   });
   return sent.id;
@@ -189,11 +180,13 @@ async function editUrgent(board: PostChannel, messageId: string, face: ScheduleF
   if (!existing) {
     return;
   }
-  await existing.edit({
-    embeds: [urgentScheduleEmbed(face)],
-    components: [claimRow(scheduleId, face.judgeId, face.recorderId, unlocked)],
-    allowedMentions: { parse: [] },
-  });
+  // Urgent posts from before the V2 redesign keep their embed; only their buttons are refreshed.
+  if (!existing.flags.has(MessageFlags.IsComponentsV2)) {
+    await existing.edit({ components: [claimRow(scheduleId, face.judgeId, face.recorderId, unlocked)], allowedMentions: { parse: [] } });
+    return;
+  }
+  const roleIds = existing.mentions.roles.map((role) => role.id);
+  await existing.edit({ ...urgentPayload({ face, scheduleId, unlocked, roleIds }), allowedMentions: { parse: [] } });
 }
 
 export async function replaceThumbnail(
