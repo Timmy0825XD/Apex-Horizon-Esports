@@ -178,6 +178,15 @@ function forwardsOf(message: Message): TranscriptForward[] {
   }));
 }
 
+function roleNameOf(message: Message): string | null {
+  const roles = message.member?.roles;
+  if (!roles) {
+    return null;
+  }
+  const role = roles.hoist ?? roles.highest;
+  return role.id === message.guildId ? null : role.name;
+}
+
 function snapshotMessage(message: Message, byId: Map<string, Message>): TranscriptMessage {
   const memberColor = message.member?.displayColor ?? 0;
   return {
@@ -192,6 +201,7 @@ function snapshotMessage(message: Message, byId: Map<string, Message>): Transcri
       displayName: message.member?.displayName ?? message.author.globalName ?? message.author.username,
       avatarUrl: message.author.displayAvatarURL({ extension: "png", size: 128 }),
       color: memberColor ? `#${memberColor.toString(16).padStart(6, "0")}` : null,
+      roleName: roleNameOf(message),
       bot: message.author.bot,
     },
     attachments: [...message.attachments.values()].flatMap((attachment) => {
@@ -236,6 +246,7 @@ export async function collectTicketSnapshot(ticket: TextChannel): Promise<Transc
   return {
     guildId: ticket.guild.id,
     guildName: ticket.guild.name,
+    guildIconUrl: ticket.guild.iconURL({ extension: "png", size: 128 }),
     channelId: ticket.id,
     channelName: ticket.name,
     channelTopic: ticket.topic,

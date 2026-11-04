@@ -27,6 +27,7 @@ function message(overrides: Partial<TranscriptMessage> = {}): TranscriptMessage 
       displayName: "Captain",
       avatarUrl: "https://cdn.discordapp.com/embed/avatars/0.png",
       color: "#57f287",
+      roleName: "Captain",
       bot: false,
     },
     attachments: [],
@@ -45,6 +46,7 @@ function snapshot(messages: TranscriptMessage[]): TranscriptSnapshot {
   return {
     guildId: "66666666666666666",
     guildName: "Apex <Horizon>",
+    guildIconUrl: null,
     channelId: "77777777777777777",
     channelName: "battle-final",
     channelTopic: "Tournament ID: 1 | Match ID: 2",
@@ -82,6 +84,7 @@ test("renderer includes commands, replies, embeds, V2 and message evidence", asy
       displayName: "Apex Bot",
       avatarUrl: "https://cdn.discordapp.com/embed/avatars/1.png",
       color: null,
+      roleName: null,
       bot: true,
     },
     reply: { messageId: first.id, authorName: "Captain", content: first.content },
@@ -138,19 +141,46 @@ test("renderer includes commands, replies, embeds, V2 and message evidence", asy
     ],
   });
 
-  const pages = await renderTranscriptPages(snapshot([first, second]), new Map(), "battle.html");
+  const third = message({
+    id: "10000000000000003",
+    createdAt: "2026-10-23T15:20:00.000Z",
+    content: "Thanks",
+    reply: { messageId: first.id, authorName: "Captain", content: first.content },
+  });
+
+  const pages = await renderTranscriptPages(snapshot([first, second, third]), new Map(), "battle.html");
   assert.equal(pages.length, 1);
   const html = pages[0].html;
-  assert.match(html, /Command used by/);
-  assert.match(html, /\/bracket upload/);
-  assert.match(html, /Original message/);
+  assert.match(html, /Captain<\/b><span>used<\/span><span class="command">\/bracket upload/);
+  assert.match(html, /href="#message-10000000000000001">Original message/);
   assert.match(html, /class="embed"/);
-  assert.match(html, /class="v2-container"/);
+  assert.match(html, /class="v2-container accent"/);
   assert.match(html, /Match Complete/);
   assert.match(html, /proof\.txt/);
   assert.match(html, /Good game/);
-  assert.match(html, /Technical details/);
+  assert.match(html, /Message details/);
   assert.match(html, /10000000000000002/);
+  assert.match(html, /class="app-tag">APP/);
+  assert.match(html, /Welcome to #battle-final!/);
+  assert.match(html, /Participants — 2/);
+  assert.match(html, /Captain — 1/);
+  assert.match(html, /<small>2 messages<\/small>/);
+  assert.match(html, /Apps — 1/);
+});
+
+test("each avatar is embedded once per page and grouped messages stay compact", async () => {
+  const avatarUrl = "https://cdn.discordapp.com/embed/avatars/0.png";
+  const pages = await renderTranscriptPages(
+    snapshot([
+      message({ id: "30000000000000001", content: "first" }),
+      message({ id: "30000000000000002", content: "second", createdAt: "2026-10-23T15:01:00.000Z" }),
+    ]),
+    new Map([[avatarUrl, "data:image/png;base64,QUJD"]]),
+    "group.html",
+  );
+  const html = pages[0].html;
+  assert.equal(html.split("data:image/png;base64,QUJD").length - 1, 1);
+  assert.match(html, /class="message compact" id="message-30000000000000002"/);
 });
 
 test("renderer splits oversized transcripts without losing message boundaries", async () => {
@@ -181,6 +211,7 @@ test("system messages stay plain text and forwards keep their visible content", 
           displayName: "Captain <script>",
           avatarUrl: "https://cdn.discordapp.com/embed/avatars/0.png",
           color: null,
+          roleName: null,
           bot: false,
         },
         forwards: [
@@ -199,7 +230,8 @@ test("system messages stay plain text and forwards keep their visible content", 
     "system.html",
   );
   const html = pages[0].html;
-  assert.match(html, /Captain &lt;script&gt; pinned a message/);
+  assert.match(html, /<b>Captain &lt;script&gt;<\/b> pinned a message/);
+  assert.match(html, /class="message system"/);
   assert.doesNotMatch(html, /Captain <script>/);
   assert.match(html, /Forwarded <strong>proof<\/strong>/);
   assert.match(html, /Forwarded message/);
