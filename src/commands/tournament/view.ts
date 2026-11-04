@@ -1,9 +1,14 @@
 import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   ContainerBuilder,
   MessageFlags,
   type Guild,
   type InteractionReplyOptions,
 } from "discord.js";
+import { customEmoji } from "../../lib/custom-emoji.js";
+import { escapeDiscord } from "../room/labels.js";
 import { emojis } from "../../emojis.js";
 import { embedColors } from "../../lib/embeds.js";
 import {
@@ -27,111 +32,167 @@ import { slashMention } from "../../lib/register-slash.js";
 
 export type TournamentPanelKind = "add" | "edit" | "info";
 
-function roleLine(guild: Guild, id: string, label: string): string {
-  const mention = formatRole(guild, id);
-  if (guild.roles.cache.has(id)) {
-    return `> **${label}:** ${mention}`;
-  }
-  return `${emojis.error} **${label}:** ${mention} *Missing from this server*`;
+type Entity = "role" | "channel" | "category";
+
+function stamp(): string {
+  return `<t:${Math.floor(Date.now() / 1000)}:F>`;
 }
 
-function channelLine(guild: Guild, id: string, label: string, category = false): string {
-  const mention = category ? formatCategory(guild, id) : formatChannel(guild, id);
-  if (guild.channels.cache.has(id)) {
-    return `> **${label}:** ${mention}`;
-  }
-  return `${emojis.error} **${label}:** ${mention} *Missing from this server*`;
+function exists(guild: Guild, kind: Entity, id: string): boolean {
+  return kind === "role" ? guild.roles.cache.has(id) : guild.channels.cache.has(id);
 }
 
-function worldSections(guild: Guild, tournament: TournamentRecord): string[] {
-  const auto = tournament.autoRoomRunning ? "On" : "Off";
+function entry(guild: Guild, kind: Entity, id: string, label: string, updated: boolean): string {
+  const mention = kind === "role" ? formatRole(guild, id) : kind === "category" ? formatCategory(guild, id) : formatChannel(guild, id);
+  const tag = updated ? " · *updated*" : "";
+  if (exists(guild, kind, id)) {
+    return `**${label}** ${mention}${tag}`;
+  }
+  return `${emojis.error} **${label}** ${mention}${tag} · *missing from this server*`;
+}
 
-  const identity = [
-    `## ${emojis.id} Identity`,
-    `> **Name:** **${tournament.name}**`,
-    `> **Bracket:** \`${tournament.challongeId}\``,
-    `> **Format:** \`${tournament.format}\``,
-    `> **Extra columns:** \`${tournament.additionalFieldCount}\``,
-    `> **Sheet:** ${formatSheetLink(tournament.sheetLink)}`,
-    `> **Auto-room:** ${auto}`,
-    `> **API key:** *Stored encrypted*`,
-  ].join("\n");
+/** Entries that fit on one line share it; a missing or updated one gets its own line so the tag stays readable. */
+function joinEntries(entries: string[], perLine: number): string[] {
+  const lines: string[] = [];
+  let current: string[] = [];
+  for (const item of entries) {
+    if (item.includes("*missing") || item.includes("*updated*")) {
+      if (current.length > 0) {
+        lines.push(current.join(" · "));
+        current = [];
+      }
+      lines.push(item);
+      continue;
+    }
+    current.push(item);
+    if (current.length === perLine) {
+      lines.push(current.join(" · "));
+      current = [];
+    }
+  }
+  if (current.length > 0) {
+    lines.push(current.join(" · "));
+  }
+  return lines;
+}
 
-  const roles = [
-    `## ${emojis.members} Roles`,
-    ...roleFields.map((field) => roleLine(guild, tournament[field.key], field.label)),
-  ].join("\n");
+const shortRole: Record<string, string> = { adminRoleId: "Admin", helperRoleId: "Helper" };
+const shortChannel: Record<string, string> = {
+  attendanceChannelId: "Attendance",
+  transcriptChannelId: "Transcripts",
+  rulesChannelId: "Rules",
+  deadlineChannelId: "Deadlines",
+  resultChannelId: "Results",
+  eventsLinksChannelId: "Events Links",
+};
 
-  const channelLines = [
-    ...textChannelFields.map((field) => channelLine(guild, tournament[field.key], field.label)),
+function worldSections(guild: Guild, tournament: TournamentRecord, changed: Set<string>): { roles: string; channels: string; tickets: string; missing: number } {
+  const roles = roleFields.map((field) =>
+    entry(guild, "role", tournament[field.key], shortRole[field.key] ?? field.label, changed.has(field.key)),
+  );
+  const channels = [
+    ...textChannelFields.map((field) =>
+      entry(guild, "channel", tournament[field.key], shortChannel[field.key] ?? field.label, changed.has(field.key)),
+    ),
     ...optionalTextChannelFields.flatMap((field) => {
       const id = tournament[field.key];
-      return id ? [channelLine(guild, id, field.label)] : [];
+      return id ? [entry(guild, "channel", id, shortChannel[field.key] ?? field.label, changed.has(field.key))] : [];
     }),
   ];
-  const channels = [`## ${emojis.textChannel} Channels`, ...channelLines].join("\n");
-
+  const openChanged = changed.has("ticketOpenCategoryIds");
   const tickets = [
-    channelLine(guild, tournament.closedTicketCategoryId, "Closed Tickets", true),
+    entry(guild, "category", tournament.closedTicketCategoryId, "Closed", changed.has("closedTicketCategoryId")),
     ...(tournament.closeTicketCategory2Id
-      ? [channelLine(guild, tournament.closeTicketCategory2Id, "Closed Tickets 2", true)]
+      ? [entry(guild, "category", tournament.closeTicketCategory2Id, "Closed 2", changed.has("closeTicketCategory2Id"))]
       : []),
     ...tournament.ticketOpenCategoryIds.flatMap((id, index) =>
-      id ? [channelLine(guild, id, `Open Tickets ${index + 1}`, true)] : [],
+      id ? [entry(guild, "category", id, `Open ${index + 1}`, openChanged)] : [],
     ),
   ];
-  const ticketCategories = [`## ${emojis.categories} Ticket categories`, ...tickets].join("\n");
-
-  return [identity, roles, channels, ticketCategories];
-}
-
-function panelCopy(kind: Exclude<TournamentPanelKind, "info">): { title: string; note: string; color: number } {
-  if (kind === "add") {
-    return {
-      title: `${emojis.success} Tournament registered`,
-      note: "This world is now operable: sheet copied, bracket linked, rooms and tickets will use these channels.",
-      color: embedColors.success,
-    };
-  }
+  const missing = [...roles, ...channels, ...tickets].filter((line) => line.includes("*missing")).length;
   return {
-    title: `${emojis.success} Tournament updated`,
-    note: "Only the values you changed were rewritten.",
-    color: embedColors.success,
+    roles: [`### ${emojis.gem} Roles`, ...joinEntries(roles, 2)].join("\n"),
+    channels: [`### ${emojis.textChannel} Channels`, ...joinEntries(channels, 2)].join("\n"),
+    tickets: [`### ${emojis.categories} Ticket Categories`, ...tickets].join("\n"),
+    missing,
   };
 }
 
-export function tournamentWorldMessage(
-  kind: TournamentPanelKind,
-  guild: Guild,
-  tournament: TournamentRecord,
-  commandId?: string,
-  thumbnailUrl?: string,
-): InteractionReplyOptions {
-  const copy =
+function sheetRow(sheetLink: string): ActionRowBuilder<ButtonBuilder> | null {
+  if (!/^https?:\/\//i.test(sheetLink.trim())) {
+    return null;
+  }
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setStyle(ButtonStyle.Link)
+      .setURL(sheetLink.trim())
+      .setLabel("Open sheet")
+      .setEmoji(customEmoji(emojis.link)),
+  );
+}
+
+export function tournamentWorldMessage(input: {
+  kind: TournamentPanelKind;
+  guild: Guild;
+  tournament: TournamentRecord;
+  commandId?: string;
+  thumbnailUrl?: string;
+  /** Keys `edit` rewrote; they get an *updated* tag. */
+  changed?: readonly string[];
+  keyChanged?: boolean;
+  actorId: string;
+}): InteractionReplyOptions {
+  const { kind, guild, tournament } = input;
+  const changed = new Set<string>(input.changed ?? []);
+  const tag = (key: string) => (changed.has(key) ? " *(updated)*" : "");
+  const name = escapeDiscord(tournament.name);
+  const count = (input.changed?.length ?? 0) + (input.keyChanged ? 1 : 0);
+  const heading =
     kind === "info"
-      ? {
-          title: `${emojis.info} **${tournament.name}**`,
-          note: `Use ${formatHelpEntry("tournament edit", commandId)} to change a role, channel, sheet, or key.`,
-          color: embedColors.info,
-        }
-      : panelCopy(kind);
+      ? `## ${emojis.torneo} ${name}\n-# Bracket ${escapeDiscord(tournament.challongeId)}`
+      : kind === "add"
+        ? `## ${emojis.success} Tournament Registered\nSheet copied and bracket linked. Rooms and tickets will use these channels.`
+        : `## ${emojis.success} Tournament Updated\n\`${count}\` ${count === 1 ? "value" : "values"} changed. The rest stayed as they were.`;
+  const identity = [
+    ...(kind === "info" ? [] : [`${emojis.torneo} **${name}**${tag("name")} · bracket \`${escapeDiscord(tournament.challongeId)}\``]),
+    [
+      `\`${tournament.format}\`${tag("format")}`,
+      `\`${tournament.additionalFieldCount}\` extra ${tournament.additionalFieldCount === 1 ? "column" : "columns"}${tag("additionalFieldCount")}`,
+      `auto-room **${tournament.autoRoomRunning ? "On" : "Off"}**`,
+      `API key stored encrypted${input.keyChanged ? " *(updated)*" : ""}`,
+    ].join(" · "),
+    ...(changed.has("sheetLink") ? [`${emojis.link} Sheet link *updated*`] : []),
+  ].join("\n");
+  const sections = worldSections(guild, tournament, changed);
 
-  const container = new ContainerBuilder().setAccentColor(copy.color);
-  if (thumbnailUrl && (kind === "add" || kind === "edit")) {
-    container.addSectionComponents(headingWithThumbnail(`# ${copy.title}`, thumbnailUrl, copy.note));
+  const container = new ContainerBuilder().setAccentColor(kind === "info" ? embedColors.info : embedColors.success);
+  if (input.thumbnailUrl && kind !== "info") {
+    container.addSectionComponents(headingWithThumbnail(heading, input.thumbnailUrl, identity));
   } else {
-    container.addTextDisplayComponents(textBlock(`# ${copy.title}`), textBlock(copy.note));
+    container.addTextDisplayComponents(textBlock(heading), textBlock(identity));
+  }
+  if (sections.missing > 0) {
+    container.addTextDisplayComponents(
+      textBlock(
+        `${emojis.alert} **${sections.missing}** ${sections.missing === 1 ? "value points" : "values point"} to something that is no longer in this server.`,
+      ),
+    );
+  }
+  const sheet = sheetRow(tournament.sheetLink);
+  if (sheet) {
+    container.addActionRowComponents(sheet);
   }
 
-  for (const section of worldSections(guild, tournament)) {
-    container.addSeparatorComponents(divider()).addTextDisplayComponents(textBlock(section));
-  }
-
-  if (tournament.createdBy) {
-    container
-      .addSeparatorComponents(divider())
-      .addTextDisplayComponents(textBlock(`-# Created by ${formatUser(tournament.createdBy)}`));
-  }
+  const edit = formatHelpEntry("tournament edit", input.commandId);
+  const footer =
+    kind === "info"
+      ? `-# ${tournament.createdBy ? `Created by ${formatUser(tournament.createdBy)} · ` : ""}change it with ${edit}`
+      : `-# ${kind === "add" ? "Registered" : "Updated"} by ${formatUser(input.actorId)} · ${stamp()}`;
+  container
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(sections.roles), textBlock(sections.channels), textBlock(sections.tickets))
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(footer));
 
   return {
     flags: v2Flags,
@@ -208,28 +269,31 @@ export function tournamentListMessage(tournaments: TournamentRecord[], guildId: 
         new ContainerBuilder()
           .setAccentColor(embedColors.info)
           .addTextDisplayComponents(
-            textBlock(`# ${emojis.info} No tournaments yet`),
+            textBlock(`## ${emojis.info} No Tournaments Yet`),
             textBlock(`This server has no operable tournaments. An **Admin** can register one with ${slashMention(guildId, "tournament add")}.`),
           ),
       ],
     };
   }
 
-  const lines = tournaments.map((row, index) => {
-    const auto = row.autoRoomRunning ? "auto-room on" : "auto-room off";
-    return `${index + 1}. **${row.name}** · \`${row.challongeId}\` · \`${row.format}\` · *${auto}*`;
-  });
+  const lines = tournaments.map(
+    (row, index) =>
+      `**${index + 1}.** ${emojis.torneo} **${escapeDiscord(row.name)}** · \`${row.format}\` · auto-room **${row.autoRoomRunning ? "On" : "Off"}**\n-# Bracket ${escapeDiscord(row.challongeId)}`,
+  );
 
   return {
     flags: [...v2Flags, MessageFlags.Ephemeral],
+    allowedMentions: { parse: [] },
     components: [
       new ContainerBuilder()
         .setAccentColor(embedColors.info)
         .addTextDisplayComponents(
-          textBlock(`# ${emojis.server} Tournaments in this server`),
-          textBlock(`**${tournaments.length}** active of **4** allowed.`),
-          textBlock(lines.join("\n")),
-        ),
+          textBlock(`## ${emojis.server} Tournaments\n\`${tournaments.length}\` of \`4\` slots used`),
+        )
+        .addSeparatorComponents(divider())
+        .addTextDisplayComponents(textBlock(lines.join("\n")))
+        .addSeparatorComponents(divider())
+        .addTextDisplayComponents(textBlock(`-# Details with ${slashMention(guildId, "tournament info")}`)),
     ],
   };
 }
@@ -237,43 +301,32 @@ export function tournamentListMessage(tournaments: TournamentRecord[], guildId: 
 export function tournamentDeletedMessage(
   name: string,
   related: DeletedRelated,
+  actorId: string,
   commandId?: string,
 ): InteractionReplyOptions {
   const findPlayer = formatHelpEntry("sheet find player", commandId);
   const container = new ContainerBuilder()
-    .setAccentColor(embedColors.success)
+    .setAccentColor(embedColors.error)
     .addTextDisplayComponents(
-      textBlock(`# ${emojis.success} Tournament removed`),
-      textBlock(`**${name}** is no longer operable in this server. Auto-room for this world is off.`),
+      textBlock(`## ${emojis.error} Tournament Removed\n**${escapeDiscord(name)}** is no longer operable here. Auto-room is off.`),
     )
     .addSeparatorComponents(divider())
     .addTextDisplayComponents(
       textBlock(
         [
-          `## ${emojis.mongo} Cleared from the bot`,
-          `> **Matches:** \`${related.matches}\``,
-          `> **Rooms:** \`${related.rooms}\``,
-          `> **Schedules:** \`${related.schedules}\``,
-          `> **Attendance:** \`${related.attendances}\``,
+          `${emojis.mongo} **Cleared** \`${related.matches}\` matches · \`${related.rooms}\` rooms · \`${related.schedules}\` schedules · \`${related.attendances}\` attendance`,
+          `${emojis.info} **Left in place** Discord channels · Google Sheet · Challonge bracket · the sheet stays in the historical archive`,
         ].join("\n"),
       ),
     )
     .addSeparatorComponents(divider())
     .addTextDisplayComponents(
-      textBlock(
-        [
-          `## ${emojis.info} Left in place`,
-          `> **Participant sheet:** historical archive`,
-          `> **Discord channels:** not deleted`,
-          `> **Google Sheet:** not deleted`,
-          `> **Challonge bracket:** not deleted`,
-        ].join("\n"),
-      ),
-      textBlock(`${findPlayer} can still search that archive.`),
+      textBlock(`-# Removed by ${formatUser(actorId)} · ${stamp()} · search the archive with ${findPlayer}`),
     );
 
   return {
     flags: v2Flags,
+    allowedMentions: { parse: [] },
     components: [container],
   };
 }

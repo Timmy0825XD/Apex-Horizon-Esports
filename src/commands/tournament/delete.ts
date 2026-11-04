@@ -26,7 +26,7 @@ export async function handleTournamentDelete(interaction: ChatInputCommandIntera
   }
 
   const related = await deleteTournamentWorld(guild.id, tournament.id);
-  await respondTournament(interaction, tournamentDeletedMessage(tournament.name, related, sheetCommandIdFor(guild.id)));
+  await respondTournament(interaction, tournamentDeletedMessage(tournament.name, related, interaction.user.id, sheetCommandIdFor(guild.id)));
   await auditTournamentDelete(
     interaction,
     guild,

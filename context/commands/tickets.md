@@ -20,4 +20,11 @@ Sin campos. Restaura el chat y devuelve el canal a la categoría abierta en la q
 
 Sin campos. Destruye el canal y olvida el vínculo partido↔canal. Ese partido puede recibir otro ticket después. **Ticket System**.
 
+Las respuestas en una sala de partido son V2 efímeros:
+
+- Título `##` (*Ticket Closed* / *Reopened* verde, *Ticket Deleted* rojo, *Already Closed* / *Already Open* azul) y la fase del partido en `-#`.
+- Los dos lados y el torneo.
+- Una línea con lo que cambió (categoría nueva, o que el partido puede tener otro ticket con `/room create`).
+- Footer con autor, hora y la mención del comando que lo deshace.
+
 Relación: distinto de `/bracket upload` (ese cierra *y* reporta).

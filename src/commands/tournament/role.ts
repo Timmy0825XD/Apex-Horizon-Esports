@@ -12,6 +12,7 @@ import {
   type Role,
 } from "discord.js";
 import { emojis } from "../../emojis.js";
+import { escapeDiscord } from "../room/labels.js";
 import { customEmoji } from "../../lib/custom-emoji.js";
 import { embedColors } from "../../lib/embeds.js";
 import { formatRole, formatRoleFromRole, formatUser } from "../../lib/formatters.js";
@@ -120,15 +121,20 @@ function collectTargets(teams: SheetTeam[], header: DiscordIdHeader | null, head
   return rows;
 }
 
+const warnColor = 0xe67e22;
+
+function stamp(): string {
+  return `<t:${Math.floor(Date.now() / 1000)}:F>`;
+}
+
 function rowLabel(row: PlayerRow): string {
+  const team = row.teamName ? `**${escapeDiscord(row.teamName)}** · ` : "";
   if (row.member) {
-    const team = row.teamName ? `**${row.teamName}** · ` : "";
-    return `> ${team}${formatUser(row.member.id)}`;
+    return `- ${team}${formatUser(row.member.id)}`;
   }
   const who = row.player.gameName || row.player.discordTag || row.player.gameId || "Unknown player";
-  const team = row.teamName ? `**${row.teamName}** · ` : "";
-  const id = row.player.discordId ? ` · \`${row.player.discordId}\`` : "";
-  return `> ${team}**${who}**${id}`;
+  const id = row.player.discordId ? ` · \`${escapeDiscord(row.player.discordId)}\`` : "";
+  return `- ${team}**${escapeDiscord(who)}**${id}`;
 }
 
 function listedBlock(rows: PlayerRow[]): string {
@@ -138,128 +144,82 @@ function listedBlock(rows: PlayerRow[]): string {
   return `${shown.map(rowLabel).join("\n")}${more}`;
 }
 
+/** Members who got the role, as mentions in a row; the rest only as a count. */
+function givenBlock(rows: PlayerRow[]): string {
+  const mentions = rows.flatMap((row) => (row.member ? [formatUser(row.member.id)] : []));
+  const shown = mentions.slice(0, MAX_SHOWN);
+  const extra = rows.length - shown.length;
+  return extra > 0 ? `${shown.join(" ")} *and **${extra}** more*` : shown.join(" ");
+}
+
 function roleResultMessage(
   tournamentName: string,
   role: Role,
   scope: string,
   buckets: RoleBuckets,
+  actorId: string,
 ): InteractionReplyOptions {
-  const containers: ContainerBuilder[] = [];
-
-  if (buckets.assigned.length > 0) {
-    const count = buckets.assigned.length;
-    containers.push(
-      new ContainerBuilder()
-        .setAccentColor(embedColors.success)
-        .addTextDisplayComponents(
-          textBlock(`# ${emojis.success} Role granted`),
-          textBlock(
-            count === 1
-              ? `Gave ${formatRoleFromRole(role)} to **1** player in **${tournamentName}** (${scope}).`
-              : `Gave ${formatRoleFromRole(role)} to **${count}** players in **${tournamentName}** (${scope}).`,
-          ),
-        )
-        .addSeparatorComponents(divider())
-        .addTextDisplayComponents(textBlock(listedBlock(buckets.assigned))),
-    );
-  }
-
-  if (buckets.alreadyHad.length > 0) {
-    const count = buckets.alreadyHad.length;
-    containers.push(
-      new ContainerBuilder()
-        .setAccentColor(embedColors.info)
-        .addTextDisplayComponents(
-          textBlock(`# ${emojis.info} Already held the role`),
-          textBlock(
-            count === 1
-              ? `**1** player already had ${formatRoleFromRole(role)}.`
-              : `**${count}** players already had ${formatRoleFromRole(role)}.`,
-          ),
-        )
-        .addSeparatorComponents(divider())
-        .addTextDisplayComponents(textBlock(listedBlock(buckets.alreadyHad))),
-    );
-  }
-
-  if (buckets.notInServer.length > 0) {
-    const count = buckets.notInServer.length;
-    containers.push(
-      new ContainerBuilder()
-        .setAccentColor(embedColors.info)
-        .addTextDisplayComponents(
-          textBlock(`# ${emojis.members} Not in this server`),
-          textBlock(
-            count === 1
-              ? "**1** player could not be found in this server."
-              : `**${count}** players could not be found in this server.`,
-          ),
-        )
-        .addSeparatorComponents(divider())
-        .addTextDisplayComponents(textBlock(listedBlock(buckets.notInServer))),
-    );
-  }
-
-  if (buckets.invalidIds.length > 0) {
-    const count = buckets.invalidIds.length;
-    containers.push(
-      new ContainerBuilder()
-        .setAccentColor(embedColors.error)
-        .addTextDisplayComponents(
-          textBlock(`# ${emojis.error} Invalid Discord IDs`),
-          textBlock(
-            count === 1
-              ? "**1** player has an empty or invalid Discord ID."
-              : `**${count}** players have empty or invalid Discord IDs.`,
-          ),
-        )
-        .addSeparatorComponents(divider())
-        .addTextDisplayComponents(textBlock(listedBlock(buckets.invalidIds))),
-    );
-  }
-
-  if (buckets.banned.length > 0) {
-    const count = buckets.banned.length;
-    containers.push(
-      new ContainerBuilder()
-        .setAccentColor(embedColors.error)
-        .addTextDisplayComponents(
-          textBlock(`# ${emojis.banned} Banned players skipped`),
-          textBlock(
-            count === 1
-              ? "**1** player is banned (Discord or official in-game ID) and did not receive the role."
-              : `**${count}** players are banned (Discord or official in-game ID) and did not receive the role.`,
-          ),
-        )
-        .addSeparatorComponents(divider())
-        .addTextDisplayComponents(textBlock(listedBlock(buckets.banned))),
-    );
-  }
-
-  if (buckets.failed.length > 0) {
-    const count = buckets.failed.length;
-    containers.push(
-      new ContainerBuilder()
-        .setAccentColor(embedColors.error)
-        .addTextDisplayComponents(
-          textBlock(`# ${emojis.error} Could not update roles`),
-          textBlock(
-            count === 1
-              ? "Discord rejected the role update for **1** player."
-              : `Discord rejected the role update for **${count}** players.`,
-          ),
-        )
-        .addSeparatorComponents(divider())
-        .addTextDisplayComponents(textBlock(listedBlock(buckets.failed))),
-    );
-  }
-
-  if (containers.length === 0) {
+  const total =
+    buckets.assigned.length +
+    buckets.alreadyHad.length +
+    buckets.notInServer.length +
+    buckets.invalidIds.length +
+    buckets.banned.length +
+    buckets.failed.length;
+  if (total === 0) {
     return tournamentErrorMessage("No players to role", `**${tournamentName}** has no players that could be processed.`, false);
   }
 
+  const skipped = buckets.notInServer.length + buckets.invalidIds.length + buckets.banned.length + buckets.failed.length;
+  const noneGiven = buckets.assigned.length === 0 && buckets.alreadyHad.length === 0;
+  const color = noneGiven ? embedColors.error : skipped > 0 ? warnColor : embedColors.success;
+  const emoji = noneGiven ? emojis.error : emojis.success;
+  const title = noneGiven ? "Role Not Given" : "Role Given to Players";
+  const counts = [
+    `**Given** \`${buckets.assigned.length}\``,
+    `**Already had it** \`${buckets.alreadyHad.length}\``,
+    `**Not in server** \`${buckets.notInServer.length}\``,
+    `**Banned** \`${buckets.banned.length}\``,
+    `**Invalid ID** \`${buckets.invalidIds.length}\``,
+    `**Failed** \`${buckets.failed.length}\``,
+  ].join(" · ");
+
+  const groups: string[] = [];
+  if (buckets.assigned.length > 0) {
+    groups.push(`### ${emojis.success} Given · ${buckets.assigned.length}\n${givenBlock(buckets.assigned)}`);
+  }
+  if (buckets.notInServer.length > 0) {
+    groups.push(`### ${emojis.members} Not in This Server · ${buckets.notInServer.length}\n${listedBlock(buckets.notInServer)}`);
+  }
+  if (buckets.invalidIds.length > 0) {
+    groups.push(
+      `### ${emojis.error} Invalid Discord IDs · ${buckets.invalidIds.length}\n-# Empty or not a Discord ID on the sheet.\n${listedBlock(buckets.invalidIds)}`,
+    );
+  }
+  if (buckets.banned.length > 0) {
+    groups.push(
+      `### ${emojis.banned} Banned, Skipped · ${buckets.banned.length}\n-# Discord ban or official in-game ID ban.\n${listedBlock(buckets.banned)}`,
+    );
+  }
+  if (buckets.failed.length > 0) {
+    groups.push(
+      `### ${emojis.error} Could Not Update · ${buckets.failed.length}\n-# Discord rejected the role update. Check my role position.\n${listedBlock(buckets.failed)}`,
+    );
+  }
+
+  const container = new ContainerBuilder()
+    .setAccentColor(color)
+    .addTextDisplayComponents(
+      textBlock(`## ${emoji} ${title}\n-# ${escapeDiscord(tournamentName)} · ${escapeDiscord(scope)}`),
+      textBlock(`${formatRoleFromRole(role)} → ${counts}`),
+    )
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(...groups.map((group) => textBlock(group)))
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(`-# Given by ${formatUser(actorId)} · ${stamp()}`));
+
   return {
-    components: containers,
+    components: [container],
     allowedMentions: { parse: [] },
   };
 }
@@ -274,16 +234,12 @@ function confirmAllPlayersMessage(
   columnCount: number,
 ): InteractionReplyOptions {
   const columns =
-    columnCount === 1
-      ? "**1** Discord ID column"
-      : `**${columnCount}** Discord ID columns (\`${format}\`)`;
-  const players =
-    playerCount === 1 ? "**1** player" : `**${playerCount}** players`;
+    columnCount === 1 ? "`1` Discord ID column" : `\`${columnCount}\` Discord ID columns (\`${format}\`)`;
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(`${ROLE_CONFIRM_PREFIX}:ok:${userId}:${tournamentId}:${role.id}`)
-      .setLabel("Confirm all players")
+      .setLabel("Give to all players")
       .setStyle(ButtonStyle.Danger)
       .setEmoji(customEmoji(emojis.success)),
     new ButtonBuilder()
@@ -296,42 +252,39 @@ function confirmAllPlayersMessage(
   return {
     components: [
       new ContainerBuilder()
-        .setAccentColor(embedColors.error)
+        .setAccentColor(warnColor)
         .addTextDisplayComponents(
-          textBlock(`# ${emojis.error} Confirm role for every player`),
           textBlock(
-            `You did not pick an **ID header**. Confirming gives ${formatRoleFromRole(role)} to **every player** in **${tournamentName}**, not one column.`,
+            `## ${emojis.alert} Give the Role to Every Player?\nNo **ID header** was picked, so ${formatRoleFromRole(role)} goes to the whole roster of **${escapeDiscord(tournamentName)}**.`,
           ),
         )
         .addSeparatorComponents(divider())
         .addTextDisplayComponents(
           textBlock(
             [
-              `## ${emojis.info} What will happen`,
-              `> I will scan ${columns} and try to grant the role to ${players}.`,
-              `> Players already holding ${formatRoleFromRole(role)} are skipped.`,
-              `> Invalid Discord IDs, people not in this server, and banned players (Discord ban or official in-game ID) are skipped.`,
-              `> This cannot be undone from the bot: you would have to remove the role yourself.`,
+              `**Columns** ${columns} · **Players** \`${playerCount}\``,
+              "- People who already have it, invalid IDs, non-members and banned players are skipped.",
+              "- The bot cannot undo this. You would remove the role by hand.",
             ].join("\n"),
           ),
+          textBlock(`-# Only ${formatUser(userId)} can use these buttons.`),
         )
-        .addSeparatorComponents(divider())
         .addActionRowComponents(row),
     ],
     allowedMentions: { parse: [] },
   };
 }
 
-function cancelledMessage(guild: Guild, tournamentName: string, roleId: string): InteractionReplyOptions {
+function cancelledMessage(guild: Guild, tournamentName: string, roleId: string, actorId: string): InteractionReplyOptions {
   return {
     components: [
       new ContainerBuilder()
         .setAccentColor(embedColors.info)
         .addTextDisplayComponents(
-          textBlock(`# ${emojis.info} Role assignment cancelled`),
           textBlock(
-            `${formatRole(guild, roleId)} was **not** given to anyone in **${tournamentName}**. Pick an **ID header** if you only want one Discord ID column.`,
+            `## ${emojis.info} Role Assignment Cancelled\n${formatRole(guild, roleId)} was **not** given to anyone in **${escapeDiscord(tournamentName)}**. Pick an **ID header** if you only want one Discord ID column.`,
           ),
+          textBlock(`-# Cancelled by ${formatUser(actorId)} · ${stamp()}`),
         ),
     ],
     allowedMentions: { parse: [] },
@@ -521,7 +474,7 @@ async function finishAssignment(
     return;
   }
 
-  await respondTournament(interaction, roleResultMessage(tournamentName, role, scope, buckets));
+  await respondTournament(interaction, roleResultMessage(tournamentName, role, scope, buckets, interaction.user.id));
 
   if (buckets.assigned.length > 0) {
     const settings = await loadGuildSettings(guild.id);
@@ -623,7 +576,7 @@ export async function handleTournamentRoleButton(interaction: ButtonInteraction)
   const tournament = await findTournamentById(guild.id, tournamentId);
 
   if (action === "no") {
-    const cancelled = cancelledMessage(guild, tournament?.name ?? "this tournament", roleId);
+    const cancelled = cancelledMessage(guild, tournament?.name ?? "this tournament", roleId, interaction.user.id);
     await interaction.update({
       components: cancelled.components,
       allowedMentions: cancelled.allowedMentions,

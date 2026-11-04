@@ -1,4 +1,10 @@
-import { ChannelType, MessageFlags, type ChatInputCommandInteraction, type TextChannel } from "discord.js";
+import {
+  ChannelType,
+  MessageFlags,
+  type ChatInputCommandInteraction,
+  type InteractionReplyOptions,
+  type TextChannel,
+} from "discord.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { formatHelpEntry } from "../../lib/formatters.js";
 import { memberIsOrganiser } from "../../lib/organiser.js";
@@ -6,13 +12,14 @@ import { prisma } from "../../lib/prisma.js";
 import { settingsCommandIdFor } from "../../lib/register-slash.js";
 import { parseValidationTicketTopic } from "../../lib/validation-ticket.js";
 import { deferRoom, respondRoom } from "../room/respond.js";
-import { categoryMention, roomPanel } from "../room/view.js";
+import { roomPanel } from "../room/view.js";
 import { loadGuildSettings } from "../settings/store.js";
 import { findTournamentById } from "../tournament/store.js";
 import { auditTicket } from "./audit.js";
 import { repaintScheduleChannel } from "../schedule/live.js";
 import { closeTicket, deleteTicket, reopenTicket } from "./lifecycle.js";
 import { closeValidationTicket } from "./validation.js";
+import { ticketActionMessage, type TicketAction } from "./view.js";
 
 const unauthorized = {
   content: "This server is not authorized to use this bot.",
@@ -105,10 +112,26 @@ export async function handleTicketSlash(interaction: ChatInputCommandInteraction
 
   const sub = interaction.options.getSubcommand();
   await deferRoom(interaction);
+  const match = await prisma.match
+    .findUnique({
+      where: { tournamentId_challongeMatchId: { tournamentId: tournament.id, challongeMatchId: room.challongeMatchId } },
+      select: { group: true, round: true, player1Name: true, player2Name: true },
+    })
+    .catch(() => null);
+  const card = (action: TicketAction, categoryId?: string) =>
+    ticketActionMessage({
+      action,
+      guild,
+      tournamentName: tournament.name,
+      matchId: room.challongeMatchId,
+      match,
+      categoryId,
+      actorId: interaction.user.id,
+    });
 
   try {
     if (sub === "close") {
-      await closeCurrent(interaction, channel, guild, tournament, room.status, settings, room.challongeMatchId);
+      await closeCurrent(interaction, channel, guild, tournament, room.status, settings, room.challongeMatchId, card);
       return;
     }
     if (sub === "reopen") {
@@ -121,17 +144,20 @@ export async function handleTicketSlash(interaction: ChatInputCommandInteraction
         room.categoryId,
         settings,
         room.challongeMatchId,
+        card,
       );
       return;
     }
     if (sub === "delete") {
-      await deleteCurrent(interaction, channel, guild, tournament.name, room.id, settings, room.challongeMatchId);
+      await deleteCurrent(interaction, channel, guild, tournament.name, room.id, settings, room.challongeMatchId, card);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "That ticket action could not be finished.";
     await respondRoom(interaction, roomPanel("error", "Ticket action failed", [message]));
   }
 }
+
+type TicketCard = (action: TicketAction, categoryId?: string) => InteractionReplyOptions;
 
 async function closeCurrent(
   interaction: ChatInputCommandInteraction,
@@ -141,25 +167,17 @@ async function closeCurrent(
   status: string,
   settings: NonNullable<Awaited<ReturnType<typeof loadGuildSettings>>>,
   matchId: number,
+  card: TicketCard,
 ): Promise<void> {
   if (status === "closed") {
-    await respondRoom(
-      interaction,
-      roomPanel("info", "Ticket already closed", ["This battle ticket is already silenced in a closed category."]),
-    );
+    await respondRoom(interaction, card("already-closed"));
     return;
   }
   const categoryId = await closeTicket(channel, guild, tournament);
   await repaintScheduleChannel(guild, channel, settings, tournament).catch((error) => {
     console.error("Schedule seat lock failed", error);
   });
-  await respondRoom(
-    interaction,
-    roomPanel("success", "Ticket closed", [
-      `This battle ticket is silenced and now sits in ${categoryMention(guild, categoryId)}.`,
-      "Chat access can be restored by reopening it.",
-    ]),
-  );
+  await respondRoom(interaction, card("closed", categoryId));
   await auditTicket(interaction, guild, settings, "closed", channel.id, tournament.name, matchId, categoryId);
 }
 
@@ -172,24 +190,17 @@ async function reopenCurrent(
   homeCategoryId: string,
   settings: NonNullable<Awaited<ReturnType<typeof loadGuildSettings>>>,
   matchId: number,
+  card: TicketCard,
 ): Promise<void> {
   if (status !== "closed") {
-    await respondRoom(
-      interaction,
-      roomPanel("info", "Ticket already open", ["This battle ticket is already in an open category."]),
-    );
+    await respondRoom(interaction, card("already-open"));
     return;
   }
   const categoryId = await reopenTicket(channel, guild, tournament, homeCategoryId);
   await repaintScheduleChannel(guild, channel, settings, tournament).catch((error) => {
     console.error("Schedule seat lock failed", error);
   });
-  await respondRoom(
-    interaction,
-    roomPanel("success", "Ticket reopened", [
-      `Chat access is restored and the ticket is back in ${categoryMention(guild, categoryId)}.`,
-    ]),
-  );
+  await respondRoom(interaction, card("reopened", categoryId));
   await auditTicket(interaction, guild, settings, "reopened", channel.id, tournament.name, matchId, categoryId);
 }
 
@@ -201,14 +212,9 @@ async function deleteCurrent(
   roomId: string,
   settings: NonNullable<Awaited<ReturnType<typeof loadGuildSettings>>>,
   matchId: number,
+  card: TicketCard,
 ): Promise<void> {
   await deleteTicket(channel, roomId);
   await auditTicket(interaction, guild, settings, "deleted", channel.id, tournamentName, matchId);
-  await respondRoom(
-    interaction,
-    roomPanel("success", "Ticket deleted", [
-      `The battle ticket for match \`${matchId}\` in **${tournamentName}** was removed.`,
-      "That match can receive a new ticket later.",
-    ]),
-  );
+  await respondRoom(interaction, card("deleted"));
 }

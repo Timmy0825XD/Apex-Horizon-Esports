@@ -4,7 +4,12 @@ Actores: [../product/actors.md](../product/actors.md). Nómina: [../domains/atte
 
 Slash: comando `staff`. Grupos `config` (`set` · `edit` · `view`) e `info` (`add` · `edit` · `export`), más subcomandos `recruit` · `fire` · `work`.
 
-`config set` / `edit` / `view` son paneles **Components V2**. `recruit` y `fire` responden en V2; el welcome de recruit en staff chat también es V2 (mención + panel). `work` se publica en el canal: un Components V2.
+`config set` / `edit` / `view` son paneles **Components V2** con el mismo patrón que `/settings`:
+
+- `### Roles` y `### Channels`, con etiquetas cortas (*Judge*, *Announcements*).
+- `edit` dice cuántos valores cambiaron y marca esas líneas con *updated*.
+- Si algo guardado ya no existe, una línea con `alert` arriba lo avisa.
+- Footer `Saved by` / `Updated by` con hora; `view` enlaza `/staff config edit`. `recruit` y `fire` responden en V2; el welcome de recruit en staff chat también es V2 (mención + panel). `work` se publica en el canal: un Components V2.
 
 Requiere `/settings set` previo (admin role y bot logs). T1/T2 son opcionales; en `config set` Discord obliga a ponerlos **al final** de las opciones.
 
@@ -92,7 +97,7 @@ Choices y roles que **añade**:
 | T1 Admin + Helper + Best Staff | T1 + Server Helper + Best Staff + Staff |
 | T2 Admin + Helper + Best Staff | T2 + Server Helper + Best Staff + Staff |
 
-Si el miembro ya tiene todo el paquete, no se vuelve a saludar. El welcome en staff chat es **Components V2**: arriba `Welcome to the family` con mención (ping), thumbnail de la persona, roles en lista y enlaces a announcements / rules / details. La respuesta V2 de recruit es **Staff Recruitment Updated**: Target, Granted Position, Roles Granted, y footer `-# Action by` con el username de quien ejecutó (sin mención). Fallar el welcome **no** deshace los roles.
+Si el miembro ya tiene todo el paquete, no se vuelve a saludar. El welcome en staff chat es **Components V2**: un section con `## Welcome to the Family`, la mención (ping) con el puesto, los roles seguidos y la thumbnail de la persona. Debajo, **Start here** con announcements, rules y details, cada uno con su emoji. La respuesta V2 de recruit es **Staff Recruited**: *@miembro is now **Puesto***, los roles concedidos seguidos y la línea del welcome (publicado en el staff chat o por qué no). Lleva el avatar y el footer `Recruited by` con mención y hora. Fallar el welcome **no** deshace los roles.
 
 ## `/staff fire`
 
@@ -107,7 +112,7 @@ Solo Admin u Organiser. Audita.
 
 Choices: Judge · Recorder · T1 Admin · T2 Admin · Best Staff · Server Helper · T1 Admin + Helper + Best Staff · T2 Admin + Helper + Best Staff · **Complete (remove all staff roles)** (todos los roles de staff configurados, incluido Manager y Challonge Mod).
 
-Un choice suelto quita **ese** rol de puesto, no el paquete de recruit (p. ej. fire Judge no quita Staff). La respuesta V2 es **Staff Removal Updated**: Target, Removed Position (`All Staff Roles` si Complete), Roles Removed, footer `-# Action by` (sin ping). Sin bloque Notes.
+Un choice suelto quita **ese** rol de puesto, no el paquete de recruit (p. ej. fire Judge no quita Staff). La respuesta V2 es roja, **Staff Removed**: *@miembro is no longer **Puesto*** (o *no longer on the staff* si es Complete), los roles quitados seguidos, el avatar y el footer `Removed by` con mención y hora (sin ping). Sin bloque Notes.
 
 ## `/staff work`
 
@@ -120,4 +125,4 @@ Un choice suelto quita **ese** rol de puesto, no el paquete de recruit (p. ej. f
 
 **Relación:** Lee asistencias no borradas de `/attendance mark`. Cubetas: [../domains/attendance-payroll.md](../domains/attendance-payroll.md).
 
-Un Components V2. Encabezado: torneo, si incluye DW y quién lo pidió. Luego **Judges**, **Recorders** y **Judge & Recorder**, cada uno en lista numerada: mención, tag y matches (`team1_score + team2_score`) con rounds. No muestra oro. La misma persona entra en Judge & Recorder aunque no haya link. Los DW no entran salvo `include_default_wins`.
+Un Components V2. Encabezado: torneo y si incluye DW. Luego **Judges**, **Recorders** y **Judge & Recorder**, cada uno con su conteo en el título `###` y una lista numerada: mención, **matches** (asistencias) y **games** (`team1_score + team2_score`). Cada lista se corta a ~1200 caracteres para que las tres quepan en el mensaje. El footer es `Requested by` con hora. No muestra oro. La misma persona entra en Judge & Recorder aunque no haya link. Los DW no entran salvo `include_default_wins`.

@@ -63,14 +63,15 @@ export async function handleStaffConfigSet(
   await guild.channels.fetch().catch(() => undefined);
   await respondStaff(
     interaction,
-    staffConfigMessage(
-      "set",
+    staffConfigMessage({
+      kind: "set",
       guild,
-      saved,
+      staff: saved,
       commandId,
-      settingsCommandIdFor(guild.id),
-      interaction.client.user?.displayAvatarURL({ size: 256 }),
-    ),
+      settingsCommandId: settingsCommandIdFor(guild.id),
+      thumbnailUrl: interaction.client.user?.displayAvatarURL({ size: 256 }),
+      actorId: interaction.user.id,
+    }),
   );
   await auditStaffConfigMutation(
     interaction,

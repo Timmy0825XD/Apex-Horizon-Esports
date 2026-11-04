@@ -383,17 +383,11 @@ async function openTeam(
   return { kind: "discord" };
 }
 
-function capLines(lines: string[]): string {
-  const shown = lines.slice(0, LIST_LIMIT);
-  const extra = lines.length - shown.length;
-  if (extra > 0) {
-    shown.push(`*And **${extra}** more.*`);
-  }
-  return shown.join("\n");
-}
-
-function nameLines(labels: string[]): string {
-  return capLines(labels.map((label) => `- **${escapeDiscord(label)}**`));
+/** Team names in a row, `·` between them. */
+function nameRow(labels: string[]): string {
+  const shown = labels.slice(0, LIST_LIMIT).map((label) => `**${escapeDiscord(label)}**`);
+  const extra = labels.length - shown.length;
+  return extra > 0 ? `${shown.join(" · ")} *and **${extra}** more*` : shown.join(" · ");
 }
 
 function validationMessage(guild: Guild, run: ValidationRun) {
@@ -401,104 +395,94 @@ function validationMessage(guild: Guild, run: ValidationRun) {
   const broken = run.full.length + run.refused.length + run.discordFailed.length;
   const gaps = broken + run.orphans.length + welcomeFailed;
   const allVerified = run.passed === run.total;
-  const tone = allVerified ? "success" : run.opened.length > 0 && gaps === 0 ? "success" : run.opened.length > 0 || broken === 0 ? "info" : "error";
+  const tone = allVerified ? "success" : run.opened.length > 0 && gaps === 0 ? "success" : run.opened.length > 0 || broken === 0 ? "warn" : "error";
   const title = allVerified
-    ? "Rosters verified"
+    ? "Rosters Verified"
     : run.opened.length > 0 && gaps === 0
-      ? "Validation tickets opened"
+      ? "Validation Tickets Opened"
       : run.opened.length > 0
-        ? "Validation finished with gaps"
+        ? "Validation Finished with Gaps"
         : broken === 0
-          ? "Teams left without a ticket"
-          : "No validation tickets opened";
+          ? "Teams Left Without a Ticket"
+          : "No Validation Tickets Opened";
   const emoji = tone === "success" ? emojis.success : tone === "error" ? emojis.error : emojis.info;
-  const color = tone === "success" ? embedColors.success : tone === "error" ? embedColors.error : embedColors.info;
+  const color = tone === "success" ? embedColors.success : tone === "error" ? embedColors.error : 0xe67e22;
   const verified = formatRole(guild, run.verifiedRoleId);
   const intro = allVerified
-    ? `Every player in **${escapeDiscord(run.tournamentName)}** is in the server and has ${verified}. **${run.total}** teams checked. No channel was created.`
+    ? "Every player is in the server and verified. No channel was created."
     : run.opened.length > 0 && gaps === 0
-      ? `Opened a ticket for every team in **${escapeDiscord(run.tournamentName)}** that is not fully verified. **${run.passed}** teams already had every player in the server with ${verified}, so they got no channel.`
+      ? `**${run.passed}** teams were already verified, so they got no channel.`
       : broken === 0 && run.opened.length === 0
         ? run.passed === 0
-          ? `Nobody registered in **${escapeDiscord(run.tournamentName)}** is in the server, so no validation ticket was opened.`
-          : `**${run.passed}** teams in **${escapeDiscord(run.tournamentName)}** are fully verified. The other **${run.orphans.length}** have nobody in the server to add, so they got no ticket.`
-        : `Checked **${run.total}** teams in **${escapeDiscord(run.tournamentName)}** against ${verified}. Tickets were opened only where someone from the roster is in the server.`;
+          ? "Nobody on the rosters is in the server, so no ticket was opened."
+          : "The other teams have nobody in the server to add, so they got no ticket."
+        : "Tickets were opened only where someone from the roster is in the server.";
 
-  const facts = [
-    `**Checked:** **${run.total}**`,
-    `**Verified teams:** **${run.passed}**`,
-    `**Tickets opened:** **${run.opened.length}**`,
-    `**Transcripts:** ${formatChannel(guild, run.transcriptChannelId)}`,
-    `**Category:** ${formatCategory(guild, run.categoryId)}`,
-    run.secondaryCategoryId ? `**Overflow:** ${formatCategory(guild, run.secondaryCategoryId)}` : "",
+  const where = [
+    `${emojis.categories} ${formatCategory(guild, run.categoryId)}`,
+    run.secondaryCategoryId ? `overflow ${formatCategory(guild, run.secondaryCategoryId)}` : "",
+    `transcripts to ${formatChannel(guild, run.transcriptChannelId)}`,
   ]
     .filter(Boolean)
-    .join("\n");
+    .join(" · ");
+  const facts = [
+    `${emojis.channels} **Checked** \`${run.total}\` · **Verified** \`${run.passed}\` · **Tickets** \`${run.opened.length}\` · **No one to add** \`${run.orphans.length}\``,
+    where,
+    intro,
+  ].join("\n");
 
   const container = new ContainerBuilder()
     .setAccentColor(color)
     .addTextDisplayComponents(
-      textBlock(`# ${emoji} ${title}`),
-      textBlock(`${emojis.torneo} **Tournament:** **${escapeDiscord(run.tournamentName)}**`),
-      textBlock(intro),
+      textBlock(
+        `## ${emoji} ${title}\n${emojis.torneo} **${escapeDiscord(run.tournamentName)}** · checked against ${verified}`,
+      ),
     )
     .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(`### ${emojis.channels} Result`), textBlock(facts));
+    .addTextDisplayComponents(textBlock(facts));
 
+  const sections: string[] = [];
   if (run.opened.length > 0) {
-    const mentions = capLines(run.opened.map((ticket) => `- ${formatChannel(guild, ticket.channelId)}`));
+    const shown = run.opened.slice(0, LIST_LIMIT).map((ticket) => formatChannel(guild, ticket.channelId));
+    const extra = run.opened.length - shown.length;
     const note =
       welcomeFailed === 0
         ? ""
-        : welcomeFailed === 1
-          ? "\n\n**1** ticket exists, but the validation message failed to send."
-          : `\n\n**${welcomeFailed}** tickets exist, but the validation message failed to send.`;
-    container
-      .addSeparatorComponents(divider())
-      .addTextDisplayComponents(textBlock(`### ${emojis.textChannel} Opened`), textBlock(`${mentions}${note}`));
+        : `\n${emojis.alert} ${welcomeFailed === 1 ? "**1** ticket exists" : `**${welcomeFailed}** tickets exist`}, but the validation message failed to send.`;
+    sections.push(
+      `### ${emojis.textChannel} Opened · ${run.opened.length}\n${shown.join(" ")}${extra > 0 ? ` *and **${extra}** more*` : ""}${note}`,
+    );
   }
-
   if (run.orphans.length > 0) {
-    const onlyOrphans = run.opened.length === 0 && broken === 0;
-    const orphanBody = onlyOrphans
-      ? nameLines(run.orphans)
-      : `These teams failed verification, and nobody on the roster is in the server.\n${nameLines(run.orphans)}`;
-    container
-      .addSeparatorComponents(divider())
-      .addTextDisplayComponents(textBlock(`### ${emojis.info} No one to add`), textBlock(orphanBody));
+    sections.push(
+      `### ${emojis.info} No One to Add · ${run.orphans.length}\n-# Failed verification and nobody on the roster is in the server.\n${nameRow(run.orphans)}`,
+    );
   }
-
   if (run.full.length > 0) {
-    const where = run.secondaryCategoryId
-      ? "Both categories are at **50** channels."
-      : `${formatCategory(guild, run.categoryId)} is at **50** channels.`;
-    container
-      .addSeparatorComponents(divider())
-      .addTextDisplayComponents(
-        textBlock(`### ${emojis.categories} Category full`),
-        textBlock(`${where}\n${nameLines(run.full)}`),
-      );
+    const full = run.secondaryCategoryId
+      ? "Both categories are at 50 channels."
+      : `${formatCategory(guild, run.categoryId)} is at 50 channels.`;
+    sections.push(`### ${emojis.categories} Category Full · ${run.full.length}\n-# ${full}\n${nameRow(run.full)}`);
   }
-
   if (run.refused.length > 0) {
-    container.addSeparatorComponents(divider()).addTextDisplayComponents(
-      textBlock(`### ${emojis.error} Could not continue`),
-      textBlock(
-        `Discord refused more channels. I need **Manage Channels** in the validation categories.\n${nameLines(run.refused)}`,
-      ),
+    sections.push(
+      `### ${emojis.error} Could Not Continue · ${run.refused.length}\n-# Discord refused more channels. I need Manage Channels in the validation categories.\n${nameRow(run.refused)}`,
     );
   }
-
   if (run.discordFailed.length > 0) {
-    container.addSeparatorComponents(divider()).addTextDisplayComponents(
-      textBlock(`### ${emojis.error} Channel not created`),
-      textBlock(`Discord did not create a ticket for these teams.\n${nameLines(run.discordFailed)}`),
+    sections.push(
+      `### ${emojis.error} Channel Not Created · ${run.discordFailed.length}\n-# Discord did not create a ticket for these teams.\n${nameRow(run.discordFailed)}`,
     );
+  }
+  if (sections.length > 0) {
+    container.addTextDisplayComponents(...sections.map((section) => textBlock(section)));
   }
 
   container
     .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(`-# Requested by ${formatUser(run.requestedBy)}`));
+    .addTextDisplayComponents(
+      textBlock(`-# Requested by ${formatUser(run.requestedBy)} · <t:${Math.floor(Date.now() / 1000)}:F>`),
+    );
 
   return {
     flags: v2Flags,

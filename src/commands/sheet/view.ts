@@ -1,9 +1,19 @@
-import { ContainerBuilder, MessageFlags, type InteractionReplyOptions } from "discord.js";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ContainerBuilder,
+  MessageFlags,
+  type InteractionReplyOptions,
+} from "discord.js";
 import { emojis } from "../../emojis.js";
+import { customEmoji } from "../../lib/custom-emoji.js";
 import { embedColors } from "../../lib/embeds.js";
 import { formatHelpEntry, formatSheetLink, formatUser } from "../../lib/formatters.js";
-import { PLAYER_FIELDS, playerBlockStart, playerSlotLabel, type SheetPlayer, type TeamFormat } from "../../lib/sheet.js";
-import { textBlock, v2Flags } from "../../lib/v2.js";
+import type { SheetPlayer, TeamFormat } from "../../lib/sheet.js";
+import { divider, textBlock, v2Flags } from "../../lib/v2.js";
+import { escapeDiscord } from "../room/labels.js";
+import { formatCurrentTitle } from "../team/view.js";
 import type { SheetOrigin, StoredSheetRecord } from "../tournament/store.js";
 
 export function sheetErrorMessage(title: string, description: string, ephemeral = true): InteractionReplyOptions {
@@ -15,6 +25,24 @@ export function sheetErrorMessage(title: string, description: string, ephemeral 
         .addTextDisplayComponents(textBlock(`# ${emojis.error} ${title}`), textBlock(description)),
     ],
   };
+}
+
+function stamp(): string {
+  return `<t:${Math.floor(Date.now() / 1000)}:F>`;
+}
+
+/** Link button to the Google Sheet; null when the stored value is not a web URL. */
+export function sheetButtonRow(sheetLink: string): ActionRowBuilder<ButtonBuilder> | null {
+  if (!/^https?:\/\//i.test(sheetLink.trim())) {
+    return null;
+  }
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setStyle(ButtonStyle.Link)
+      .setURL(sheetLink.trim())
+      .setLabel("Open sheet")
+      .setEmoji(customEmoji(emojis.link)),
+  );
 }
 
 export type SheetArchiveOk = {
@@ -38,14 +66,12 @@ export type SheetArchiveFail = {
   reason: string;
 };
 
-function extraColumnNote(extraColumns: number): string {
-  return extraColumns === 0
-    ? "No extra columns."
-    : `**${extraColumns}** extra column${extraColumns === 1 ? "" : "s"} stored for \`/team\`.`;
+function plural(count: number, one: string, many: string): string {
+  return `\`${count}\` ${count === 1 ? one : many}`;
 }
 
-function namedLink(name: string, sheetLink: string): string {
-  return sheetLink ? `${formatSheetLink(sheetLink)}` : `**${name}**`;
+function linkSuffix(sheetLink: string): string {
+  return sheetLink ? ` · ${formatSheetLink(sheetLink)}` : "";
 }
 
 function buildArchiveContainers(
@@ -53,43 +79,56 @@ function buildArchiveContainers(
   archived: SheetArchiveOk[],
   skipped: SheetArchiveSkip[],
   failed: SheetArchiveFail[],
+  actorId: string,
   commandId?: string,
 ) {
   const containers = [];
   const findPlayer = formatHelpEntry("sheet find player", commandId);
+  const footer = `-# Archived by ${formatUser(actorId)} · ${stamp()} · search it from any server with ${findPlayer}`;
 
   if (archived.length === 1 && skipped.length === 0 && failed.length === 0) {
     const row = archived[0];
     if (row) {
-      containers.push(
-        new ContainerBuilder()
-          .setAccentColor(embedColors.success)
-          .addTextDisplayComponents(
-            textBlock(`# ${emojis.success} Sheet archived`),
-            textBlock(
-              `**${row.name}** from **${row.guildName}** is now in the **global** player archive. Detected **${row.format}** with **${row.teams}** teams. ${extraColumnNote(row.extraColumns)}`,
-            ),
-            textBlock(`${findPlayer} can search it from any server.`),
-            textBlock(`${formatSheetLink(row.sheetLink)}\n*This is not an operable tournament.*`),
+      const extra = row.extraColumns === 0 ? "no extra columns" : `${plural(row.extraColumns, "extra column", "extra columns")} for \`/team\``;
+      const container = new ContainerBuilder()
+        .setAccentColor(embedColors.success)
+        .addTextDisplayComponents(
+          textBlock(`## ${emojis.success} Sheet Archived\n-# Global archive · not an operable tournament`),
+          textBlock(
+            [
+              `${emojis.torneo} **${escapeDiscord(row.name)}** · \`${row.format}\` · ${plural(row.teams, "team", "teams")}`,
+              `${emojis.server} From **${escapeDiscord(row.guildName)}** · ${extra}`,
+            ].join("\n"),
           ),
-      );
+        );
+      const button = sheetButtonRow(row.sheetLink);
+      if (button) {
+        container.addActionRowComponents(button);
+      }
+      containers.push(container.addSeparatorComponents(divider()).addTextDisplayComponents(textBlock(footer)));
     }
   } else if (archived.length > 0) {
     containers.push(
       new ContainerBuilder()
         .setAccentColor(embedColors.success)
         .addTextDisplayComponents(
-          textBlock(`# ${emojis.success} Sheets archived`),
           textBlock(
-            `Stored **${archived.length}** participant sheet${archived.length === 1 ? "" : "s"} from **${sourceGuildName}** in the global archive.`,
+            `## ${emojis.success} Sheets Archived\n${plural(archived.length, "sheet", "sheets")} from **${escapeDiscord(sourceGuildName)}** are now in the global archive.`,
           ),
-          textBlock(`${findPlayer} can search them from any server.`),
+        )
+        .addSeparatorComponents(divider())
+        .addTextDisplayComponents(
           textBlock(
             archived
-              .map((row) => `> **${row.name}** · \`${row.format}\` · **${row.teams}** teams · ${formatSheetLink(row.sheetLink)}`)
+              .map(
+                (row) =>
+                  `- **${escapeDiscord(row.name)}** · \`${row.format}\` · ${plural(row.teams, "team", "teams")}${linkSuffix(row.sheetLink)}`,
+              )
               .join("\n"),
           ),
-        ),
+        )
+        .addSeparatorComponents(divider())
+        .addTextDisplayComponents(textBlock(footer)),
     );
   }
 
@@ -98,13 +137,12 @@ function buildArchiveContainers(
       new ContainerBuilder()
         .setAccentColor(embedColors.info)
         .addTextDisplayComponents(
-          textBlock(`# ${emojis.info} Already in the archive`),
           textBlock(
-            `Skipped **${skipped.length}** sheet${skipped.length === 1 ? "" : "s"} because that Google Sheet was already stored globally.`,
+            `## ${emojis.info} Already in the Archive · ${skipped.length}\n-# That Google Sheet was already stored globally, so it was skipped.`,
           ),
           textBlock(
             skipped
-              .map((row) => `> **${row.name}** · ${namedLink(row.name, row.sheetLink)}\n> *${row.reason}*`)
+              .map((row) => `- **${escapeDiscord(row.name)}**${linkSuffix(row.sheetLink)} · *${row.reason}*`)
               .join("\n"),
           ),
         ),
@@ -116,15 +154,10 @@ function buildArchiveContainers(
       new ContainerBuilder()
         .setAccentColor(embedColors.error)
         .addTextDisplayComponents(
-          textBlock(`# ${emojis.error} Could not archive`),
-          textBlock(`**${failed.length}** row${failed.length === 1 ? "" : "s"} did not make it into the archive.`),
+          textBlock(`## ${emojis.error} Could Not Archive · ${failed.length}\n-# These rows did not make it into the archive.`),
           textBlock(
             failed
-              .map((row) =>
-                row.sheetLink
-                  ? `> **${row.name}** · ${formatSheetLink(row.sheetLink)}\n> *${row.reason}*`
-                  : `> **${row.name}:** ${row.reason}`,
-              )
+              .map((row) => `- **${escapeDiscord(row.name)}**${linkSuffix(row.sheetLink)} · *${row.reason}*`)
               .join("\n"),
           ),
         ),
@@ -139,16 +172,17 @@ export function sheetArchiveResultMessage(
   archived: SheetArchiveOk[],
   skipped: SheetArchiveSkip[],
   failed: SheetArchiveFail[],
+  actorId: string,
   commandId?: string,
 ): InteractionReplyOptions {
-  const containers = buildArchiveContainers(sourceGuildName, archived, skipped, failed, commandId);
+  const containers = buildArchiveContainers(sourceGuildName, archived, skipped, failed, actorId, commandId);
   if (containers.length === 0) {
     return sheetErrorMessage("Nothing archived", "No sheets were stored in the global archive.", false);
   }
-  return { flags: v2Flags, components: containers };
+  return { flags: v2Flags, components: containers, allowedMentions: { parse: [] } };
 }
 
-function originLabel(origin: SheetOrigin): string {
+export function originLabel(origin: SheetOrigin): string {
   if (origin === "historical") {
     return "historical";
   }
@@ -158,28 +192,31 @@ function originLabel(origin: SheetOrigin): string {
   return "active tournament";
 }
 
-function sheetTitle(sheet: StoredSheetRecord): string {
-  const event = sheet.tournamentName ? `**${sheet.tournamentName}**` : "Manual sheet";
-  const server = sheet.guildName || "Unknown server";
-  return `${event} (\`${sheet.format}\`, ${originLabel(sheet.origin)})\n> **Server:** **${server}**`;
+function sheetLine(sheet: StoredSheetRecord): string {
+  const event = sheet.tournamentName ? `**${escapeDiscord(sheet.tournamentName)}**` : "Manual sheet";
+  const server = sheet.guildName ? ` · **${escapeDiscord(sheet.guildName)}**` : "";
+  return `- ${event} · \`${sheet.format}\` · ${originLabel(sheet.origin)}${server}${linkSuffix(sheet.sheetLink)}`;
 }
 
-function playerFieldLines(player: SheetPlayer, headers: string[], format: TeamFormat): string[] {
-  const start = playerBlockStart(format) + player.slot * PLAYER_FIELDS.length;
-  return PLAYER_FIELDS.map((field, index) => {
-    const label = headers[start + index] || `${playerSlotLabel(player.slot)} ${field.label}`;
-    const value = player[field.key];
-    if (!value) {
-      return `> **${label}:** *Empty*`;
-    }
-    if (field.key === "discordId" && /^\d{17,20}$/.test(value)) {
-      return `> **${label}:** ${formatUser(value)}`;
-    }
-    if (field.key === "gameName" || field.key === "discordTag" || field.key === "currentTitle") {
-      return `> **${label}:** **${value}**`;
-    }
-    return `> **${label}:** \`${value}\``;
-  });
+function playerLines(player: SheetPlayer, teamName: string, format: TeamFormat): string[] {
+  const lines: string[] = [];
+  if (format !== "1vs1" && teamName) {
+    lines.push(`${emojis.humans} **Team** ${escapeDiscord(teamName)} · captain`);
+  }
+  const tag = player.discordTag ? `**${escapeDiscord(player.discordTag)}**` : "*No tag*";
+  const id = /^\d{17,20}$/.test(player.discordId)
+    ? formatUser(player.discordId)
+    : player.discordId
+      ? `\`${escapeDiscord(player.discordId)}\``
+      : "*no ID*";
+  lines.push(`**Discord** ${tag} · ${id}`);
+  const gameName = player.gameName ? `**${escapeDiscord(player.gameName)}**` : "*No name*";
+  const gameId = player.gameId ? `\`${escapeDiscord(player.gameId)}\`` : "*no ID*";
+  lines.push(`**In-game** ${gameName} · ${gameId}`);
+  if (player.currentTitle.trim()) {
+    lines.push(`**Title** ${formatCurrentTitle(escapeDiscord(player.currentTitle))}`);
+  }
+  return lines;
 }
 
 export type PlayerHit = {
@@ -200,7 +237,7 @@ export function playerFoundMessages(hits: PlayerHit[]): InteractionReplyOptions 
         new ContainerBuilder()
           .setAccentColor(embedColors.error)
           .addTextDisplayComponents(
-            textBlock(`# ${emojis.error} No players matched`),
+            textBlock(`## ${emojis.error} No Players Matched`),
             textBlock("None of the stored sheets across this bot matched those identifiers. Try another field or a shorter name."),
           ),
       ],
@@ -210,26 +247,16 @@ export function playerFoundMessages(hits: PlayerHit[]): InteractionReplyOptions 
   const shown = hits.slice(0, 5);
   const extra = hits.length - shown.length;
   const containers = shown.map((hit, index) => {
-    const sheetLines = hit.sheets.map((sheet) => `> ${sheetTitle(sheet)}\n> ${formatSheetLink(sheet.sheetLink)}`);
-    const note =
-      hits.length === 1
-        ? `Matched **${hit.displayName}** in **${hit.sheets.length}** stored sheet${hit.sheets.length === 1 ? "" : "s"}.`
-        : `Player **${index + 1}** of **${hits.length}**: **${hit.displayName}** appeared in **${hit.sheets.length}** sheet${hit.sheets.length === 1 ? "" : "s"}.`;
-
-    const captainLines = playerFieldLines(hit.captain, hit.headers, hit.format);
-    const teamLine =
-      hit.format === "1vs1" || !hit.teamName
-        ? captainLines.join("\n")
-        : `> **Team:** **${hit.teamName}**\n${captainLines.join("\n")}`;
-
+    const found = `Found in ${hit.sheets.length} stored ${hit.sheets.length === 1 ? "sheet" : "sheets"}`;
+    const position = hits.length > 1 ? `Player ${index + 1} of ${hits.length} · ${found}` : found;
     return new ContainerBuilder()
       .setAccentColor(embedColors.info)
       .addTextDisplayComponents(
-        textBlock(`# ${emojis.members} ${hit.displayName}`),
-        textBlock(note),
-        textBlock(`**Captain of their team**\n${teamLine}`),
-        textBlock(`**Sheets**\n${sheetLines.join("\n")}`),
-      );
+        textBlock(`## ${emojis.members} ${escapeDiscord(hit.displayName)}\n-# ${position}`),
+        textBlock(playerLines(hit.captain, hit.teamName, hit.format).join("\n")),
+      )
+      .addSeparatorComponents(divider())
+      .addTextDisplayComponents(textBlock([`### ${emojis.torneo} Sheets`, ...hit.sheets.map(sheetLine)].join("\n")));
   });
 
   if (extra > 0) {
@@ -237,14 +264,15 @@ export function playerFoundMessages(hits: PlayerHit[]): InteractionReplyOptions 
       new ContainerBuilder()
         .setAccentColor(embedColors.info)
         .addTextDisplayComponents(
-          textBlock(`# ${emojis.next} More matches`),
-          textBlock(`**${extra}** more distinct player${extra === 1 ? "" : "s"} matched. Narrow the search with a Discord ID or in-game ID.`),
+          textBlock(`## ${emojis.next} More Matches · ${extra}`),
+          textBlock("Narrow the search with a Discord ID or in-game ID."),
         ),
     );
   }
 
   return {
     flags: [...v2Flags, MessageFlags.Ephemeral],
+    allowedMentions: { parse: [] },
     components: containers,
   };
 }
@@ -275,11 +303,11 @@ const ISSUE_COPY: Record<SheetIssueKind, { title: string; body: string }> = {
   },
   "duplicate-discord": {
     title: "Duplicate Discord IDs",
-    body: "Each Discord ID can appear once on the sheet. These values are repeated.",
+    body: "Each Discord ID can appear once on the sheet.",
   },
   "duplicate-game": {
     title: "Duplicate in-game IDs",
-    body: "Each in-game ID can appear once on the sheet. These values are repeated.",
+    body: "Each in-game ID can appear once on the sheet.",
   },
   "discord-id": {
     title: "Discord IDs to fix",
@@ -287,15 +315,15 @@ const ISSUE_COPY: Record<SheetIssueKind, { title: string; body: string }> = {
   },
   "game-id": {
     title: "In-game IDs to fix",
-    body: "An in-game ID has to be **8–16** hex characters, ignoring spaces.",
+    body: "An in-game ID has to be 8–16 hex characters, ignoring spaces.",
   },
   "account-age": {
     title: "Accounts not older than 30 days",
-    body: "Discord accounts have to be older than **30 days**.",
+    body: "Discord accounts have to be older than 30 days.",
   },
   "staff-role": {
     title: "Staff roles on the roster",
-    body: "Players cannot hold the server **Staff**, **Judge**, or **Recorder** role.",
+    body: "Players cannot hold the server Staff, Judge, or Recorder role.",
   },
   membership: {
     title: "Not in this server",
@@ -318,41 +346,38 @@ function clipLines(lines: string[]): string {
 
 export function sheetValidateMessage(
   report: SheetValidateReport,
-  commandIds: { tournamentCommandId?: string; utilityCommandId?: string },
+  commandIds: { tournamentCommandId?: string; utilityCommandId?: string; sheetCommandId?: string },
 ): InteractionReplyOptions {
   const issueCount = report.buckets.reduce((sum, bucket) => sum + bucket.lines.length, 0);
   const containers = [];
+  const facts = `\`${report.format}\` · ${plural(report.teams, "team", "teams")} · ${plural(report.players, "player", "players")}`;
+  const staffNote = report.staffConfigured
+    ? []
+    : [`${emojis.info} *Staff, judge, and recorder roles are not configured, so that check was skipped.*`];
 
   if (issueCount === 0) {
     const register = formatHelpEntry("tournament add", commandIds.tournamentCommandId);
-    const staffNote = report.staffConfigured
-      ? ""
-      : "\nStaff, judge, and recorder roles are not configured, so that check was skipped.";
     containers.push(
       new ContainerBuilder()
         .setAccentColor(embedColors.success)
         .addTextDisplayComponents(
-          textBlock(`# ${emojis.success} Sheet passed`),
-          textBlock(
-            `Checked **${report.players}** player${report.players === 1 ? "" : "s"} in **${report.teams}** team${report.teams === 1 ? "" : "s"} (\`${report.format}\`). Nothing failed.${staffNote}`,
-          ),
-          textBlock(`Register the tournament with ${register} when you are ready. This check does not store the sheet.`),
-        ),
+          textBlock(`## ${emojis.success} Sheet Passed\n-# This check does not store the sheet`),
+          textBlock([`${facts} · nothing failed`, ...staffNote].join("\n")),
+        )
+        .addSeparatorComponents(divider())
+        .addTextDisplayComponents(textBlock(`-# Register the tournament with ${register} when you are ready`)),
     );
   } else {
-    const staffNote = report.staffConfigured
-      ? ""
-      : " Staff, judge, and recorder roles are not configured, so that check was skipped.";
+    const again = formatHelpEntry("sheet validate", commandIds.sheetCommandId);
     containers.push(
       new ContainerBuilder()
         .setAccentColor(embedColors.error)
         .addTextDisplayComponents(
-          textBlock(`# ${emojis.error} Sheet needs fixes`),
-          textBlock(
-            `**${issueCount}** check${issueCount === 1 ? "" : "s"} failed across **${report.players}** player${report.players === 1 ? "" : "s"} in **${report.teams}** team${report.teams === 1 ? "" : "s"} (\`${report.format}\`).${staffNote}`,
-          ),
-          textBlock("The tournament was not created. Correct the Google Sheet, then run this again."),
-        ),
+          textBlock(`## ${emojis.error} Sheet Needs Fixes\n-# Nothing was registered`),
+          textBlock([`${facts} · **Failed checks** \`${issueCount}\``, ...staffNote].join("\n")),
+        )
+        .addSeparatorComponents(divider())
+        .addTextDisplayComponents(textBlock(`-# Fix the Google Sheet and run ${again} again`)),
     );
   }
 
@@ -366,8 +391,8 @@ export function sheetValidateMessage(
       new ContainerBuilder()
         .setAccentColor(embedColors.error)
         .addTextDisplayComponents(
-          textBlock(`# ${emojis.error} ${copy.title}`),
-          textBlock(`${copy.body}${tagHint}\n\n${clipLines(bucket.lines)}`),
+          textBlock(`### ${emojis.error} ${copy.title} · ${bucket.lines.length}\n-# ${copy.body}${tagHint}`),
+          textBlock(clipLines(bucket.lines)),
         ),
     );
   }

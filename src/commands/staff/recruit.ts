@@ -5,7 +5,7 @@ import {
   type GuildMember,
 } from "discord.js";
 import type { StaffInput } from "./fields.js";
-import { formatHelpEntry, formatMember, formatRole, formatUser } from "../../lib/formatters.js";
+import { formatHelpEntry, formatMember, formatUser } from "../../lib/formatters.js";
 import { actorMatches } from "../../lib/command-access.js";
 import { auditStaffMembership } from "./audit.js";
 import {
@@ -191,11 +191,12 @@ export async function handleStaffRecruit(
     staffMembershipMessage({
       kind: "recruit",
       targetId: target.id,
-      actorName: interaction.user.username,
+      actorId: interaction.user.id,
       position: recruitLabel(post),
-      roles: toAdd.map((role) => formatRole(guild, role.id)).join("\n"),
+      roleIds: toAdd.map((role) => role.id),
+      guild,
       thumbnailUrl: target.displayAvatarURL({ size: 256 }),
-      note: welcomeNote ?? undefined,
+      welcome: welcomeNote ? { problem: welcomeNote } : { channelId: staff.staffchatChannelId },
     }),
   );
   await auditStaffMembership(

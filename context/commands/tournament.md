@@ -41,11 +41,21 @@ Valida bracket + layout de la hoja. Cada jugador tiene **5** columnas (tag, Disc
 
 Apaga automatización y **borra la config del torneo** más todo lo que el bot guardó de ese mundo: partidos, salas, schedules y asistencias. **No** borra canales Discord, la hoja de Google ni el bracket externo. La copia de la sheet en BD **pasa a histórico** (sigue saliendo en `/sheet find player` / `/sheet get`). Admin u Organiser. Audita.
 
+La respuesta es un V2 rojo `## Tournament Removed`. Lleva lo borrado (**Cleared**: matches, rooms, schedules, attendance) y lo que se queda (**Left in place**) en una línea cada uno, y el footer `Removed by` con hora y la mención de `/sheet find player`.
+
 ## `/tournament info` / `/tournament list`
 
-Info: un torneo completo. List: todos del servidor (efímero). No mutan. No auditan. Admin u Organiser.
+Info: un torneo completo. List: todos del servidor (efímero), con `N of 4 slots used`, una línea por torneo (formato y auto-room **On**/**Off**), el bracket en `-#` y el footer con la mención de `/tournament info`. No mutan. No auditan. Admin u Organiser.
 
-El panel V2 de add / edit / info separa **Identity**, **Roles**, **Channels** y **Ticket categories**. Omite categorías de tickets (y el canal Events Links) que no estén configuradas: no muestra *Not configured*. Footer: *Created by* con mención de quien registró el torneo.
+El panel V2 de add / edit / info lleva:
+
+- Título `##`: en `info` es el nombre con el bracket en `-#`; en `add` / `edit`, *Tournament Registered* / *Tournament Updated*.
+- Una línea de identidad (formato, columnas extra, auto-room, API key).
+- Si algo ya no existe, aviso con `alert`.
+- El botón **Open sheet**.
+- `### Roles`, `### Channels` (emparejados de dos en dos en la misma línea) y `### Ticket Categories`.
+
+`edit` dice cuántos valores cambiaron y marca cada uno con *updated*. Omite categorías de tickets (y el canal Events Links) que no estén configuradas: no muestra *Not configured*. Footer en `info`: *Created by* con mención de quien registró el torneo.
 
 ## `/tournament report`
 
@@ -95,7 +105,9 @@ El libro tiene siete hojas, en este orden. Los nombres de usuario, rol y canal v
 
 `tournament` lista los torneos **de ese servidor**. `id_header` lista **solo** las columnas de Discord ID de ese formato: `1vs1` → 1 header, `2vs2` → 2, y así hasta `5vs5`. Los demás headers de la hoja no aparecen. El valor interno es el slot (capitán = 0). Los nombres salen de la fila 1 almacenada, o del contrato canónico (`Captain Discord ID`, `Player 2 Discord ID`, …).
 
-Con `id_header`: asigna el rol a los jugadores de **esa** columna (Discord ID). Sin `id_header`: **todos** los jugadores de todas las columnas de Discord ID, pero **antes** un V2 de confirmación (qué rol, a quién, qué se omite). Botones Confirm / Cancel; solo quien lanzó el comando puede pulsarlos. Sin confirmación no se asigna nada.
+Con `id_header`: asigna el rol a los jugadores de **esa** columna (Discord ID). Sin `id_header`: **todos** los jugadores de todas las columnas de Discord ID, pero **antes** un V2 de confirmación (qué rol, a quién, qué se omite). Es un aviso naranja con las columnas y los jugadores en una línea y dos viñetas (qué se omite, que no se puede deshacer). Los botones **Give to all players** (rojo) / **Cancel** solo los pulsa quien lanzó el comando, como dice el `-#` de encima. Sin confirmación no se asigna nada; cancelar deja *Role Assignment Cancelled* con `Cancelled by`.
+
+El resultado es **un solo** V2: *Role Given to Players* con torneo y alcance en `-#` y todos los conteos en una línea (Given, Already had it, Not in server, Banned, Invalid ID, Failed). Debajo, solo los grupos con gente, cada uno con su conteo en el título: quienes recibieron el rol como menciones seguidas, y los problemas en viñetas con equipo e ID. Verde si todo salió, naranja si hubo saltos, rojo si no se dio a nadie. Footer `Given by` con hora.
 
 Resuelve por Discord ID (snowflake). Omite y reporta: IDs inválidos o vacíos, no están en el servidor, ya tenían el rol, o están baneados (usuario o ID de juego oficial). En Discord **no** menciona la hoja.
 
@@ -131,4 +143,11 @@ Al crear el canal se publica un Components V2 y, después, un mensaje de texto:
 5. Subtítulo **Issues**: una línea por slot con problema, `- @usuario **tag** -` y el mismo rótulo que Verification en `/team info` (`Not verified` o `Not in server`, con el emoji de error). Sin ID válido no hay mención: va el tag o el nombre del slot
 6. Mensaje de texto que menciona a quien quedó en el canal: *Please read this and take care of solving it as soon as possible.*
 
-El topic del canal queda `Group validation | Tournament ID: <id de Challonge> | Transcript: <id del canal>`. Ese canal es el de `transcript_channel` de este comando, no el transcript de las salas. Este comando no genera el HTML. `/ticket close` dentro de ese canal avisa en efímero que se borra en **5** segundos, envía el transcript al canal anotado y borra el canal. `reopen` y `delete` no lo archivan. La respuesta de `validate` se publica en el canal donde se usó.
+El topic del canal queda `Group validation | Tournament ID: <id de Challonge> | Transcript: <id del canal>`. Ese canal es el de `transcript_channel` de este comando, no el transcript de las salas. Este comando no genera el HTML. `/ticket close` dentro de ese canal avisa en efímero que se borra en **5** segundos, envía el transcript al canal anotado y borra el canal. `reopen` y `delete` no lo archivan. La respuesta de `validate` se publica en el canal donde se usó:
+
+- Un V2 con el título según el resultado, y el torneo con el `verified_role` en una línea.
+- **Checked**, **Verified**, **Tickets** y **No one to add** en una línea.
+- Las categorías y el canal de transcripts en otra, y una frase corta.
+- Debajo, solo las secciones con contenido (*Opened*, *No One to Add*, *Category Full*, *Could Not Continue*, *Channel Not Created*). Cada una lleva el conteo en el título y los canales o equipos seguidos.
+- Naranja si quedan huecos.
+- Footer `Requested by` con hora.

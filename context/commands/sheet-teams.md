@@ -20,6 +20,8 @@ CSV: columna 1 = nombre del torneo, columna 2 = URL de la Google Sheet. **Sin fi
 
 La copia guarda el servidor de origen (`guildId` + nombre) para mostrarlo en `find player` y `get`, pero el pozo de búsqueda es de **todo el bot**.
 
+Respuesta para una sola hoja: V2 verde `## Sheet Archived` con *Global archive · not an operable tournament* en `-#`. Debajo, torneo, formato y equipos en una línea, y el servidor de origen con las columnas extra en otra. Después el botón de enlace **Open sheet** y el footer `Archived by` con mención, hora y la mención de `/sheet find player`. Con CSV: *Sheets Archived* con una línea por hoja (nombre · formato · equipos · enlace). Las omitidas y las fallidas van en bloques propios (azul y rojo), cada uno con el conteo en el título y una viñeta por fila con el motivo.
+
 ## `/sheet get`
 
 **Para qué:** Recuperar el link de una hoja archivada por **nombre de torneo**, o exportar el catálogo entero. Lectura; no audita. Admin u Organiser; respuesta efímera.
@@ -31,7 +33,7 @@ La copia guarda el servidor de origen (`guildId` + nombre) para mostrarlo en `fi
 
 \*Al menos uno. Se pueden usar los dos a la vez.
 
-Autocomplete lista las sheets almacenadas de **todo el bot** (nombre · servidor). El valor interno es el id de la copia. Si el texto no es un id, busca por nombre (exacto primero, si no contiene). Varias coincidencias → varias líneas, cada una con servidor y `[Click Here](url)`.
+Autocomplete lista las sheets almacenadas de **todo el bot** (nombre · servidor). El valor interno es el id de la copia. Si el texto no es un id, busca por nombre (exacto primero, si no contiene). Una coincidencia: el nombre del torneo es el título `##`, con el origen (*historical*, *manual archive*, *active tournament*) en `-#`. Debajo van el formato y el servidor, y el botón **Open sheet**. Varias coincidencias: *Sheets Matched* con el conteo y una línea por hoja (nombre · formato · origen · servidor · `[Click Here](url)`). El catálogo CSV va con el conteo, el componente File y el footer `Exported by`.
 
 CSV: columnas `Tournament,Sheet,Server` (con header). Incluye activas, manuales e históricas. Archivo `tournament-sheets.csv`.
 
@@ -48,7 +50,7 @@ CSV: columnas `Tournament,Sheet,Server` (con header). Incluye activas, manuales 
 
 \*Al menos uno. Varios rellenos = **OR**.
 
-Un V2 **por jugador distinto**: datos del capitán (y nombre de equipo si no es 1vs1) + lista de sheets. Cada sheet enseña **el servidor** al que pertenece. Los campos extra de la hoja **no** entran aquí. Varios jugadores → varios V2, cada uno con copy de *ese* jugador.
+Un V2 **por jugador distinto**. El título `##` es el nombre y debajo, en `-#`, en cuántas hojas aparece. El capitán va en cuatro líneas: equipo (si no es 1vs1), Discord (tag y mención o ID), in-game (nombre e ID) y título con `hero` / `legend`. Debajo, `### Sheets` con una línea por hoja (nombre · formato · origen · servidor · enlace). Los campos extra de la hoja **no** entran aquí. Varios jugadores → varios V2, cada uno con copy de *ese* jugador.
 
 ## `/sheet validate`
 
@@ -58,7 +60,7 @@ Un V2 **por jugador distinto**: datos del capitán (y nombre de equipo si no es 
 
 Admin u Organiser. Previo a crear torneo. Efímero. No archiva la hoja y no audita. Relación: `/utility discord tag` para corregir tags, `/tournament add` para registrar después.
 
-Recorre cada jugador de la hoja viva y aplica las comprobaciones de [../domains/sheet.md](../domains/sheet.md). Si algo falla, un V2 de resumen y un V2 por tipo de fallo. Si pasa, indica que se puede registrar con `/tournament add`.
+Recorre cada jugador de la hoja viva y aplica las comprobaciones de [../domains/sheet.md](../domains/sheet.md). Si algo falla, un V2 de resumen y un V2 por tipo de fallo. El resumen es *Sheet Needs Fixes*, con formato, equipos, jugadores y **Failed checks** en una línea, y el footer con la mención de `/sheet validate`. Cada tipo de fallo lleva el conteo en el título `###` y la explicación en `-#`. Si pasa, es *Sheet Passed* y el footer indica que se puede registrar con `/tournament add`.
 
 ## `/utility discord tag`
 
@@ -80,7 +82,7 @@ Admin u Organiser. Salida efímera, un username por línea.
 
 Busca en **cualquier jugador** de la fila. `user` coincide por Discord ID. `alias` coincide por **game ID**, **in-game name** o **Discord ID** (el bot clasifica el texto: snowflake → Discord ID, hex 8–16 → game ID, si no → nombre; nombre exacto primero, si no contiene con ≥ 3 caracteres).
 
-Un V2 por equipo coincidente. El **título es el nombre del equipo** (sin thumbnail del container). Cada jugador va en su propio **Section** con el avatar de Discord como thumbnail: Discord Tag, Discord ID, Game Name, Game ID, Title (emoji `hero` / `legend` si el título contiene *hero* o *legend*), y **Verification al final**. Verification: **success + In server** si está en el servidor **y** tiene el `verified_role` de `/settings`; **banned + Banned** si está baneado del servidor; si está pero sin el rol, *Not verified*; si no está, *Not in server*. En `2vs2`…`5vs5` el nombre de equipo es el título. Los campos extra van **al final**, con el nombre de cada header. Footer: `-# Requested by` con `formatUser`. Varios equipos → varios V2 (máximo 5 + aviso). Sin coincidencias: V2 de vacío. En Discord **no** menciona la hoja ni `/sheet find player`.
+Un V2 por equipo coincidente. El **título es el nombre del equipo** (sin thumbnail del container). Bajo el título `##` van el torneo y *matched by* en una línea, y `-# Team N of M` si hay varios. Cada jugador va en su propio **Section** con el avatar de Discord como thumbnail. El título del section es `### Captain` / `Player N` con la **Verification** al lado. Debajo, tres líneas: Discord (tag y mención, o el ID si no es válido), juego (nombre e ID) y Title (emoji `hero` / `legend` si el título contiene *hero* o *legend*). Verification: **success + In server** si está en el servidor **y** tiene el `verified_role` de `/settings`; **banned + Banned** si está baneado del servidor; si está pero sin el rol, *Not verified*; si no está, *Not in server*. En `2vs2`…`5vs5` el nombre de equipo es el título. Los campos extra van **al final**, con el nombre de cada header. Footer: `-# Requested by` con `formatUser` y la hora. Varios equipos → varios V2 (máximo 5 + aviso). Sin coincidencias: V2 de vacío. En Discord **no** menciona la hoja ni `/sheet find player`.
 
 ## `/team list`
 
