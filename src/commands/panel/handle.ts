@@ -3,6 +3,7 @@ import {
   MessageFlags,
   type ButtonInteraction,
   type ChatInputCommandInteraction,
+  type ModalSubmitInteraction,
   type StringSelectMenuInteraction,
 } from "discord.js";
 import { emojis } from "../../emojis.js";
@@ -12,6 +13,7 @@ import { embedColors } from "../../lib/embeds.js";
 import { slashMention, subcommandPath } from "../../lib/register-slash.js";
 import { textBlock, v2Flags } from "../../lib/v2.js";
 import { buildGuideContainer } from "./guide-view.js";
+import { DEADLINE_MODAL_PREFIX, handleDeadlineModal, handleTournamentPanel } from "./tournament.js";
 import {
   buildExpiredPanel,
   buildTutorialPanel,
@@ -24,7 +26,7 @@ import {
   TUTORIAL_IDS,
 } from "./tutorial.js";
 
-type PanelInteraction = ChatInputCommandInteraction | ButtonInteraction | StringSelectMenuInteraction;
+type PanelInteraction = ChatInputCommandInteraction | ButtonInteraction | StringSelectMenuInteraction | ModalSubmitInteraction;
 
 const unauthorized = {
   content: "This server is not authorized to use this bot.",
@@ -36,28 +38,46 @@ const adminOnly = {
   flags: MessageFlags.Ephemeral,
 } as const;
 
-/** `context/commands/access.md`: `/panel tutorial` is Admin only. */
-async function canUsePanel(interaction: PanelInteraction): Promise<boolean> {
-  return actorMatches(interaction, { admin: true });
-}
+const adminOrOrganiser = {
+  content: "You need **Admin** or **Organiser** to post tournament panels.",
+  flags: MessageFlags.Ephemeral,
+} as const;
 
-async function guard(interaction: PanelInteraction): Promise<boolean> {
+/**
+ * `context/commands/access.md`: `/panel tutorial` (and its buttons and menus) is Admin only;
+ * `/panel tournament …` (and the deadline form) is Admin or Organiser.
+ */
+async function guard(interaction: PanelInteraction, tournamentPanel: boolean): Promise<boolean> {
   if (!isAllowedGuild(interaction.guildId)) {
     await interaction.reply(unauthorized);
     return false;
   }
-  if (!(await canUsePanel(interaction))) {
-    await interaction.reply(adminOnly);
+  const allowed = await actorMatches(interaction, tournamentPanel ? { admin: true, organiser: true } : { admin: true });
+  if (!allowed) {
+    await interaction.reply(tournamentPanel ? adminOrOrganiser : adminOnly);
     return false;
   }
   return true;
 }
 
-export async function handlePanelSlash(interaction: ChatInputCommandInteraction): Promise<void> {
-  if (!(await guard(interaction)) || !interaction.guildId) {
+export async function handlePanelModal(interaction: ModalSubmitInteraction): Promise<void> {
+  if (!interaction.customId.startsWith(DEADLINE_MODAL_PREFIX) || !(await guard(interaction, true))) {
     return;
   }
-  if (subcommandPath(interaction) !== "tutorial") {
+  await handleDeadlineModal(interaction);
+}
+
+export async function handlePanelSlash(interaction: ChatInputCommandInteraction): Promise<void> {
+  const path = subcommandPath(interaction);
+  const group = interaction.options.getSubcommandGroup(false);
+  if (!(await guard(interaction, group === "tournament")) || !interaction.guildId) {
+    return;
+  }
+  if (group === "tournament") {
+    await handleTournamentPanel(interaction, interaction.options.getSubcommand(true));
+    return;
+  }
+  if (path !== "tutorial") {
     return;
   }
   if (!interaction.channel?.isSendable()) {
@@ -75,7 +95,7 @@ export async function handlePanelSlash(interaction: ChatInputCommandInteraction)
 }
 
 export async function handlePanelSelect(interaction: StringSelectMenuInteraction): Promise<void> {
-  if (!(await guard(interaction)) || !interaction.guildId) {
+  if (!(await guard(interaction, false)) || !interaction.guildId) {
     return;
   }
   const session = touchSession(interaction.guildId, interaction.user.id);
@@ -94,7 +114,7 @@ export async function handlePanelSelect(interaction: StringSelectMenuInteraction
 }
 
 export async function handlePanelButton(interaction: ButtonInteraction): Promise<void> {
-  if (!(await guard(interaction)) || !interaction.guildId) {
+  if (!(await guard(interaction, false)) || !interaction.guildId) {
     return;
   }
   const guildId = interaction.guildId;

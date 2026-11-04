@@ -1,6 +1,27 @@
 # Panel
 
-Paneles informativos para el staff. Slash: comando `panel`. Solo **Admin** ([access.md](access.md)).
+Paneles informativos. Slash: comando `panel`. `/panel tutorial` es solo **Admin**; `/panel tournament …` es **Admin u Organiser** ([access.md](access.md)). Ninguno audita: publican información, no cambian datos del bot.
+
+## `/panel tournament rules` · `bracket` · `deadline`
+
+**Para qué:** Publicar en el canal donde se ejecuta un panel informativo de un torneo. Es la respuesta pública al comando, en Components V2 con el acento dorado de la familia Tournament. Arriba va el nombre del torneo en `-#`; abajo, `-# Posted by` con mención (sin ping) y hora.
+
+`tournament` es obligatorio en los tres: autocomplete con los torneos del servidor.
+
+| Subcomando | Campos | Panel |
+|---|---|---|
+| `rules` | `spanish`, `english`: enlaces `https://` obligatorios | `## Tournament Rules` (emoji `rules`, icono del servidor de thumbnail si tiene). Texto en inglés con la traducción al español en `-#`. Botones de enlace **Reglas en español** y **English rules** con su bandera |
+| `bracket` | `shuffle`: enlace de YouTube (`youtube.com` o `youtu.be`) obligatorio | `## Bracket` (emoji `torneo`, emoji `challonge` de thumbnail). Sección **Challonge bracket** con el botón **Open bracket** y sección **Team shuffle evidence** con **Watch on YouTube**. El enlace del bracket no se escribe: el bot lo pide a Challonge (`full_challonge_url`) con el ID y la API key guardados del torneo. Si Challonge no responde, no publica y lo dice en efímero |
+| `deadline` | `role`: rol de participantes | Abre un formulario **Rounds** (una ronda por línea, `10/10 - 14/10`). Publica la mención del rol, que **sí hace ping**, y debajo `## Round Deadlines` (emoji `calendar`), una frase para que estén atentos a las fechas y `**Round N** · dd/mm → dd/mm` por línea |
+
+### Fechas de `deadline`
+
+- Acepta `dd/mm - dd/mm`, con `-`, `–`, `—`, `→` o `to`, y un `Round N:` delante opcional. Se puede escribir el año (`dd/mm/yyyy`).
+- Sin año, la primera fecha toma el año actual. Si una fecha retrocede meses respecto a la anterior (diciembre → enero), pasa al año siguiente.
+- Las rondas van en orden y no se solapan: cada una empieza después de que termina la anterior, y termina el mismo día o después de empezar. Fechas que no existen, formatos que no se entienden o más de **25** rondas se rechazan en efímero y no se publica nada.
+- Si el rol no es mencionable y el bot no tiene **Mention All Roles** en el canal, el panel sale igual y quien lo lanzó recibe un aviso efímero de que no hubo notificación.
+
+Los paneles no se guardan: para cambiar uno, se vuelve a lanzar el comando y se borra el anterior.
 
 ## `/panel tutorial`
 

@@ -3,6 +3,8 @@ export type ChallongeTournament = {
   name: string;
   url: string;
   state: string;
+  /** Public bracket page, e.g. `https://challonge.com/rakshasa_t2`. */
+  fullUrl?: string;
 };
 
 export type ChallongeParticipant = {
@@ -153,7 +155,7 @@ async function challongeGet(path: string, apiKey: string, timeoutMs: number): Pr
 
 export async function fetchChallongeTournament(id: string, apiKey: string): Promise<ChallongeTournament> {
   const body = (await challongeGet(`tournaments/${encodeURIComponent(id)}.json`, apiKey, 12_000)) as {
-    tournament?: { id?: number; name?: string; url?: string; state?: string };
+    tournament?: { id?: number; name?: string; url?: string; state?: string; full_challonge_url?: string };
   };
   const tournament = body.tournament;
   if (!tournament?.id || !tournament.name || !tournament.url) {
@@ -165,6 +167,7 @@ export async function fetchChallongeTournament(id: string, apiKey: string): Prom
     name: tournament.name,
     url: tournament.url,
     state: tournament.state ?? "unknown",
+    fullUrl: tournament.full_challonge_url,
   };
 }
 
