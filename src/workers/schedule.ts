@@ -1,7 +1,6 @@
 import type { Client, Guild } from "discord.js";
 import type { Schedule } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
-import { formatChannel, formatUser } from "../lib/formatters.js";
 import { loadGuildSettings } from "../commands/settings/store.js";
 import { findTournamentById } from "../commands/tournament/store.js";
 import { revokeTicket, ticketChannel } from "../commands/schedule/channel.js";
@@ -9,7 +8,7 @@ import { paintSchedule } from "../commands/schedule/live.js";
 import { publishUrgent, thumbnailImageUrl } from "../commands/schedule/messages.js";
 import { presentFace } from "../commands/schedule/store.js";
 import { postSeatLine, seatHeldBy, seatResignedLine, seatsAreClosed, seatWrite, type Seat } from "../commands/schedule/seat.js";
-import { confirmRow, reminderScheduleEmbed } from "../commands/schedule/view.js";
+import { reminderMentions, reminderPayload } from "../commands/schedule/view.js";
 
 let timer: ReturnType<typeof setInterval> | null = null;
 let running = false;
@@ -93,21 +92,20 @@ async function sendReminder(guild: Guild, schedule: Schedule): Promise<void> {
   if (!ticket || schedule.messages.t10MessageId) {
     return;
   }
-  const { settings, tournament, match } = await loadScheduleContext(guild, schedule);
+  const { tournament, match } = await loadScheduleContext(guild, schedule);
   if (!tournament || !match) {
     return;
   }
-  const imageUrl = settings
-    ? await thumbnailImageUrl(guild, settings.thumbnailChannelId, schedule.messages.thumbnailMessageId)
-    : undefined;
-  const face = await presentFace(guild, tournament, match, schedule, imageUrl);
-  const row = confirmRow(schedule.id, schedule.judgeId, schedule.recorderId, schedule.confirmations.judge, schedule.confirmations.recorder);
-  const mentions = [...new Set([face.captain1Id, face.captain2Id, schedule.judgeId, schedule.recorderId].filter((id): id is string => Boolean(id)))];
-  const rules = formatChannel(guild, tournament.rulesChannelId);
+  const face = await presentFace(guild, tournament, match, schedule);
+  const mentions = reminderMentions(face, schedule);
   const message = await ticket.send({
-    content: `${mentions.map((id) => formatUser(id)).join(" ")}\nPlease make sure to read and follow the rules stated in ${rules}.`,
-    embeds: [reminderScheduleEmbed(face)],
-    components: row ? [row] : [],
+    ...reminderPayload({
+      face,
+      scheduleId: schedule.id,
+      confirmations: schedule.confirmations,
+      rulesChannelId: tournament.rulesChannelId,
+      mentionIds: mentions,
+    }),
     allowedMentions: { users: mentions, parse: [] },
   });
   await prisma.schedule.update({
@@ -146,11 +144,11 @@ async function startTime(guild: Guild, schedule: Schedule): Promise<void> {
   const stillSeated = (userId: string) => seated.judgeId === userId || seated.recorderId === userId;
   if (judgeLeft) {
     await revokeTicket(ticket, judgeLeft, stillSeated(judgeLeft));
-    await postSeatLine(ticket, seatResignedLine("judge", judgeLeft), judgeLeft);
+    await postSeatLine(ticket, seatResignedLine("judge", judgeLeft), judgeLeft, "warning");
   }
   if (recorderLeft) {
     await revokeTicket(ticket, recorderLeft, stillSeated(recorderLeft));
-    await postSeatLine(ticket, seatResignedLine("recorder", recorderLeft), recorderLeft);
+    await postSeatLine(ticket, seatResignedLine("recorder", recorderLeft), recorderLeft, "warning");
   }
   const needsUrgent = !closed && (!seated.judgeId || !seated.recorderId);
   const claimsOpenUntil = needsUrgent ? new Date(Date.now() + 10 * 60 * 1000) : closed ? null : seated.claimsOpenUntil;

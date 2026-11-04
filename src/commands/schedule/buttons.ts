@@ -1,5 +1,8 @@
-import { MessageFlags, type ButtonInteraction, type Guild } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ContainerBuilder, MessageFlags, type ButtonInteraction, type Guild } from "discord.js";
+import type { Schedule } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
+import { formatUser } from "../../lib/formatters.js";
+import { textBlock, v2Flags } from "../../lib/v2.js";
 import { loadGuildSettings } from "../settings/store.js";
 import { loadGuildStaffState } from "../staff/store.js";
 import { findTournamentById } from "../tournament/store.js";
@@ -7,23 +10,38 @@ import { isJudge, isRecorder } from "./access.js";
 import { auditSchedule, peopleLine, ticketLine } from "./audit.js";
 import { grantTicket, ticketChannel } from "./channel.js";
 import { paintSchedule } from "./live.js";
-import { formatUser } from "../../lib/formatters.js";
-import { schedulePlain } from "./respond.js";
 import { bookedAround, selfBusyBody, staffBusyTitle, staffClash } from "./conflicts.js";
+import {
+  channelUrl,
+  linkButton,
+  matchEyebrow,
+  matchName,
+  scheduleCard,
+  seatName,
+  shortUtc,
+  toneColor,
+  type CardTone,
+} from "./respond.js";
 import { closedSeatBody, closedSeatTitle, postSeatLine, seatAssignedLine, seatHeldBy, seatsAreClosed, seatWrite } from "./seat.js";
 import { handleOpenButton } from "./query.js";
 import { handleShowButton } from "./show.js";
-import { claimsAreOpen, confirmRow, parseScheduleButton } from "./view.js";
+import { presentFace } from "./store.js";
+import { claimsAreOpen, confirmRow, parseScheduleButton, reminderMentions, reminderPayload } from "./view.js";
 
-function privateReply(interaction: ButtonInteraction, kind: "error" | "success" | "info", title: string, body: string) {
-  const payload = {
-    content: schedulePlain(kind, title, body),
-    allowedMentions: { parse: [] as const },
-  };
+/** Private V2 answer to whoever pressed. */
+function privateReply(interaction: ButtonInteraction, tone: CardTone, title: string, body: string, extra?: ActionRowBuilder<ButtonBuilder>) {
+  const card = scheduleCard({ tone, title, blocks: extra ? [body, extra] : [body] });
+  const payload = { components: [card], allowedMentions: { parse: [] as const } };
   if (interaction.deferred || interaction.replied) {
-    return interaction.editReply(payload);
+    return interaction.editReply({ ...payload, flags: v2Flags });
   }
-  return interaction.reply({ ...payload, flags: MessageFlags.Ephemeral });
+  return interaction.reply({ ...payload, flags: [...v2Flags, MessageFlags.Ephemeral] });
+}
+
+function loadMatch(schedule: Schedule) {
+  return prisma.match.findUnique({
+    where: { tournamentId_challongeMatchId: { tournamentId: schedule.tournamentId, challongeMatchId: schedule.challongeMatchId } },
+  });
 }
 
 export async function handleScheduleButton(interaction: ButtonInteraction): Promise<void> {
@@ -42,7 +60,7 @@ export async function handleScheduleButton(interaction: ButtonInteraction): Prom
   }
   const schedule = await prisma.schedule.findUnique({ where: { id: parsed.scheduleId } });
   if (!schedule || schedule.guildId !== guild.id) {
-    await privateReply(interaction, "error", "Schedule missing", "That schedule is no longer active.");
+    await privateReply(interaction, "error", "Schedule missing", "That schedule was deleted, so its buttons no longer work.");
     return;
   }
   if (parsed.action === "claim") {
@@ -52,30 +70,28 @@ export async function handleScheduleButton(interaction: ButtonInteraction): Prom
   await confirmSeat(interaction, guild, schedule, parsed.seat);
 }
 
-async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule: NonNullable<Awaited<ReturnType<typeof prisma.schedule.findUnique>>>, seat: "judge" | "recorder"): Promise<void> {
+async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule: Schedule, seat: "judge" | "recorder"): Promise<void> {
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const { staff } = await loadGuildStaffState(guild.id);
   const settings = await loadGuildSettings(guild.id);
   if (!staff || !settings) {
-    await privateReply(interaction, "error", "Staff not configured", "Staff roles are not configured yet.");
+    await privateReply(interaction, "error", "Staff not configured", "Staff roles are not configured yet, so nobody can take a seat.");
     return;
   }
   const allowed = seat === "judge" ? isJudge(interaction, staff) : isRecorder(interaction, staff);
   if (!allowed) {
     await privateReply(
       interaction,
-      "error",
-      seat === "judge" ? "Judge role required" : "Recorder role required",
-      "That seat is only for members who hold the matching role.",
+      "warning",
+      `${seatName(seat)} role required`,
+      `The **${seatName(seat)}** seat is only for members who hold that role.`,
     );
     return;
   }
   if (await seatsAreClosed(schedule)) {
-    await privateReply(interaction, "error", closedSeatTitle, closedSeatBody);
+    await privateReply(interaction, "warning", closedSeatTitle, closedSeatBody);
     const tournament = await findTournamentById(guild.id, schedule.tournamentId);
-    const match = await prisma.match.findUnique({
-      where: { tournamentId_challongeMatchId: { tournamentId: schedule.tournamentId, challongeMatchId: schedule.challongeMatchId } },
-    });
+    const match = await loadMatch(schedule);
     const ticket = await ticketChannel(guild, schedule.channelId);
     if (tournament && match && ticket) {
       await paintSchedule(guild, ticket, settings, tournament, match, schedule, false).catch((error) => {
@@ -85,23 +101,21 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
     return;
   }
   if (!claimsAreOpen(schedule.claimsOpenUntil)) {
-    await privateReply(interaction, "error", "Buttons locked", "Claim buttons are locked. A judge or recorder can run refresh to open them for 10 minutes.");
+    await privateReply(interaction, "warning", "Buttons locked", "The claim window closed. A judge or recorder can run refresh to open it for 10 more minutes.");
     return;
   }
-  if ((seat === "judge" && schedule.judgeId) || (seat === "recorder" && schedule.recorderId)) {
-    const label = seat === "judge" ? "judge" : "recorder";
-    await privateReply(interaction, "error", "Seat taken", `A ${label} is already assigned.`);
+  const holder = seat === "judge" ? schedule.judgeId : schedule.recorderId;
+  if (holder) {
+    await privateReply(interaction, "warning", "Seat taken", `${formatUser(holder)} already holds the **${seatName(seat)}** seat.`);
     return;
   }
   const clash = staffClash(await bookedAround(guild.id, schedule.scheduledAt, schedule.id), interaction.user.id, schedule.scheduledAt);
   if (clash) {
-    await privateReply(interaction, "error", staffBusyTitle, selfBusyBody(clash));
+    await privateReply(interaction, "warning", staffBusyTitle, selfBusyBody(clash));
     return;
   }
   const tournament = await findTournamentById(guild.id, schedule.tournamentId);
-  const match = await prisma.match.findUnique({
-    where: { tournamentId_challongeMatchId: { tournamentId: schedule.tournamentId, challongeMatchId: schedule.challongeMatchId } },
-  });
+  const match = await loadMatch(schedule);
   const ticket = await ticketChannel(guild, schedule.channelId);
   if (!tournament || !match || !ticket) {
     await privateReply(interaction, "error", "Ticket missing", "The battle ticket for this schedule could not be opened.");
@@ -113,8 +127,16 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
     data: seatWrite(seat, interaction.user.id, false),
   });
   if (reserved.count === 0) {
-    const label = seat === "judge" ? "judge" : "recorder";
-    await privateReply(interaction, "error", "Seat taken", `A ${label} is already assigned.`);
+    const winner = await prisma.schedule.findUnique({ where: { id: schedule.id }, select: { judgeId: true, recorderId: true } });
+    const taken = seat === "judge" ? winner?.judgeId : winner?.recorderId;
+    await privateReply(
+      interaction,
+      "warning",
+      "Seat taken",
+      taken
+        ? `${formatUser(taken)} took the **${seatName(seat)}** seat a moment before you.`
+        : `Someone took the **${seatName(seat)}** seat a moment before you.`,
+    );
     return;
   }
   try {
@@ -125,14 +147,27 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
       where: { id: schedule.id, ...seatHeldBy(seat, interaction.user.id) },
       data: seatWrite(seat, null, false),
     });
-    await privateReply(interaction, "error", "Ticket access failed", "The bot could not add you to the battle ticket, so the seat was released.");
+    await privateReply(interaction, "error", "Ticket access failed", "I could not add you to the battle ticket, so the seat was released.");
     return;
   }
   const next = await prisma.schedule.findUniqueOrThrow({ where: { id: schedule.id } });
   await paintSchedule(guild, ticket, settings, tournament, match, next, false);
-  const label = seat === "judge" ? "Judge" : "Recorder";
   await postSeatLine(ticket, seatAssignedLine(seat, interaction.user.id), interaction.user.id);
-  await privateReply(interaction, "success", "Seat claimed", `You are now assigned as **${label}** for this match.`);
+  await interaction.editReply({
+    components: [
+      scheduleCard({
+        tone: "success",
+        eyebrow: matchEyebrow(tournament.name, match),
+        title: "Seat claimed",
+        blocks: [
+          `You are the **${seatName(seat)}** for ${matchName(match.player1Name, match.player2Name)} · \`${shortUtc(schedule.scheduledAt)}\`.`,
+          new ActionRowBuilder<ButtonBuilder>().addComponents(linkButton("Open ticket", channelUrl(guild.id, ticket.id))),
+        ],
+      }),
+    ],
+    flags: v2Flags,
+    allowedMentions: { parse: [] },
+  });
   await auditSchedule({
     guild,
     settings,
@@ -144,14 +179,14 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
   });
 }
 
-async function confirmSeat(interaction: ButtonInteraction, guild: Guild, schedule: NonNullable<Awaited<ReturnType<typeof prisma.schedule.findUnique>>>, seat: "judge" | "recorder"): Promise<void> {
+async function confirmSeat(interaction: ButtonInteraction, guild: Guild, schedule: Schedule, seat: "judge" | "recorder"): Promise<void> {
   const holder = seat === "judge" ? schedule.judgeId : schedule.recorderId;
   if (holder !== interaction.user.id) {
-    await privateReply(interaction, "error", "Not your seat", "Only the person assigned to that seat can confirm.");
+    await privateReply(interaction, "warning", "Not your seat", `Only the assigned **${seatName(seat)}** can confirm this seat.`);
     return;
   }
   if (Date.now() >= schedule.scheduledAt.getTime()) {
-    await privateReply(interaction, "error", "Match started", "Confirmation closes when the match starts.");
+    await privateReply(interaction, "warning", "Match started", "Confirmation closes when the match starts.");
     return;
   }
   // Only flip this seat, and only while the presser still holds it.
@@ -160,16 +195,48 @@ async function confirmSeat(interaction: ButtonInteraction, guild: Guild, schedul
     data: { confirmations: { update: seat === "judge" ? { judge: true } : { recorder: true } } },
   });
   if (confirmed.count === 0) {
-    await privateReply(interaction, "error", "Not your seat", "Only the person assigned to that seat can confirm.");
+    await privateReply(interaction, "warning", "Not your seat", `Only the assigned **${seatName(seat)}** can confirm this seat.`);
     return;
   }
   const current = await prisma.schedule.findUniqueOrThrow({ where: { id: schedule.id } });
-  const row = confirmRow(current.id, current.judgeId, current.recorderId, current.confirmations.judge, current.confirmations.recorder);
-  await interaction.update({ components: row ? [row] : [], allowedMentions: { parse: [] } });
+  await repaintReminder(interaction, guild, current);
   const ticket = await ticketChannel(guild, schedule.channelId);
-  const label = seat === "judge" ? "Judge" : "Recorder";
+  const minutes = Math.max(0, Math.round((schedule.scheduledAt.getTime() - Date.now()) / 60_000));
   await ticket?.send({
-    content: `${formatUser(interaction.user.id)} Attendance confirmed as ${label} for this match.`,
-    allowedMentions: { users: [interaction.user.id], parse: [] },
+    components: [
+      new ContainerBuilder()
+        .setAccentColor(toneColor.success)
+        .addTextDisplayComponents(
+          textBlock(`${formatUser(interaction.user.id)} confirmed attendance as **${seatName(seat)}**.\n-# ${minutes} min before start`),
+        ),
+    ],
+    flags: v2Flags,
+    allowedMentions: { parse: [] },
+  });
+}
+
+/** Rebuild the T-10 card so its staff check shows the new state; reminders from before V2 only swap their buttons. */
+async function repaintReminder(interaction: ButtonInteraction, guild: Guild, schedule: Schedule): Promise<void> {
+  const row = confirmRow(schedule.id, schedule.judgeId, schedule.recorderId, schedule.confirmations.judge, schedule.confirmations.recorder);
+  if (!interaction.message.flags.has(MessageFlags.IsComponentsV2)) {
+    await interaction.update({ components: row ? [row] : [], allowedMentions: { parse: [] } });
+    return;
+  }
+  const tournament = await findTournamentById(guild.id, schedule.tournamentId);
+  const match = await loadMatch(schedule);
+  if (!tournament || !match) {
+    await interaction.deferUpdate();
+    return;
+  }
+  const face = await presentFace(guild, tournament, match, schedule);
+  await interaction.update({
+    ...reminderPayload({
+      face,
+      scheduleId: schedule.id,
+      confirmations: schedule.confirmations,
+      rulesChannelId: tournament.rulesChannelId,
+      mentionIds: reminderMentions(face, schedule),
+    }),
+    allowedMentions: { parse: [] },
   });
 }

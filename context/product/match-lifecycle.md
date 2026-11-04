@@ -95,7 +95,7 @@ botones + worker T-10/T-0
         → el ticket y el canal de resultados tienen la declaración. Links se rellenan después con attachResultsLinks
 
 /bracket upload
-        → el bracket avanza y, al publicar el transcript, attachResultsTranscript enlaza el título de los dos embeds. El siguiente ticket no nace al momento: espera 00:00 o 12:00 UTC si auto-room está on, o `/room create`
+        → el bracket avanza y, al publicar el transcript, attachResultsTranscript añade el botón **Transcript** a los dos posts de results. El siguiente ticket no nace al momento: espera 00:00 o 12:00 UTC si auto-room está on, o `/room create`
 
 /bracket dq both
         → el partido queda 0 / -1 (lado 1 avanza marcado, lado 2 eliminado). La llave siguiente del marcado se reporta -1 / 0, o 0 / -1 si los dos llegan marcados, y no abre ticket

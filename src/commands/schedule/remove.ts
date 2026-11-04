@@ -6,7 +6,8 @@ import { auditSchedule, ticketLine } from "./audit.js";
 import { revokeTicket, ticketChannel, unmarkTicket } from "./channel.js";
 import { deleteScheduleEvent } from "./event.js";
 import { clearScheduleMessages, deleteTracked } from "./messages.js";
-import { replySchedule, scheduleNotice } from "./respond.js";
+import { slashMention } from "../../lib/register-slash.js";
+import { cardPayload, matchEyebrow, matchName, quote, replySchedule, scheduleCard, scheduleNotice, shortUtc, stampFooter } from "./respond.js";
 import type { TicketBundle } from "./ticket.js";
 
 export async function runDelete(interaction: ChatInputCommandInteraction, bundle: TicketBundle): Promise<void> {
@@ -28,7 +29,14 @@ export async function runDelete(interaction: ChatInputCommandInteraction, bundle
     return;
   }
   if (!interaction.options.getBoolean("confirm", true)) {
-    await replySchedule(interaction, scheduleNotice("info", "Delete cancelled", "The schedule is still active."));
+    await replySchedule(
+      interaction,
+      scheduleNotice(
+        "info",
+        "Delete cancelled",
+        `The schedule for ${matchName(bundle.match.player1Name, bundle.match.player2Name)} is still active. Nothing was removed.`,
+      ),
+    );
     return;
   }
   const reason = interaction.options.getString("reason")?.trim() || null;
@@ -49,7 +57,26 @@ export async function runDelete(interaction: ChatInputCommandInteraction, bundle
     await unmarkTicket(ticket);
   }
   await prisma.schedule.delete({ where: { id: schedule.id } });
-  await replySchedule(interaction, scheduleNotice("success", "Schedule deleted", "The posts, reminders, and the live mark were removed. This cannot be undone."));
+  const blocks = [
+    `${matchName(bundle.match.player1Name, bundle.match.player2Name)} · was \`${shortUtc(schedule.scheduledAt)}\``,
+    `Removed the ticket post, the schedules post, the thumbnail, the reminders${schedule.results ? ", the result posts" : ""}, the server event and the live mark on the channel name.`,
+  ];
+  if (reason) {
+    blocks.push(quote(reason));
+  }
+  blocks.push(`-# This cannot be undone. Run ${slashMention(guild.id, "schedule create")} to schedule the match again.`);
+  await replySchedule(
+    interaction,
+    cardPayload(
+      scheduleCard({
+        tone: "danger",
+        eyebrow: matchEyebrow(bundle.tournament.name, bundle.match),
+        title: "Schedule deleted",
+        blocks,
+        footer: stampFooter("Deleted", interaction.user.id),
+      }),
+    ),
+  );
   const details = [ticketLine(guild, schedule.channelId), `**Match** \`${schedule.challongeMatchId}\``];
   if (reason) {
     details.push(`**Reason** ${reason}`);

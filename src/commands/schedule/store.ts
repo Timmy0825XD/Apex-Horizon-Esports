@@ -27,6 +27,7 @@ export async function presentFace(
     face.captain2Id = right ? snowflake(captainOf(right)?.discordId) : null;
   }
   face.createdAt = schedule.createdAt;
+  face.creatorId = schedule.createdBy ?? null;
   if (schedule.createdBy) {
     const user = await guild.client.users.fetch(schedule.createdBy).catch(() => null);
     face.creatorName = user?.username ?? "Unknown";

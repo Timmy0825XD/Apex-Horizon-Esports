@@ -2,13 +2,35 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ContainerBuilder,
   EmbedBuilder,
+  SectionBuilder,
+  TextDisplayBuilder,
+  ThumbnailBuilder,
 } from "discord.js";
 import { emojis } from "../../emojis.js";
 import { customEmoji } from "../../lib/custom-emoji.js";
 import { embedColors } from "../../lib/embeds.js";
 import { formatChannel, formatUser } from "../../lib/formatters.js";
-import { escapeDiscord, roundLabel } from "../room/labels.js";
+import { escapeDiscord, roundLabel, scoreLine } from "../room/labels.js";
+import { textBlock, v2Flags } from "../../lib/v2.js";
+import {
+  channelUrl,
+  linkButton,
+  matchEyebrow,
+  matchName,
+  quote,
+  scheduleCard,
+  seatEmoji,
+  seatName,
+  shortUtc,
+  stampFooter,
+  toneColor,
+  type CardBlock,
+} from "./respond.js";
+
+/** Yellow accent of the schedule post, kept from the embed it replaced. */
+const SCHEDULE_YELLOW = 0xf1c40f;
 
 export type ScheduleFace = {
   tournamentName: string;
@@ -26,6 +48,7 @@ export type ScheduleFace = {
   captain1Id?: string | null;
   captain2Id?: string | null;
   creatorName?: string | null;
+  creatorId?: string | null;
   createdAt?: Date | null;
   alert?: ScheduleAlertFace | null;
 };
@@ -164,40 +187,256 @@ export function confirmRow(scheduleId: string, judgeId: string | null, recorderI
   return row.components.length > 0 ? row : null;
 }
 
-export function urgentScheduleEmbed(face: ScheduleFace): EmbedBuilder {
-  const embed = scheduleEmbed(face).setColor(embedColors.error);
-  if (!face.alert) {
-    return embed;
-  }
-  const lines = embed.data.description?.split("\n") ?? [];
-  const urgent = ["", `${emojis.alert} **URGENT: Staff Replacement Needed!**`, "", "Match starts in 2 minutes!", ""];
-  if (face.alert.judgeFailedId) {
-    urgent.push(`${emojis.judge} ${formatUser(face.alert.judgeFailedId)} Failed to confirm presence.`);
-  } else if (face.alert.judgeVacant) {
-    urgent.push(`${emojis.judge} Failed to confirm presence.`);
-  }
-  if (face.alert.recorderFailedId) {
-    urgent.push(`${emojis.recorder} ${formatUser(face.alert.recorderFailedId)} Failed to confirm presence.`);
-  } else if (face.alert.recorderVacant) {
-    urgent.push(`${emojis.recorder} Failed to confirm presence.`);
-  }
-  urgent.push("");
-  const staffAt = lines.findIndex((line) => line === "**Staffs:**");
-  if (staffAt >= 0) {
-    lines.splice(staffAt, 0, ...urgent);
-  } else {
-    lines.push(...urgent);
-  }
-  return embed
-    .setDescription(lines.join("\n"))
-    .setFooter({ text: "IMMEDIATE ACTION REQUIRED - Match starts in 2 minutes" })
-    .setTimestamp(face.alert.raisedAt);
+/** Who holds a seat in a staff block: the member and whether they confirmed. */
+function staffState(seat: "judge" | "recorder", userId: string | null, state: "confirmed" | "waiting" | "failed" | null): string {
+  const holder = userId ? formatUser(userId) : "*Open*";
+  const note = state === "confirmed" ? " · confirmed" : state === "waiting" ? " · *waiting*" : state === "failed" ? " · **did not confirm**" : "";
+  return `${seatEmoji(seat)} ${seatName(seat)} · ${holder}${note}`;
 }
 
-export function reminderScheduleEmbed(face: ScheduleFace, postedAt = new Date()): EmbedBuilder {
-  return scheduleEmbed(face)
-    .setFooter({ text: "Staff Confirmation Required | Confirm before the 2-minute staff check" })
-    .setTimestamp(postedAt);
+/** Captains and assigned staff, pinged by the T-10 reminder. */
+export function reminderMentions(face: ScheduleFace, seats: { judgeId: string | null; recorderId: string | null }): string[] {
+  return [...new Set([face.captain1Id, face.captain2Id, seats.judgeId, seats.recorderId].filter((id): id is string => Boolean(id)))];
+}
+
+type CardMessage = { components: (TextDisplayBuilder | ContainerBuilder)[]; flags: typeof v2Flags };
+
+/**
+ * T-10 reminder in the ticket: mentions outside the card (so they ping), then a short match summary,
+ * the rules channel and a staff check with the Present buttons.
+ */
+export function reminderPayload(input: {
+  face: ScheduleFace;
+  scheduleId: string;
+  confirmations: { judge: boolean; recorder: boolean };
+  rulesChannelId: string;
+  mentionIds: string[];
+}): CardMessage {
+  const { face, confirmations } = input;
+  const unix = Math.floor(face.when.getTime() / 1000);
+  const staff = ["### Staff check"];
+  if (face.judgeId) staff.push(staffState("judge", face.judgeId, confirmations.judge ? "confirmed" : "waiting"));
+  if (face.recorderId) staff.push(staffState("recorder", face.recorderId, confirmations.recorder ? "confirmed" : "waiting"));
+  const blocks: CardBlock[] = [
+    `${matchName(face.leftName, face.rightName)} · \`${shortUtc(face.when)}\` · <t:${unix}:t> your time`,
+    `Read and follow the rules in ${formatChannel(null, input.rulesChannelId)} before you start.`,
+    "divider",
+    staff.join("\n"),
+  ];
+  const row = confirmRow(input.scheduleId, face.judgeId, face.recorderId, confirmations.judge, confirmations.recorder);
+  if (row) blocks.push(row);
+  const card = scheduleCard({
+    tone: "pending",
+    emoji: emojis.uptime,
+    eyebrow: matchEyebrow(face.tournamentName, face),
+    title: `Match starts <t:${unix}:R>`,
+    blocks,
+    footer: "Confirm before the 2-minute staff check, or the seat opens for someone else.",
+  });
+  const mentions = input.mentionIds.map((id) => formatUser(id)).join(" ");
+  return { components: mentions ? [textBlock(mentions), card] : [card], flags: v2Flags };
+}
+
+/** T-2 urgent post in the schedules channel: role pings outside the card, the missing seats and Assign. */
+export function urgentPayload(input: { face: ScheduleFace; scheduleId: string; unlocked: boolean; roleIds: string[] }): CardMessage {
+  const { face } = input;
+  const unix = Math.floor(face.when.getTime() / 1000);
+  const alert = face.alert;
+  const judge = alert?.judgeFailedId
+    ? staffState("judge", alert.judgeFailedId, "failed")
+    : staffState("judge", face.judgeId, face.judgeId ? "confirmed" : null);
+  const recorder = alert?.recorderFailedId
+    ? staffState("recorder", alert.recorderFailedId, "failed")
+    : staffState("recorder", face.recorderId, face.recorderId ? "confirmed" : null);
+  const raisedAt = Math.floor((alert?.raisedAt ?? new Date()).getTime() / 1000);
+  const card = scheduleCard({
+    tone: "danger",
+    emoji: emojis.alert,
+    eyebrow: matchEyebrow(face.tournamentName, face),
+    title: "Urgent Staff Replacement",
+    blocks: [
+      `${matchName(face.leftName, face.rightName)} starts **<t:${unix}:R>** · ${formatChannel(null, face.channelId)}`,
+      "divider",
+      ["### Missing", judge, recorder].join("\n"),
+      claimRow(input.scheduleId, face.judgeId, face.recorderId, input.unlocked),
+    ],
+    footer: `Assign stays open for 10 minutes · raised <t:${raisedAt}:f>`,
+  });
+  const mentions = input.roleIds.map((id) => `<@&${id}>`).join(" ");
+  return { components: mentions ? [textBlock(mentions), card] : [card], flags: v2Flags };
+}
+
+function isHttps(url: string | null | undefined): url is string {
+  return Boolean(url && /^https:\/\//i.test(url.trim()));
+}
+
+function timeLine(when: Date, prefix = ""): string {
+  const unix = Math.floor(when.getTime() / 1000);
+  return `${prefix}**${utcStamp(when).replace(/-/g, "/")}** · <t:${unix}:F> (<t:${unix}:R>)`;
+}
+
+function postTitle(face: ScheduleFace, trophy: boolean): string {
+  return `${trophy ? `${emojis.torneo} ` : ""}${escapeDiscord(face.leftName)} ${emojis.vs} ${escapeDiscord(face.rightName)}`;
+}
+
+function staffBlock(face: ScheduleFace): string {
+  return [
+    "### Staff",
+    `${seatEmoji("judge")} Judge · ${face.judgeId ? formatUser(face.judgeId) : "*Open*"}`,
+    `${seatEmoji("recorder")} Recorder · ${face.recorderId ? formatUser(face.recorderId) : "*Open*"}`,
+  ].join("\n");
+}
+
+function creatorFooter(face: ScheduleFace): string | null {
+  if (!face.creatorId) {
+    return null;
+  }
+  const at = face.createdAt ? ` · <t:${Math.floor(face.createdAt.getTime() / 1000)}:f>` : "";
+  return `Created by ${formatUser(face.creatorId)}${at}`;
+}
+
+/** Users named on the first line of a schedule post: the captains, plus the staff when asked. */
+export function postMentionIds(face: ScheduleFace, includeStaff: boolean): string[] {
+  const ids = [face.captain1Id, face.captain2Id, ...(includeStaff ? [face.judgeId, face.recorderId] : [])];
+  return [...new Set(ids.filter((id): id is string => Boolean(id)))];
+}
+
+/**
+ * The schedule post in the battle ticket. The first line names the captains (and the staff on an update)
+ * so the ping works; the card repeats the captains next to their team.
+ */
+export function ticketPostPayload(face: ScheduleFace, mentionIds: string[]): CardMessage {
+  const captain = (id: string | null | undefined, team: string) =>
+    `${emojis.captains} ${id ? formatUser(id) : "*Unknown*"} · **${escapeDiscord(team)}**`;
+  const blocks: CardBlock[] = [timeLine(face.when), { gallery: isHttps(face.imageUrl) ? [face.imageUrl] : [] }, "divider"];
+  blocks.push(["### Captains", captain(face.captain1Id, face.leftName), captain(face.captain2Id, face.rightName)].join("\n"));
+  blocks.push(staffBlock(face));
+  if (face.remark) {
+    blocks.push(quote(face.remark));
+  }
+  const card = scheduleCard({
+    tone: "pending",
+    emoji: "",
+    eyebrow: matchEyebrow(face.tournamentName, face),
+    title: postTitle(face, true),
+    blocks,
+    footer: creatorFooter(face),
+  });
+  card.setAccentColor(SCHEDULE_YELLOW);
+  const mentions = mentionIds.map((id) => formatUser(id)).join(" ");
+  return { components: mentions ? [textBlock(mentions), card] : [card], flags: v2Flags };
+}
+
+/** The schedule post in the schedules channel: captains named without a ping, Assign and the ticket link inside. */
+export function boardPostPayload(input: {
+  face: ScheduleFace;
+  guildId: string;
+  scheduleId: string;
+  unlocked: boolean;
+  openUntil: Date | null;
+}): CardMessage {
+  const { face } = input;
+  const row = claimRow(input.scheduleId, face.judgeId, face.recorderId, input.unlocked).addComponents(
+    linkButton("Open ticket", channelUrl(input.guildId, face.channelId)),
+  );
+  const footer = [
+    input.unlocked && input.openUntil ? `Assign is open until <t:${Math.floor(input.openUntil.getTime() / 1000)}:t>` : null,
+    creatorFooter(face),
+  ].filter(Boolean);
+  const blocks: CardBlock[] = [timeLine(face.when), { gallery: isHttps(face.imageUrl) ? [face.imageUrl] : [] }, "divider", staffBlock(face)];
+  if (face.remark) {
+    blocks.push(quote(face.remark));
+  }
+  blocks.push(row);
+  const card = scheduleCard({
+    tone: "pending",
+    emoji: "",
+    eyebrow: matchEyebrow(face.tournamentName, face),
+    title: postTitle(face, true),
+    blocks,
+    footer: footer.length ? footer.join(" · ") : null,
+  });
+  card.setAccentColor(SCHEDULE_YELLOW);
+  const mentions = postMentionIds(face, false).map((id) => formatUser(id)).join(" ");
+  return { components: mentions ? [textBlock(mentions), card] : [card], flags: v2Flags };
+}
+
+/**
+ * The result declaration. In the ticket the first line is **Match Complete!** with the captains (it pings);
+ * the result channel gets the same card without that line. Proofs are attachments shown in a gallery.
+ */
+export function resultsPayload(input: {
+  face: ScheduleFace;
+  team1Score: number;
+  team2Score: number;
+  notes: string | null;
+  links: string[];
+  declaredAt: Date;
+  uploadedById: string | null;
+  transcriptUrl: string | null;
+  proofNames: string[];
+  intro: boolean;
+}): CardMessage {
+  const { face } = input;
+  const blocks: CardBlock[] = [
+    timeLine(input.declaredAt, "Result "),
+    "divider",
+    `### Result\n${scoreLine(face.leftName, face.rightName, input.team1Score, input.team2Score)}`,
+  ];
+  if (input.notes) {
+    blocks.push(quote(input.notes));
+  }
+  blocks.push("divider", staffBlock(face), { gallery: input.proofNames.map((name) => `attachment://${name}`) });
+  const buttons = input.links.filter(isHttps).map((url, index) => linkButton(`Recording ${index + 1}`, url.trim()));
+  if (isHttps(input.transcriptUrl)) {
+    buttons.push(linkButton("Transcript", input.transcriptUrl.trim()));
+  }
+  for (let index = 0; index < buttons.length; index += 5) {
+    blocks.push(new ActionRowBuilder<ButtonBuilder>().addComponents(buttons.slice(index, index + 5)));
+  }
+  const card = scheduleCard({
+    tone: "success",
+    emoji: "",
+    eyebrow: matchEyebrow(face.tournamentName, face),
+    title: postTitle(face, false),
+    blocks,
+    footer: input.uploadedById ? stampFooter("Uploaded", input.uploadedById, input.declaredAt) : null,
+  });
+  if (!input.intro) {
+    return { components: [card], flags: v2Flags };
+  }
+  const captains = postMentionIds(face, false).map((id) => formatUser(id)).join(" ");
+  return { components: [textBlock(`${emojis.torneo} **Match Complete!**${captains ? ` ${captains}` : ""}`), card], flags: v2Flags };
+}
+
+/** Direct GIF of the New Schedule alert (a Tenor page link cannot be a thumbnail). */
+const NEW_SCHEDULE_GIF = "https://media.tenor.com/a7v_DiKrkeoAAAAC/check-schedule.gif";
+
+/** New Schedule alert in the staff chat: pings the roles of the open seats above the card. */
+export function newSchedulePayload(input: { face: ScheduleFace; roleIds: string[]; openSeats: ("judge" | "recorder")[]; boardUrl: string }): CardMessage {
+  const { face } = input;
+  const unix = Math.floor(face.when.getTime() / 1000);
+  const seats = input.openSeats.map((seat) => `**${seatName(seat)}**`).join(" and a ");
+  const intro = new SectionBuilder()
+    .addTextDisplayComponents(
+      textBlock(`-# ${matchEyebrow(face.tournamentName, face)}\n## ${emojis.calendar} New Schedule`),
+      textBlock(`${matchName(face.leftName, face.rightName)} needs a ${seats}.\n\`${shortUtc(face.when)}\` · <t:${unix}:F> (<t:${unix}:R>)`),
+    )
+    .setThumbnailAccessory(new ThumbnailBuilder().setURL(NEW_SCHEDULE_GIF));
+  const card = new ContainerBuilder()
+    .setAccentColor(toneColor.pending)
+    .addSectionComponents(intro)
+    .addActionRowComponents(
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        linkButton("Go to Assign", input.boardUrl).setEmoji(customEmoji(seatEmoji(input.openSeats[0] ?? "judge"))),
+      ),
+    );
+  const footer = creatorFooter(face);
+  if (footer) {
+    card.addTextDisplayComponents(textBlock(`-# ${footer}`));
+  }
+  const mentions = input.roleIds.map((id) => `<@&${id}>`).join(" ");
+  return { components: mentions ? [textBlock(mentions), card] : [card], flags: v2Flags };
 }
 
 export function resultsEmbed(input: {

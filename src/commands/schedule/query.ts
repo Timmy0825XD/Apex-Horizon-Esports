@@ -2,28 +2,38 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ContainerBuilder,
   MessageFlags,
+  SectionBuilder,
   type ButtonInteraction,
   type ChatInputCommandInteraction,
   type Guild,
   type InteractionReplyOptions,
 } from "discord.js";
 import type { Schedule } from "@prisma/client";
-import { emojis, numberEmojis } from "../../emojis.js";
+import { emojis } from "../../emojis.js";
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { actorMatches } from "../../lib/command-access.js";
 import { customEmoji } from "../../lib/custom-emoji.js";
-import { formatChannel, formatUser } from "../../lib/formatters.js";
 import { prisma } from "../../lib/prisma.js";
-import { divider, textBlock, v2Flags } from "../../lib/v2.js";
-import { escapeDiscord } from "../room/labels.js";
-import { replySchedule, scheduleNotice } from "./respond.js";
+import { textBlock } from "../../lib/v2.js";
+import { escapeDiscord, roundTitle } from "../room/labels.js";
+import { loadGuildSettings } from "../settings/store.js";
+import {
+  cardPayload,
+  channelUrl,
+  linkButton,
+  replySchedule,
+  scheduleCard,
+  scheduleNotice,
+  shortUtc,
+  staffInline,
+  stampFooter,
+  type CardBlock,
+} from "./respond.js";
 import { scheduleStatus, type ScheduleStatus } from "./show.js";
 import { slashMention } from "../../lib/register-slash.js";
 
 const PAGE_SIZE = 5;
-const OPEN_COLOR = 0xf1c40f;
 const FILTERS = ["any", "all", "missing_judge", "missing_recorder"] as const;
 
 type OpenFilter = (typeof FILTERS)[number];
@@ -33,6 +43,7 @@ type OpenRow = {
   schedule: Schedule;
   left: string;
   right: string;
+  round: number;
   tournamentName: string;
   status: ScheduleStatus;
   gap: Gap;
@@ -46,21 +57,15 @@ const FILTER_LABEL: Record<OpenFilter, string> = {
 };
 
 const GAP_LABEL: Record<Gap, string> = {
-  both: "BOTH SEATS OPEN",
-  judge: "JUDGE OPEN",
-  recorder: "RECORDER OPEN",
+  both: "Both seats open",
+  judge: "Judge open",
+  recorder: "Recorder open",
 };
 
 const GAP_EMOJI: Record<Gap, string> = {
   both: emojis.judge_recorder,
   judge: emojis.judge,
   recorder: emojis.recorder,
-};
-
-const STATUS_LABEL: Record<ScheduleStatus, string> = {
-  pending: "PENDING",
-  completed: "COMPLETED",
-  overdue: "RESULT PENDING",
 };
 
 function isOpenFilter(value: string): value is OpenFilter {
@@ -99,20 +104,6 @@ function matchesFilter(gap: Gap, filter: OpenFilter): boolean {
   return true;
 }
 
-function listStamp(when: Date): string {
-  const month = String(when.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(when.getUTCDate()).padStart(2, "0");
-  const hour = String(when.getUTCHours()).padStart(2, "0");
-  const minute = String(when.getUTCMinutes()).padStart(2, "0");
-  return `${when.getUTCFullYear()}-${month}-${day} ${hour}:${minute} UTC`;
-}
-
-function seatText(seat: "judge" | "recorder", userId: string | null): string {
-  const emoji = seat === "judge" ? emojis.judge : emojis.recorder;
-  const label = seat === "judge" ? "Judge" : "Recorder";
-  return userId ? `${emoji} **${label}:** ${formatUser(userId)}` : `${emoji} **${label}:** *Open*`;
-}
-
 function openCustomId(page: number, filter: OpenFilter): string {
   return `schedule:open:${page}:${filter}`;
 }
@@ -128,48 +119,6 @@ function parseOpenCustomId(customId: string): { page: number; filter: OpenFilter
     return null;
   }
   return { page, filter };
-}
-
-function payload(container: ContainerBuilder): InteractionReplyOptions {
-  return { components: [container], flags: v2Flags, allowedMentions: { parse: [] } };
-}
-
-function emptyBody(filter: OpenFilter): string {
-  if (filter === "all") {
-    return "No match that is still open is missing both seats.";
-  }
-  if (filter === "missing_judge") {
-    return "No match that is still open is missing a judge.";
-  }
-  if (filter === "missing_recorder") {
-    return "No match that is still open is missing a recorder.";
-  }
-  return "No match that is still open is missing a judge or a recorder.";
-}
-
-function itemBlock(guild: Guild, index: number, row: OpenRow): string {
-  const unix = Math.floor(row.schedule.scheduledAt.getTime() / 1000);
-  const badge = numberEmojis[index] ?? `**${index + 1}.**`;
-  return [
-    `${badge} **${escapeDiscord(row.left)} vs ${escapeDiscord(row.right)}**`,
-    `<t:${unix}:R> (\`${listStamp(row.schedule.scheduledAt)}\`) · ${STATUS_LABEL[row.status]}`,
-    `${emojis.torneo} ${escapeDiscord(row.tournamentName)} · ${formatChannel(guild, row.schedule.channelId)} · ${emojis.id} \`${row.schedule.challongeMatchId}\``,
-    seatText("judge", row.schedule.judgeId),
-    seatText("recorder", row.schedule.recorderId),
-  ].join("\n");
-}
-
-function listBody(guild: Guild, rows: OpenRow[], filter: OpenFilter): string {
-  const parts: string[] = [];
-  let previous: Gap | null = null;
-  rows.forEach((row, index) => {
-    if (filter === "any" && row.gap !== previous) {
-      parts.push(`## ${GAP_EMOJI[row.gap]} ${GAP_LABEL[row.gap]}`);
-      previous = row.gap;
-    }
-    parts.push(itemBlock(guild, index, row));
-  });
-  return parts.join("\n\n");
 }
 
 function pager(page: number, pages: number, filter: OpenFilter): ActionRowBuilder<ButtonBuilder> {
@@ -223,6 +172,7 @@ async function loadOpen(guildId: string, filter: OpenFilter): Promise<OpenRow[]>
       schedule,
       left: match.player1Name,
       right: match.player2Name,
+      round: match.round,
       tournamentName: tournament.name,
       status: scheduleStatus(schedule, now),
       gap,
@@ -233,44 +183,70 @@ async function loadOpen(guildId: string, filter: OpenFilter): Promise<OpenRow[]>
   return rows;
 }
 
-function listMessage(guild: Guild, filter: OpenFilter, rows: OpenRow[], page: number): InteractionReplyOptions {
+function emptyBody(filter: OpenFilter): string {
+  if (filter === "all") {
+    return "No match that is still open is missing both seats.";
+  }
+  if (filter === "missing_judge") {
+    return "No match that is still open is missing a judge.";
+  }
+  if (filter === "missing_recorder") {
+    return "No match that is still open is missing a recorder.";
+  }
+  return "No match that is still open is missing a judge or a recorder.";
+}
+
+function rowSection(guild: Guild, schedulesChannelId: string | null, row: OpenRow): SectionBuilder {
+  const unix = Math.floor(row.schedule.scheduledAt.getTime() / 1000);
+  const boardId = row.schedule.messages.scheduleChannelMessageId;
+  const claimUrl = schedulesChannelId && boardId ? channelUrl(guild.id, schedulesChannelId, boardId) : channelUrl(guild.id, row.schedule.channelId);
+  return new SectionBuilder()
+    .addTextDisplayComponents(
+      textBlock(
+        [
+          `**${escapeDiscord(row.left)} vs ${escapeDiscord(row.right)}**`,
+          [`<t:${unix}:R>`, `\`${shortUtc(row.schedule.scheduledAt)}\``, escapeDiscord(row.tournamentName), roundTitle(row.round)].join(" · "),
+          staffInline(row.schedule.judgeId ?? null, row.schedule.recorderId ?? null),
+        ].join("\n"),
+      ),
+    )
+    .setButtonAccessory(linkButton("Claim", claimUrl));
+}
+
+function listMessage(guild: Guild, actorId: string, schedulesChannelId: string | null, filter: OpenFilter, rows: OpenRow[], page: number): InteractionReplyOptions {
+  const eyebrow = `Filter: ${FILTER_LABEL[filter]}`;
   if (rows.length === 0) {
-    return payload(
-      new ContainerBuilder()
-        .setAccentColor(OPEN_COLOR)
-        .addTextDisplayComponents(textBlock(`# ${emojis.judge_recorder} No open seats`), textBlock(emptyBody(filter))),
-    );
+    return cardPayload(scheduleCard({ tone: "success", eyebrow, title: "No open seats", blocks: [emptyBody(filter)], footer: stampFooter("Requested", actorId) }));
   }
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const safePage = Math.min(page, pages - 1);
   const slice = rows.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
-  const both = rows.filter((row) => row.gap === "both").length;
-  const judges = rows.filter((row) => row.gap === "judge").length;
-  const recorders = rows.filter((row) => row.gap === "recorder").length;
-  const counts = [
-    both > 0 ? `${emojis.judge_recorder} **Both:** \`${both}\`` : null,
-    judges > 0 ? `${emojis.judge} **Judge:** \`${judges}\`` : null,
-    recorders > 0 ? `${emojis.recorder} **Recorder:** \`${recorders}\`` : null,
-  ].filter((line): line is string => Boolean(line));
-  const header = [
-    `${emojis.calendar} **Page:** \`${safePage + 1}/${pages}\``,
-    `${emojis.stats} **Open schedules:** \`${rows.length}\``,
-    `${emojis.info} **Filter:** ${FILTER_LABEL[filter]}`,
-    ...counts,
-  ];
-  const container = new ContainerBuilder()
-    .setAccentColor(OPEN_COLOR)
-    .addTextDisplayComponents(textBlock(`# ${emojis.judge_recorder} Open seats`), textBlock(header.join("\n")))
-    .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(listBody(guild, slice, filter)));
-  if (pages > 1) {
-    container.addSeparatorComponents(divider()).addActionRowComponents(pager(safePage, pages, filter));
+  const order: Gap[] = ["both", "judge", "recorder"];
+  const counts = order
+    .map((gap) => [gap, rows.filter((row) => row.gap === gap).length] as const)
+    .filter(([, count]) => count > 0)
+    .map(([gap, count]) => `**${count}** ${GAP_LABEL[gap].toLowerCase()}`)
+    .join(" · ");
+  const blocks: CardBlock[] = [counts];
+  let previous: Gap | null = null;
+  for (const row of slice) {
+    if (row.gap !== previous) {
+      blocks.push("divider", `### ${GAP_EMOJI[row.gap]} ${GAP_LABEL[row.gap]}`);
+      previous = row.gap;
+    }
+    blocks.push(rowSection(guild, schedulesChannelId, row));
   }
-  return payload(container);
+  if (pages > 1) {
+    blocks.push("divider", pager(safePage, pages, filter));
+  }
+  return cardPayload(
+    scheduleCard({ tone: "pending", emoji: emojis.judge_recorder, eyebrow, title: "Open Seats", blocks, footer: stampFooter("Requested", actorId) }),
+  );
 }
 
-async function listPayload(guild: Guild, filter: OpenFilter, page: number): Promise<InteractionReplyOptions> {
-  return listMessage(guild, filter, await loadOpen(guild.id, filter), page);
+async function listPayload(guild: Guild, actorId: string, filter: OpenFilter, page: number): Promise<InteractionReplyOptions> {
+  const [rows, settings] = await Promise.all([loadOpen(guild.id, filter), loadGuildSettings(guild.id)]);
+  return listMessage(guild, actorId, settings?.schedulesChannelId ?? null, filter, rows, page);
 }
 
 export async function runUnassigned(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -292,7 +268,7 @@ export async function runUnassigned(interaction: ChatInputCommandInteraction): P
   if (!interaction.deferred && !interaction.replied) {
     await interaction.deferReply();
   }
-  await replySchedule(interaction, await listPayload(guild, parseFilter(interaction.options.getString("filter")), 0));
+  await replySchedule(interaction, await listPayload(guild, interaction.user.id, parseFilter(interaction.options.getString("filter")), 0));
 }
 
 export async function handleOpenButton(interaction: ButtonInteraction): Promise<void> {
@@ -325,7 +301,7 @@ export async function handleOpenButton(interaction: ButtonInteraction): Promise<
   }
   await interaction.deferUpdate();
   try {
-    const next = await listPayload(guild, parsed.filter, parsed.page);
+    const next = await listPayload(guild, interaction.user.id, parsed.filter, parsed.page);
     await interaction.editReply({
       components: next.components,
       allowedMentions: { parse: [] },
