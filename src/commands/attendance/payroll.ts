@@ -33,10 +33,16 @@ export type PayRow = {
   remark: string | null;
 };
 
+export type RoleWork = {
+  gold: number;
+  matches: number;
+  games: number;
+};
+
 export type PersonSalary = {
-  judge: number;
-  recorder: number;
-  dual: number;
+  judge: RoleWork;
+  recorder: RoleWork;
+  dual: RoleWork;
   total: number;
 };
 
@@ -64,24 +70,29 @@ function unitOf(mode: PayMode, games: number): number {
 
 export function salaryFor(userId: string, rows: PayRow[], mode: PayMode): PersonSalary {
   const rates = PAY_RATES[mode];
-  const salary: PersonSalary = { judge: 0, recorder: 0, dual: 0, total: 0 };
+  const empty = (): RoleWork => ({ gold: 0, matches: 0, games: 0 });
+  const salary: PersonSalary = { judge: empty(), recorder: empty(), dual: empty(), total: 0 };
+  const add = (work: RoleWork, rate: number, games: number) => {
+    work.gold += rate * unitOf(mode, games);
+    work.matches += 1;
+    work.games += games;
+  };
   for (const row of rows) {
-    const unit = unitOf(mode, gamesOf(row));
+    const games = gamesOf(row);
     if (row.judgeId === row.recorderId) {
-      if (row.judgeId !== userId) {
-        continue;
+      if (row.judgeId === userId) {
+        add(salary.dual, rates.dual, games);
       }
-      salary.dual += rates.dual * unit;
       continue;
     }
     if (row.judgeId === userId) {
-      salary.judge += rates.judge * unit;
+      add(salary.judge, rates.judge, games);
     }
     if (row.recorderId === userId) {
-      salary.recorder += rates.recorder * unit;
+      add(salary.recorder, rates.recorder, games);
     }
   }
-  salary.total = salary.judge + salary.recorder + salary.dual;
+  salary.total = salary.judge.gold + salary.recorder.gold + salary.dual.gold;
   return salary;
 }
 

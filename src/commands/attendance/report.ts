@@ -59,7 +59,7 @@ export async function handleAttendanceReport(interaction: ChatInputCommandIntera
   let unit: SalaryUnit = "ac";
   const view = (disabled = false) =>
     salaryMessage({
-      username: target.username,
+      userId: target.id,
       avatarUrl: target.displayAvatarURL({ extension: "png", size: 256 }),
       tournamentName: tournament.name,
       mode,

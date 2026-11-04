@@ -11,8 +11,16 @@ import { customEmoji } from "../../lib/custom-emoji.js";
 import { embedColors, errorEmbed } from "../../lib/embeds.js";
 import { formatChannel, formatUser } from "../../lib/formatters.js";
 import { divider, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
-import { escapeDiscord, matchLabel } from "../room/labels.js";
-import { formatArtCoin, hasRecordingLink, isDefaultWin, type PayMode, type PersonSalary } from "./payroll.js";
+import { escapeDiscord, matchLabel, roundTitle } from "../room/labels.js";
+import {
+  PAY_RATES,
+  formatArtCoin,
+  hasRecordingLink,
+  isDefaultWin,
+  type PayMode,
+  type PersonSalary,
+  type RoleWork,
+} from "./payroll.js";
 
 export function scoreLine(leftName: string, rightName: string, team1: number, team2: number): string {
   const left = `**${escapeDiscord(leftName)}**`;
@@ -22,48 +30,94 @@ export function scoreLine(leftName: string, rightName: string, team1: number, te
   return `${leftShown} \`${team1}\` vs \`${team2}\` ${rightShown}`;
 }
 
-export function markedMessage(input: {
+export function stageLabel(match: { group: string | null; round: number } | null): string | null {
+  if (!match) {
+    return null;
+  }
+  const round = roundTitle(match.round);
+  return match.group ? `Group ${escapeDiscord(match.group)} · ${round}` : round;
+}
+
+type CardMatch = {
   tournamentName: string;
   channelId: string;
-  judgeId: string;
-  recorderId: string;
-  team1Score: number;
-  team2Score: number;
+  stage: string | null;
   leftName: string;
   rightName: string;
-  links: string[];
-  remark: string | null;
-  uploadedBy: string;
-  markedAt: Date;
-}): MessageCreateOptions {
-  const intro = [
-    scoreLine(input.leftName, input.rightName, input.team1Score, input.team2Score),
-    `${emojis.torneo} **Tournament:** ${escapeDiscord(input.tournamentName)}`,
+  team1Score: number;
+  team2Score: number;
+  judgeId: string;
+  recorderId: string;
+};
+
+function cardHeading(title: string, stage: string | null): string {
+  return stage ? `${title}\n-# ${stage}` : title;
+}
+
+function cardScore(input: CardMatch): string {
+  return [
+    `### ${scoreLine(input.leftName, input.rightName, input.team1Score, input.team2Score)}`,
+    `${emojis.torneo} **${escapeDiscord(input.tournamentName)}** · ${formatChannel(null, input.channelId)}`,
   ].join("\n");
-  const details = [
-    `${emojis.judge} **Judge**\n${formatUser(input.judgeId)}`,
-    `${emojis.recorder} **Recorder**\n${formatUser(input.recorderId)}`,
-    `${emojis.textChannel} **Channel**\n${formatChannel(null, input.channelId)}`,
-  ];
-  if (hasRecordingLink(input.links)) {
-    details.push(`**Recording Link**\n${input.links.map((url) => `[Link](${url})`).join("\n")}`);
+}
+
+function staffLines(judgeId: string, recorderId: string): string[] {
+  if (judgeId === recorderId) {
+    return [`${emojis.judge_recorder} **Judge & Recorder** ${formatUser(judgeId)}`];
   }
+  return [`${emojis.judge} **Judge** ${formatUser(judgeId)}`, `${emojis.recorder} **Recorder** ${formatUser(recorderId)}`];
+}
+
+function stamp(date: Date): string {
+  return `<t:${Math.floor(date.getTime() / 1000)}:F>`;
+}
+
+function recordingRows(links: string[]): ActionRowBuilder<ButtonBuilder>[] {
+  const urls = links.map((link) => link.trim()).filter((link) => link.length > 0);
+  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+  for (let start = 0; start < urls.length; start += 5) {
+    rows.push(
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        urls.slice(start, start + 5).map((url, offset) =>
+          new ButtonBuilder()
+            .setStyle(ButtonStyle.Link)
+            .setURL(url)
+            .setLabel(urls.length === 1 ? "Recording" : `Recording ${start + offset + 1}`)
+            .setEmoji(customEmoji(emojis.link)),
+        ),
+      ),
+    );
+  }
+  return rows;
+}
+
+export function markedMessage(
+  input: CardMatch & {
+    links: string[];
+    remark: string | null;
+    uploadedBy: string;
+    markedAt: Date;
+  },
+): MessageCreateOptions {
+  const details = staffLines(input.judgeId, input.recorderId);
   if (isDefaultWin(input.remark)) {
-    details.push("**Remark**\n`DW`");
+    details.push("**Remark** `DW` · *default win, no recording needed*");
   }
 
   const container = new ContainerBuilder()
     .setAccentColor(embedColors.success)
     .addTextDisplayComponents(
-      textBlock(`# ${emojis.success} Attendance Marked Successfully`),
-      textBlock(intro),
+      textBlock(cardHeading(`## ${emojis.success} Attendance Marked`, input.stage)),
+      textBlock(cardScore(input)),
     )
     .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(details.join("\n")))
+    .addTextDisplayComponents(textBlock(details.join("\n")));
+  if (hasRecordingLink(input.links)) {
+    container.addActionRowComponents(...recordingRows(input.links));
+  }
+  container
     .addSeparatorComponents(divider())
-    .addTextDisplayComponents(
-      textBlock(`-# Uploaded by ${formatUser(input.uploadedBy)} · <t:${Math.floor(input.markedAt.getTime() / 1000)}:F>`),
-    );
+    .addTextDisplayComponents(textBlock(`-# Uploaded by ${formatUser(input.uploadedBy)} · ${stamp(input.markedAt)}`));
 
   return {
     components: [container],
@@ -72,24 +126,30 @@ export function markedMessage(input: {
   };
 }
 
-export function deletedMessage(input: {
-  tournamentName: string;
-  channelId: string;
-  reason: string | null;
-}): MessageCreateOptions {
-  const lines = [
-    `${emojis.torneo} **Tournament:** ${escapeDiscord(input.tournamentName)}`,
-    `${emojis.textChannel} **Channel:** ${formatChannel(null, input.channelId)}`,
-  ];
+export function deletedMessage(
+  input: CardMatch & {
+    reason: string | null;
+    deletedBy: string;
+    deletedAt: Date;
+  },
+): MessageCreateOptions {
+  const container = new ContainerBuilder()
+    .setAccentColor(embedColors.error)
+    .addTextDisplayComponents(
+      textBlock(cardHeading(`## ${emojis.error} Attendance Deleted`, input.stage)),
+      textBlock(cardScore(input)),
+    )
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(staffLines(input.judgeId, input.recorderId).join("\n")));
   if (input.reason) {
-    lines.push(`**Reason:** ${escapeDiscord(input.reason)}`);
+    container.addTextDisplayComponents(textBlock(`**Reason**\n> ${escapeDiscord(input.reason).replace(/\n/g, "\n> ")}`));
   }
+  container
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(`-# Deleted by ${formatUser(input.deletedBy)} · ${stamp(input.deletedAt)}`));
+
   return {
-    components: [
-      new ContainerBuilder()
-        .setAccentColor(embedColors.error)
-        .addTextDisplayComponents(textBlock(`# ${emojis.error} Attendance Deleted`), textBlock(lines.join("\n"))),
-    ],
+    components: [container],
     flags: v2Flags,
     allowedMentions: { parse: [] },
   };
@@ -237,8 +297,18 @@ function salaryType(mode: PayMode): string {
   return mode === "per_game" ? "Per game" : "Per match";
 }
 
+function plural(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
+function workLine(emoji: string, label: string, work: RoleWork, mode: PayMode, unit: SalaryUnit): string {
+  const matches = plural(work.matches, "match", "matches");
+  const done = mode === "per_game" ? `${matches} · ${plural(work.games, "game", "games")}` : matches;
+  return `${emoji} **${label}** \`${amount(work.gold, unit)}\` · *${done}*`;
+}
+
 export function salaryMessage(input: {
-  username: string;
+  userId: string;
   avatarUrl: string | null;
   tournamentName: string;
   mode: PayMode;
@@ -246,27 +316,36 @@ export function salaryMessage(input: {
   unit: SalaryUnit;
   disabled?: boolean;
 }): MessageCreateOptions {
-  const title = `# ${emojis.stats} **${escapeDiscord(input.username)}**`;
-  const lines = [
+  const title = `## ${emojis.stats} Salary Report`;
+  const who = [
+    formatUser(input.userId),
     `${emojis.torneo} **${escapeDiscord(input.tournamentName)}** · ${salaryType(input.mode)}`,
-    "",
-    `${emojis.judge} **Judge**  \`${amount(input.salary.judge, input.unit)}\``,
-    `${emojis.recorder} **Recorder**  \`${amount(input.salary.recorder, input.unit)}\``,
-    `${emojis.judge_recorder}**Both Roles**  \`${amount(input.salary.dual, input.unit)}\``,
+  ].join("\n");
+  const work = [
+    workLine(emojis.judge, "Judge", input.salary.judge, input.mode, input.unit),
+    workLine(emojis.recorder, "Recorder", input.salary.recorder, input.mode, input.unit),
+    workLine(emojis.judge_recorder, "Both Roles", input.salary.dual, input.mode, input.unit),
   ].join("\n");
   const currency = input.unit === "gold" ? emojis.gold : emojis.AC;
-  const container = new ContainerBuilder()
-    .setAccentColor(0xe8ff00)
-    .addActionRowComponents(salaryRow(input.unit, input.disabled))
-    .addSeparatorComponents(divider());
+  const unitName = input.unit === "gold" ? "GOLD" : "AC";
+  const rates = PAY_RATES[input.mode];
+  const total = [
+    `## ${currency} Total \`${amount(input.salary.total, input.unit)} ${unitName}\``,
+    `-# ${salaryType(input.mode)} · Judge ${amount(rates.judge, input.unit)} · Recorder ${amount(rates.recorder, input.unit)} · Both Roles ${amount(rates.dual, input.unit)} ${unitName}`,
+  ].join("\n");
+
+  const container = new ContainerBuilder().setAccentColor(0xe8ff00);
   if (input.avatarUrl) {
-    container.addSectionComponents(headingWithThumbnail(title, input.avatarUrl, lines));
+    container.addSectionComponents(headingWithThumbnail(title, input.avatarUrl, who));
   } else {
-    container.addTextDisplayComponents(textBlock(title), textBlock(lines));
+    container.addTextDisplayComponents(textBlock(title), textBlock(who));
   }
   container
     .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(`${currency} **Total**  \`${amount(input.salary.total, input.unit)}\``));
+    .addTextDisplayComponents(textBlock(work))
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(total))
+    .addActionRowComponents(salaryRow(input.unit, input.disabled));
 
   return {
     components: [container],
