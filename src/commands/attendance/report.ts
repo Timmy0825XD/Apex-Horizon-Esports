@@ -3,7 +3,7 @@ import { loadGuildStaffState } from "../staff/store.js";
 import { actorMatches } from "../../lib/command-access.js";
 import { canViewOtherSalary } from "./access.js";
 import { v2Flags } from "../../lib/v2.js";
-import { watchSalaryButtons } from "./buttons.js";
+import { watchPanelButtons } from "./buttons.js";
 import { payModeForFormat, salaryFor } from "./payroll.js";
 import { deferPublic, editAttendance } from "./respond.js";
 import { findGuildTournament, listUserAttendance } from "./store.js";
@@ -73,7 +73,7 @@ export async function handleAttendanceReport(interaction: ChatInputCommandIntera
     flags: v2Flags,
     allowedMentions: { parse: [] },
   });
-  await watchSalaryButtons(
+  await watchPanelButtons(
     interaction,
     message,
     (customId) => {

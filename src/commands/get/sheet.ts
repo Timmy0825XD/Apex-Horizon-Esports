@@ -13,8 +13,8 @@ import {
 } from "../attendance/payroll.js";
 import { deferHidden, editAttendance } from "../attendance/respond.js";
 import { findGuildTournament, matchesById, whereActive } from "../attendance/store.js";
-import { attendanceError } from "../attendance/view.js";
-import { escapeDiscord } from "../room/labels.js";
+import { attendanceError, sheetMessage } from "../attendance/view.js";
+import { v2Flags } from "../../lib/v2.js";
 import { loadGuildStaffState } from "../staff/store.js";
 
 function slug(name: string): string {
@@ -125,8 +125,25 @@ export async function handleGetSheet(interaction: ChatInputCommandInteraction): 
   ]);
 
   const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
-  await editAttendance(interaction, {
-    content: `Attendance workbook for **${escapeDiscord(tournament.name)}**. Rates follow the stored format **${tournament.format || "2vs2"}**.`,
-    files: [new AttachmentBuilder(buffer, { name: `${slug(tournament.name)}-attendance.xlsx` })],
+  const filename = `${slug(tournament.name)}-attendance.xlsx`;
+  const panel = sheetMessage({
+    tournamentName: tournament.name,
+    format: tournament.format || "2vs2",
+    mode,
+    records: rows.length,
+    includeDw,
+    judges: counts.judges.length,
+    recorders: counts.recorders.length,
+    duals: counts.duals.length,
+    totalGold: lines.reduce((sum, line) => sum + line.gold, 0),
+    filename,
+  });
+  await interaction.editReply({
+    content: null,
+    embeds: [],
+    components: panel.components,
+    files: [new AttachmentBuilder(buffer, { name: filename })],
+    flags: v2Flags,
+    allowedMentions: { parse: [] },
   });
 }

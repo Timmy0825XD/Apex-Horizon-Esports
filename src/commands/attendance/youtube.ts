@@ -1,6 +1,8 @@
 const VIDEO_HOSTS = new Set(["youtube.com", "www.youtube.com", "m.youtube.com"]);
 const SHORT_HOSTS = new Set(["youtu.be", "www.youtu.be"]);
 
+export const MAX_RECORDING_LINKS = 7;
+
 export type LinkRead =
   | { ok: true; links: string[] }
   | { ok: false; reason: "empty" | "invalid" | "too_many" };
@@ -46,7 +48,7 @@ function uniqueTokens(raw: string): { ok: true; links: string[] } | { ok: false;
       links.push(token);
     }
   }
-  if (links.length > 7) {
+  if (links.length > MAX_RECORDING_LINKS) {
     return { ok: false, reason: "too_many" };
   }
   return { ok: true, links };
@@ -68,7 +70,7 @@ export function mergeYoutubeLinks(existing: string[], raw: string): LinkMerge {
   if (parsed.links.some((link) => existing.includes(link))) {
     return { ok: false, reason: "duplicate" };
   }
-  if (existing.length + parsed.links.length > 7) {
+  if (existing.length + parsed.links.length > MAX_RECORDING_LINKS) {
     return { ok: false, reason: "too_many" };
   }
   return { ok: true, added: parsed.links, links: [...existing, ...parsed.links] };
