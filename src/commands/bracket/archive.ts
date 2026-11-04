@@ -1,9 +1,16 @@
-import { MessageFlags, type ChatInputCommandInteraction, type Guild, type TextChannel } from "discord.js";
+import {
+  MessageFlags,
+  type ChatInputCommandInteraction,
+  type Guild,
+  type InteractionReplyOptions,
+  type TextChannel,
+} from "discord.js";
 import { attachResultsTranscript } from "../schedule/results.js";
 import { closeTicket } from "../ticket/lifecycle.js";
 import { publishTicketTranscript, transcriptFilename } from "../ticket/transcript/index.js";
 import type { TournamentRecord } from "../tournament/fields.js";
-import { bracketPanel, channelClosedMessage, transcriptGeneratedMessage } from "./view.js";
+import { respondBracket } from "./respond.js";
+import { bracketPanel, type CloseProgress } from "./view.js";
 
 function archivedChannelName(current: string): string {
   const bare = current.replace(/^[✅🔴]+/u, "").replace(/^-+/, "");
@@ -22,9 +29,14 @@ export async function archiveBattleTicket(input: {
   tournament: TournamentRecord;
   matchId: number;
   reason: string;
+  /** Repaints the command's closing card; the same reply is edited at every step. */
+  render: (progress: CloseProgress) => InteractionReplyOptions;
 }): Promise<void> {
   const { interaction, guild, ticket, tournament } = input;
-  const actorTag = interaction.user.username;
+  const paint = (progress: CloseProgress) =>
+    respondBracket(interaction, input.render(progress)).catch((error) => {
+      console.error(`Closing card update failed for match ${input.matchId}`, error);
+    });
   const nextName = archivedChannelName(ticket.name);
   if (nextName !== ticket.name) {
     await ticket.setName(nextName, input.reason).catch(() => undefined);
@@ -35,6 +47,7 @@ export async function archiveBattleTicket(input: {
   } catch (error) {
     console.error(`Battle ticket close failed for match ${input.matchId}`, error);
     const detail = error instanceof Error ? error.message : "The ticket could not be archived.";
+    await paint({ archive: "failed", transcript: "pending", transcriptUrl: null });
     await warn(interaction, "Ticket not archived", [
       "The score is saved on Challonge, but this ticket stayed open.",
       detail,
@@ -42,7 +55,7 @@ export async function archiveBattleTicket(input: {
     ]);
     return;
   }
-  await interaction.followUp(channelClosedMessage(interaction.user.id, actorTag)).catch(() => undefined);
+  await paint({ archive: "done", transcript: "pending", transcriptUrl: null });
 
   try {
     const archivedName = ticket.name.startsWith("✅") ? ticket.name : nextName;
@@ -53,9 +66,10 @@ export async function archiveBattleTicket(input: {
       channelName: archivedName,
     });
     await attachResultsTranscript(guild, tournament.id, input.matchId, transcriptUrl).catch(() => undefined);
-    await interaction.followUp(transcriptGeneratedMessage(transcriptUrl, actorTag)).catch(() => undefined);
+    await paint({ archive: "done", transcript: "done", transcriptUrl });
   } catch (error) {
     console.error(`Battle ticket transcript failed for match ${input.matchId}`, error);
+    await paint({ archive: "done", transcript: "failed", transcriptUrl: null });
     await warn(interaction, "Transcript not generated", [
       "The score is saved and the ticket is archived, but the transcript could not be published.",
       "Generate it manually from this channel.",

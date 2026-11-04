@@ -45,11 +45,14 @@ Solo lectura. Se publica en el canal (no efímero). V2 con barra verde: título 
 
 Reporta al bracket, completa el match, renombra el canal (quita el `🔴` del schedule si estaba y deja solo el prefijo `✅`), cierra/archiva y genera con el renderer propio un transcript HTML del estado final visible. Incluye texto y markdown, menciones, comandos y respuestas, embeds, Components V2, imágenes, reacciones, stickers, emojis y archivos no audiovisuales; excluye efímeros, hilos, audio, vídeo e historial eliminado/editado. El archivo se nombra como el canal (`✅…html`). En el canal de transcripts publica un **Components V2** con torneo, canal, enlace de descarga, el HTML adjunto y el emoji `transcript_thumnail` como thumbnail. Si supera el límite seguro de subida, publica varias partes HTML y el Components V2 enlaza el índice. Empate prohibido.
 
-Respuesta en el canal (no efímera), **tres Components V2** con título grande, en este orden:
+Respuesta en el canal (no efímera): **un solo Components V2** que se edita en cada paso. Thumbnail: el logo de Challonge.
 
-1. Confirmación de que el marcador se subió (torneo, enfrentamiento, score, ganador, canal). Thumbnail: avatar de quien ejecutó el comando.
-2. Confirmación de que el canal se cerró y movió a categoría de archivados. Thumbnail: emoji `open_close`.
-3. Confirmación de que se generó el transcript, con enlace al mensaje del HTML. Thumbnail: emoji `transcript_thumnail`.
+- `## Score Uploaded` y la fase en `-#` (`Group X · Round N`; sin grupo, solo la ronda).
+- Marcador en `###` con el emoji `winner` en el ganador, y debajo el torneo y la mención del ticket.
+- `note`, si la hay, en cita.
+- Pasos: **Score saved** on Challonge → **Ticket archived** (emoji `open_close`) → **Transcript published** con el canal de transcripts (emoji `transcript`). El paso en curso sale en `-#` (*Archiving the ticket…*, *Publishing the transcript…*). Uno fallido sale con el emoji `error` y lo que hay que hacer a mano.
+- Footer `-# Uploaded by` con mención y la fecha y hora. Al publicar el transcript se añade el botón de enlace **View transcript** al mensaje del HTML.
+- Acento naranja mientras trabaja o si falla un paso; verde cuando termina todo.
 
 Al publicar el transcript llama `attachResultsTranscript` con la URL de ese mensaje para enlazar el título de los embeds de `/schedule results add` (ticket y canal de resultados). El siguiente ticket espera al reloj si auto-room está on. Log: **Score Upload**, publicado en cuanto Challonge acepta el marcador (antes de cerrar el ticket).
 
@@ -59,7 +62,7 @@ Si Challonge ya aceptó el marcador y después falla un paso de Discord (categor
 
 **Solo dentro del ticket.** Sin campos. Mismo rol que `upload` (admin o helper de ese torneo, u Organiser).
 
-Marca ese partido **lado 1 = 0**, **lado 2 = -1**. En Challonge gana el número más alto, así que el lado 1 avanza y el lado 2 queda eliminado. El lado 1 queda marcado: debe perder la llave a la que avanza. El ticket actual se cierra como `upload` (renombre `✅`, archivo, transcript). La primera confirmación es un Components V2 rojo de descalificación doble (avatar de quien ejecutó). El cierre y el transcript reutilizan sus propios V2. Log: **Score Upload**.
+Marca ese partido **lado 1 = 0**, **lado 2 = -1**. En Challonge gana el número más alto, así que el lado 1 avanza y el lado 2 queda eliminado. El lado 1 queda marcado: debe perder la llave a la que avanza. El ticket actual se cierra como `upload` (renombre `✅`, archivo, transcript). La respuesta es la misma tarjeta única de `upload`, en rojo, con `## Both Sides Disqualified` y el emoji `banned` como thumbnail. Lleva el marcador `0` vs `-1`, **Advances** (con la nota de que pierde su próxima llave) y **Eliminated**. Si la marca sigue esperando rival, lo dice en `-#`. Los forfeits automáticos van en **Forfeited before a ticket**, cada uno con marcador y fase. Siguen los mismos pasos de cierre y el footer `Disqualified by`. Log: **Score Upload**.
 
 Cuando la llave siguiente ya tiene los dos lados y está `open`, el bot la reporta **antes** de crear sala:
 
@@ -83,12 +86,12 @@ Organiser. Enmienda un marcador ya reportado.
 
 Empate prohibido. Deja rastro de marcador anterior → nuevo en el embed y en el log **Score Upload**.
 
-Si el **ganador no cambia** (solo el marcador), o cambia pero **no hay tickets aguas abajo** que dependan de esa llave: un solo Components V2 de éxito, con el emoji de Challonge como thumbnail. El mismo V2 reemplaza la advertencia al aceptar.
+Si el **ganador no cambia** (solo el marcador), o cambia pero **no hay tickets aguas abajo** que dependan de esa llave: un solo Components V2 de éxito, con el emoji de Challonge como thumbnail: `## Bracket Corrected`, la fase, el marcador nuevo en `###` con `winner`, **Before** → **now**, **Rooms rebuilt** si se rehicieron tickets, y footer `Corrected by` con mención y hora. El mismo V2 reemplaza la advertencia al confirmar.
 
 Si el ganador **cambia** y ya existían tickets abiertos/cerrados en partidos descendientes (llaves que se completaron con el ganador viejo):
 
-1. Primero un **Components V2** de confirmación (título grande, thumbnail con el logo de Challonge). Muestra el marcador actual → nuevo, el ganador nuevo, cada ticket que se borrará, en viñetas **Channel**, **Round** (con grupo si hay) y **Status** y qué pasa al aceptar: se borran esos tickets y sus schedules, se reinician sus puntajes, se recrean los que queden `open` y los que sigan esperando ganador no se abren. Botones **Aceptar** / **Cancelar** (solo quien lanzó el comando). Al pulsar cualquiera, ambos se bloquean al instante y el resultado reemplaza el aviso cuando termina.
-2. Al aceptar: esos tickets se **borran**, sus puntajes en Challonge se **reinician** (reopen), se aplica el marcador nuevo, y se **recrean** solo los tickets de partidos que queden `open` con ambos lados definidos y capitanes correctos. Los que queden a la espera de un ganador no se reabren hasta que esa llave vuelva a estar lista.
-3. Al cancelar: no se toca nada.
+1. Primero un **Components V2** naranja de confirmación (`## Confirm Bracket Correction`, la fase en `-#`, thumbnail con el logo de Challonge). Muestra el marcador actual → nuevo, el ganador nuevo, el torneo, y cada ticket que se borrará en una línea (canal · fase · **Open**/**Closed**, máx. 12 y *and N more*). Después, en tres viñetas, qué pasa al confirmar: se borran esos tickets y sus schedules, se reinician sus puntajes, se recrean los que queden `open` y los demás esperan su ronda. Botones **Confirm correction** (rojo) y **Cancel**, que solo pulsa quien lanzó el comando, como dice el `-#` de encima. Al pulsar cualquiera, ambos se bloquean al instante y el resultado reemplaza el aviso cuando termina.
+2. Al confirmar: esos tickets se **borran**, sus puntajes en Challonge se **reinician** (reopen), se aplica el marcador nuevo, y se **recrean** solo los tickets de partidos que queden `open` con ambos lados definidos y capitanes correctos. Los que queden a la espera de un ganador no se reabren hasta que esa llave vuelva a estar lista.
+3. Al cancelar: no se toca nada. El aviso pasa a un V2 azul `## Correction Cancelled` con el footer `Cancelled by`.
 
 Relación: distinto de `/ticket delete` (ese no toca el bracket).

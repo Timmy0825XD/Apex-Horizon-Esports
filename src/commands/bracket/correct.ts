@@ -46,6 +46,7 @@ import {
   type CorrectTicket,
 } from "./view.js";
 import { slashMention } from "../../lib/register-slash.js";
+import { stageLabel } from "../room/labels.js";
 
 type ComponentNode = {
   type: number;
@@ -281,6 +282,7 @@ async function applyCorrection(
   oldScore1: number | null;
   oldScore2: number | null;
   rebuilt: number;
+  stage: string | null;
 }> {
   const bracket = await fetchChallongeBracket(tournament.challongeId, apiKey);
   const match = bracket.matches.find((item) => item.id === matchId);
@@ -342,7 +344,16 @@ async function applyCorrection(
     oldScore1: old?.score1 ?? null,
     oldScore2: old?.score2 ?? null,
     rebuilt,
+    stage: stageLabel({ group: stored?.group ?? null, round: match.round }),
   };
+}
+
+async function storedGroup(tournamentId: string, matchId: number): Promise<string | null> {
+  const row = await prisma.match.findUnique({
+    where: { tournamentId_challongeMatchId: { tournamentId, challongeMatchId: matchId } },
+    select: { group: true },
+  });
+  return row?.group ?? null;
 }
 
 export async function runBracketCorrect(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -451,6 +462,7 @@ export async function runBracketCorrect(interaction: ChatInputCommandInteraction
         interaction,
         correctConfirmMessage({
           tournamentName: tournament.name,
+          stage: stageLabel({ group: await storedGroup(tournament.id, match.id), round: match.round }),
           leftName: sides.leftName,
           rightName: sides.rightName,
           oldScore1: previous?.score1 ?? null,
@@ -459,7 +471,6 @@ export async function runBracketCorrect(interaction: ChatInputCommandInteraction
           score2,
           winnerName: sides.winnerName,
           tickets,
-          actorTag: interaction.user.username,
           userId: interaction.user.id,
           tournamentId: tournament.id,
           matchId,
@@ -473,15 +484,16 @@ export async function runBracketCorrect(interaction: ChatInputCommandInteraction
       interaction,
       scoreCorrectedMessage({
         tournamentName: tournament.name,
+        stage: result.stage,
         leftName: result.leftName,
         rightName: result.rightName,
         oldScore1: result.oldScore1,
         oldScore2: result.oldScore2,
         score1,
         score2,
-        winnerName: result.winnerName,
         rebuilt: 0,
-        actorTag: interaction.user.username,
+        actorId: interaction.user.id,
+        at: new Date(),
       }),
     );
     await auditScoreUpload(interaction, guild, settings, {
@@ -540,7 +552,7 @@ export async function handleBracketButton(interaction: ButtonInteraction): Promi
   }
 
   if (parsed.action === "no") {
-    await interaction.editReply(asSurface(correctionCancelledMessage()));
+    await interaction.editReply(asSurface(correctionCancelledMessage(interaction.user.id, new Date())));
     return;
   }
 
@@ -582,15 +594,16 @@ export async function handleBracketButton(interaction: ButtonInteraction): Promi
       asSurface(
         scoreCorrectedMessage({
           tournamentName: tournament.name,
+          stage: result.stage,
           leftName: result.leftName,
           rightName: result.rightName,
           oldScore1: result.oldScore1,
           oldScore2: result.oldScore2,
           score1: parsed.score1,
           score2: parsed.score2,
-          winnerName: result.winnerName,
           rebuilt: result.rebuilt,
-          actorTag: interaction.user.username,
+          actorId: interaction.user.id,
+          at: new Date(),
         }),
       ),
     );

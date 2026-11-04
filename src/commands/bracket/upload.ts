@@ -17,7 +17,8 @@ import { settlePendingForfeits } from "./forfeit.js";
 import { auditScoreUpload } from "./audit.js";
 import { deferBracket, respondBracket } from "./respond.js";
 import { archiveBattleTicket } from "./archive.js";
-import { bracketPanel, matchUpdatedMessage } from "./view.js";
+import { bracketPanel, closeStarted, matchUpdatedMessage, type CloseProgress } from "./view.js";
+import { stageLabel } from "../room/labels.js";
 import { slashMention } from "../../lib/register-slash.js";
 
 async function syncMatchRow(
@@ -201,22 +202,23 @@ export async function runBracketUpload(interaction: ChatInputCommandInteraction)
       console.error("Pending forfeit settle failed after score upload", error);
     });
 
-    const actorTag = interaction.user.username;
-    await respondBracket(
-      interaction,
+    const uploadedAt = new Date();
+    const card = (progress: CloseProgress) =>
       matchUpdatedMessage({
         tournamentName: tournament.name,
+        channelId: channel.id,
+        stage: stageLabel({ group: existing?.group ?? null, round: match.round }),
         leftName,
         rightName,
         score1,
         score2,
-        winnerName,
-        channelId: channel.id,
-        actorTag,
-        avatarUrl: interaction.user.displayAvatarURL({ extension: "png", size: 256 }),
+        actorId: interaction.user.id,
+        at: uploadedAt,
+        transcriptChannelId: tournament.transcriptChannelId,
+        progress,
         note,
-      }),
-    );
+      });
+    await respondBracket(interaction, card(closeStarted));
 
     await archiveBattleTicket({
       interaction,
@@ -225,6 +227,7 @@ export async function runBracketUpload(interaction: ChatInputCommandInteraction)
       tournament,
       matchId: match.id,
       reason: "Bracket score uploaded",
+      render: card,
     });
   } catch (error) {
     const message =
