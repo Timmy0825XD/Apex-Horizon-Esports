@@ -13,7 +13,7 @@ import { attachedFile, textBlock, v2Flags } from "../../lib/v2.js";
 import { actorMatches } from "../../lib/command-access.js";
 import { auditUtility } from "./audit.js";
 import { customEmojiCdnUrl, parseEmojiRef } from "./parse.js";
-import { deferUtility, respondUtility, utilityError } from "./view.js";
+import { actorFooter, deferUtility, respondUtility, utilityError } from "./view.js";
 
 export async function handleEmojiSteal(interaction: ChatInputCommandInteraction, guild: Guild): Promise<void> {
   if (!(await actorMatches(interaction, { admin: true }))) {
@@ -80,10 +80,11 @@ export async function handleEmojiSteal(interaction: ChatInputCommandInteraction,
   const filename = `${name}.${extension}`;
   const files = image ? [new AttachmentBuilder(Buffer.from(image), { name: filename })] : [];
   const container = new ContainerBuilder()
-    .setAccentColor(embedColors.success)
+    .setAccentColor(embedColors.error)
     .addTextDisplayComponents(
-      textBlock(`# ${emojis.success} Emoji removed`),
-      textBlock(`Removed \`${name}\` (\`${emoji.id}\`) from this server. The image is attached so you can reuse it.`),
+      textBlock(
+        `## ${emojis.error} Emoji Removed\n\`${name}\` · \`${emoji.id}\` · ${animated ? "animated" : "static"}`,
+      ),
     );
 
   if (files.length > 0) {
@@ -91,11 +92,15 @@ export async function handleEmojiSteal(interaction: ChatInputCommandInteraction,
   } else {
     container.addMediaGalleryComponents((gallery) => gallery.addItems((item) => item.setURL(url)));
   }
+  container.addTextDisplayComponents(
+    textBlock(`${actorFooter("Removed", interaction.user.id)} · the image is attached so you can reuse it`),
+  );
 
   await respondUtility(interaction, {
     flags: v2Flags,
     files,
     components: [container],
+    allowedMentions: { parse: [] },
   });
 
   await auditUtility(interaction, guild, {

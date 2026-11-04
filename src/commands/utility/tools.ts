@@ -7,26 +7,25 @@ import {
 import { emojis, numberEmojis } from "../../emojis.js";
 import { embedColors } from "../../lib/embeds.js";
 import { formatUserFromUser } from "../../lib/formatters.js";
-import { attachedFile, divider, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
+import { attachedFile, divider, textBlock, v2Flags } from "../../lib/v2.js";
 import { actorMatches } from "../../lib/command-access.js";
 import { customEmojiCdnUrl, parseDisplayEmoji, parseSnowflakes, pickRandom, splitChoices, twemojiUrl, utcDate } from "./parse.js";
-import { deferUtility, respondUtility, utilityError, utilityInfo, utilitySuccess } from "./view.js";
+import { escapeDiscord } from "../room/labels.js";
+import { deferUtility, linkRow, respondUtility, utilityCard, utilityError } from "./view.js";
 
 const MAX_TAG_IDS = 80;
 
-function mediaPanel(title: string, body: string, imageUrl: string, thumbnailUrl?: string) {
-  const container = new ContainerBuilder().setAccentColor(embedColors.info);
-  if (thumbnailUrl) {
-    container.addSectionComponents(headingWithThumbnail(`# ${title}`, thumbnailUrl, body));
-  } else {
-    container.addTextDisplayComponents(textBlock(`# ${title}`), textBlock(body));
-  }
+/** Big image in a gallery, with a link button to the full-size file. */
+function mediaPanel(heading: string, imageUrl: string) {
   return {
     flags: v2Flags,
+    allowedMentions: { parse: [] },
     components: [
-      container.addMediaGalleryComponents((gallery) =>
-        gallery.addItems((item) => item.setURL(imageUrl)),
-      ),
+      new ContainerBuilder()
+        .setAccentColor(embedColors.info)
+        .addTextDisplayComponents(textBlock(heading))
+        .addMediaGalleryComponents((gallery) => gallery.addItems((item) => item.setURL(imageUrl)))
+        .addActionRowComponents(linkRow("Open full size", imageUrl)),
     ],
   };
 }
@@ -56,28 +55,41 @@ export async function handleRandom(interaction: ChatInputCommandInteraction): Pr
   const picked = pickRandom(choices, count);
   const container = new ContainerBuilder()
     .setAccentColor(embedColors.info)
-    .addTextDisplayComponents(textBlock(`# ${emojis.random} Random picks`))
-    .addSeparatorComponents(divider());
-
-  for (let i = 0; i < picked.length; i += 1) {
-    container.addTextDisplayComponents(textBlock(`# ${numberEmojis[i]} **${picked[i]}**`));
-    if (i < picked.length - 1) {
-      container.addSeparatorComponents(divider());
-    }
-  }
+    .addTextDisplayComponents(
+      textBlock(`## ${emojis.random} Random Picks\n-# ${picked.length} of ${choices.length} options`),
+    )
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(
+      textBlock(picked.map((choice, index) => `### ${numberEmojis[index]} ${escapeDiscord(choice)}`).join("\n")),
+    )
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(`-# Picked for ${formatUserFromUser(interaction.user)}`));
 
   await respondUtility(interaction, {
     flags: v2Flags,
+    allowedMentions: { parse: [] },
     components: [container],
   });
 }
 
 export async function handleToss(interaction: ChatInputCommandInteraction): Promise<void> {
   const heads = Math.random() < 0.5;
+  const side = heads ? "Heads" : "Tails";
   await respondUtility(
     interaction,
-    utilitySuccess("Coin flip", `${emojis.party} It landed on **${heads ? "Heads" : "Tails"}**.`, false),
+    utilityCard({
+      color: embedColors.info,
+      heading: `## ${emojis.party} ${side}\nThe coin landed on **${side}**.`,
+      blocks: [`-# Flipped for ${formatUserFromUser(interaction.user)}`],
+      ephemeral: false,
+    }),
   );
+}
+
+/** `08/11/2026 21:00`: the day/month/year order the bot uses for UTC dates. */
+function utcLabel(date: Date): string {
+  const two = (value: number) => String(value).padStart(2, "0");
+  return `${two(date.getUTCDate())}/${two(date.getUTCMonth() + 1)}/${date.getUTCFullYear()} ${two(date.getUTCHours())}:${two(date.getUTCMinutes())}`;
 }
 
 export async function handleUtc(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -104,18 +116,14 @@ export async function handleUtc(interaction: ChatInputCommandInteraction): Promi
       components: [
         new ContainerBuilder()
           .setAccentColor(embedColors.info)
-          .addTextDisplayComponents(textBlock(`# ${emojis.calendar} UTC timestamp`))
-          .addSeparatorComponents(divider())
           .addTextDisplayComponents(
             textBlock(
-              [
-                `**Unix:** \`${unix}\``,
-                `**Full:** <t:${unix}:F>`,
-                `**Short:** <t:${unix}:f>`,
-                `**Relative:** <t:${unix}:R>`,
-                `*Same UTC clock the schedules use.*`,
-              ].join("\n"),
+              `## ${emojis.calendar} UTC Timestamp\n-# ${utcLabel(date)} UTC · same clock the schedules use`,
             ),
+          )
+          .addSeparatorComponents(divider())
+          .addTextDisplayComponents(
+            textBlock([`**Full** <t:${unix}:F>`, `**Short** <t:${unix}:f>`, `**Relative** <t:${unix}:R>`].join("\n")),
           ),
       ],
     },
@@ -169,18 +177,21 @@ export async function handleDiscordTag(interaction: ChatInputCommandInteraction)
   }
 
   const body = `\`\`\`\n${lines.join("\n")}\n\`\`\``;
+  const count = `${lines.length} ${lines.length === 1 ? "username" : "usernames"} in paste order`;
   const note =
     missing > 0
-      ? `\n*${missing} ID${missing === 1 ? "" : "s"} could not be resolved and were left as-is.*`
+      ? `${emojis.alert} ${missing === 1 ? "**1** ID could not be resolved and stays" : `**${missing}** IDs could not be resolved and stay`} as the ID, in the same row.`
       : "";
 
   if (body.length < 3500) {
     await respondUtility(
       interaction,
-      utilityInfo(
-        "Discord tags for the sheet",
-        `**${lines.length}** username${lines.length === 1 ? "" : "s"} in paste order.\n${body}${note}`,
-      ),
+      utilityCard({
+        color: embedColors.info,
+        heading: `## ${emojis.info} Discord Tags\n-# ${count} · copy the block into the sheet`,
+        blocks: [body, ...(note ? [note] : [])],
+        ephemeral: true,
+      }),
     );
     return;
   }
@@ -192,10 +203,10 @@ export async function handleDiscordTag(interaction: ChatInputCommandInteraction)
       new ContainerBuilder()
         .setAccentColor(embedColors.info)
         .addTextDisplayComponents(
-          textBlock(`# ${emojis.info} Discord tags for the sheet`),
-          textBlock(`**${lines.length}** usernames in paste order. Copy them from the attached file.${note}`),
+          textBlock(`## ${emojis.info} Discord Tags\n-# ${count} · too many for a code block, copy them from the file`),
         )
-        .addFileComponents(attachedFile("discord-tags.txt")),
+        .addFileComponents(attachedFile("discord-tags.txt"))
+        .addTextDisplayComponents(...(note ? [textBlock(note)] : [])),
     ],
   });
 }
@@ -204,19 +215,8 @@ export async function handleAvatar(interaction: ChatInputCommandInteraction, gui
   const user = interaction.options.getUser("user") ?? interaction.user;
   const member = await guild.members.fetch(user.id).catch(() => null);
   const imageUrl = (member ?? user).displayAvatarURL({ size: 4096, extension: "png" });
-  await respondUtility(interaction, {
-    flags: v2Flags,
-    components: [
-      new ContainerBuilder()
-        .setAccentColor(embedColors.info)
-        .addTextDisplayComponents(
-          textBlock(`# ${emojis.humans} Avatar`),
-          textBlock(`Avatar for ${formatUserFromUser(user)}.`),
-        )
-        .addSeparatorComponents(divider())
-        .addMediaGalleryComponents((gallery) => gallery.addItems((item) => item.setURL(imageUrl))),
-    ],
-  });
+  const kind = member?.avatar ? "server avatar" : "account avatar";
+  await respondUtility(interaction, mediaPanel(`## ${emojis.humans} Avatar\n${formatUserFromUser(user)} · ${kind}`, imageUrl));
 }
 
 export async function handleEnlarge(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -230,13 +230,16 @@ export async function handleEnlarge(interaction: ChatInputCommandInteraction): P
     const url = customEmojiCdnUrl(parsed.id, parsed.animated);
     await respondUtility(
       interaction,
-      mediaPanel(`${emojis.info} Enlarged emoji`, `Custom emoji \`${parsed.name}\` (\`${parsed.id}\`).`, url),
+      mediaPanel(
+        `## ${emojis.info} Enlarged Emoji\n\`${parsed.name}\` · \`${parsed.id}\` · ${parsed.animated ? "animated" : "static"}`,
+        url,
+      ),
     );
     return;
   }
 
   await respondUtility(
     interaction,
-    mediaPanel(`${emojis.info} Enlarged emoji`, "Unicode emoji at full size.", twemojiUrl(parsed.emoji)),
+    mediaPanel(`## ${emojis.info} Enlarged Emoji\nUnicode emoji at full size`, twemojiUrl(parsed.emoji)),
   );
 }

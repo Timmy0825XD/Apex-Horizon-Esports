@@ -66,6 +66,15 @@ Organiser. Respuesta efímera. No audita. El bot necesita **Manage Server** o **
 
 Organiser (`manager_role` o Administrator). No se banea a uno mismo, al owner, al bot ni a otros bots. Si el objetivo está en el servidor, la jerarquía Discord gana. El bot necesita **Ban Members**. Si ya está baneado, no reescribe la duración. Audita en **Moderation**.
 
+La respuesta es un V2 rojo:
+
+- `## User Banned` con la mención y el ID.
+- Si hay avatar, va de thumbnail.
+- **Duration** con la caducidad relativa y, si caduca, **Until** con la fecha exacta. Si es permanente, *does not expire*.
+- El motivo en cita, o *No reason given*.
+- Si no se pudo guardar la caducidad, una línea con `alert`.
+- Footer `Banned by` con mención y hora.
+
 ## `/user unban`
 
 **Para qué:** Quitar el ban de Discord y borrar el registro rastreado (cancela la caducidad pendiente). Si Discord ya no lo tenía baneado pero el bot sí lo recordaba, solo cancela el vencimiento.
@@ -75,3 +84,5 @@ Organiser (`manager_role` o Administrator). No se banea a uno mismo, al owner, a
 | discord_id | STRING | Sí |
 
 Organiser. El bot necesita **Ban Members**. Audita.
+
+La respuesta es un V2 verde `## User Unbanned` con la mención y el ID, el avatar si lo hay, una línea con lo que pasó y el footer `Unbanned by` con hora.

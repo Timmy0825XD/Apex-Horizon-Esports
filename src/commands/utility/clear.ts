@@ -11,24 +11,26 @@ import {
 } from "discord.js";
 import { emojis } from "../../emojis.js";
 import { customEmoji } from "../../lib/custom-emoji.js";
-import { formatCategory, formatChannel } from "../../lib/formatters.js";
+import { embedColors } from "../../lib/embeds.js";
+import { formatCategory, formatChannel, formatUser } from "../../lib/formatters.js";
 import { actorMatches } from "../../lib/command-access.js";
 import { botHasChannelPermission } from "./access.js";
 import { auditUtility } from "./audit.js";
 import { wait } from "./channels.js";
-import { deferUtility, respondUtility, asMessageEdit, utilityError, utilityInfo, utilitySuccess } from "./view.js";
+import { actorFooter, asMessageEdit, deferUtility, respondUtility, utilityCard, utilityError, utilityInfo } from "./view.js";
 
-function confirmRow(userId: string, categoryId: string): ActionRowBuilder<ButtonBuilder> {
+function confirmRow(userId: string, categoryId: string, count: number): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(`utility:cat:ok:${userId}:${categoryId}`)
-      .setLabel("Confirm delete")
+      .setLabel(`Delete ${count} ${count === 1 ? "channel" : "channels"}`)
       .setStyle(ButtonStyle.Danger)
       .setEmoji(customEmoji(emojis.error)),
     new ButtonBuilder()
       .setCustomId(`utility:cat:no:${userId}:${categoryId}`)
       .setLabel("Cancel")
-      .setStyle(ButtonStyle.Secondary),
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji(customEmoji(emojis.info)),
   );
 }
 
@@ -123,17 +125,21 @@ export async function handleClear(interaction: ChatInputCommandInteraction, guil
     }
   }
 
-  const skipNote =
-    skipped > 0
-      ? `\n*${skipped} message${skipped === 1 ? "" : "s"} older than 14 days were left in place.*`
-      : "";
+  const filter = number != null ? `last ${number} ${number === 1 ? "message" : "messages"}` : `last ${days} ${days === 1 ? "day" : "days"}`;
+  const counts = [`**Deleted** \`${deleted}\``];
+  if (skipped > 0) {
+    counts.push(`**Left in place** \`${skipped}\` *(older than 14 days, Discord will not bulk-delete them)*`);
+  }
 
   await respondUtility(
     interaction,
-    utilitySuccess(
-      "Channel purged",
-      `Deleted **${deleted}** message${deleted === 1 ? "" : "s"} in ${formatChannel(guild, channel.id)}.${skipNote}`,
-    ),
+    utilityCard({
+      color: embedColors.error,
+      heading: `## ${emojis.error} Channel Purged\n${formatChannel(guild, channel.id)} · ${filter}`,
+      blocks: [counts.join(" · ")],
+      footer: actorFooter("Purged", interaction.user.id),
+      ephemeral: true,
+    }),
   );
 
   if (deleted > 0) {
@@ -186,17 +192,19 @@ export async function handleClearCategory(interaction: ChatInputCommandInteracti
   const listing = children
     .slice(0, 15)
     .map((child) => formatChannel(guild, child.id))
-    .join("\n");
-  const extra = children.length > 15 ? `\n*…and **${children.length - 15}** more.*` : "";
+    .join(" ");
+  const extra = children.length > 15 ? ` *and **${children.length - 15}** more*` : "";
+  const count = children.length;
 
-  const warning = utilityError(
-    "Delete every channel in this category?",
-    `This permanently deletes **${children.length}** channel${children.length === 1 ? "" : "s"} under ${formatCategory(guild, category.id)}. The category itself stays.\n\n${listing}${extra}`,
+  await interaction.reply(
+    utilityCard({
+      color: 0xe67e22,
+      heading: `## ${emojis.alert} Delete Every Channel in This Category?\n${formatCategory(guild, category.id)} · \`${count}\` ${count === 1 ? "channel" : "channels"} · the category itself stays`,
+      blocks: [`${listing}${extra}`, `-# This cannot be undone. Only ${formatUser(interaction.user.id)} can use these buttons.`],
+      rows: [confirmRow(interaction.user.id, category.id, count)],
+      ephemeral: true,
+    }),
   );
-  await interaction.reply({
-    ...warning,
-    components: [...(warning.components ?? []), confirmRow(interaction.user.id, category.id)],
-  });
 }
 
 export async function handleClearCategoryButton(interaction: ButtonInteraction): Promise<void> {
@@ -217,7 +225,14 @@ export async function handleClearCategoryButton(interaction: ButtonInteraction):
 
   if (action === "no") {
     await interaction.update(
-      asMessageEdit(utilityInfo("Category wipe cancelled", `No channels under ${formatCategory(guild, categoryId)} were deleted.`)),
+      asMessageEdit(
+        utilityCard({
+          color: embedColors.info,
+          heading: `## ${emojis.info} Category Wipe Cancelled\nNo channels under ${formatCategory(guild, categoryId)} were deleted.`,
+          footer: actorFooter("Cancelled", interaction.user.id),
+          ephemeral: true,
+        }),
+      ),
     );
     return;
   }
@@ -248,14 +263,15 @@ export async function handleClearCategoryButton(interaction: ButtonInteraction):
     }
   }
 
-  const failNote = failed > 0 ? `\n**${failed}** could not be deleted.` : "";
   await interaction.editReply(
     asMessageEdit(
-      utilitySuccess(
-        "Category cleared",
-        `Deleted **${deleted}** channel${deleted === 1 ? "" : "s"} under ${formatCategory(guild, category.id)}. The category itself was kept.${failNote}`,
-        false,
-      ),
+      utilityCard({
+        color: embedColors.error,
+        heading: `## ${emojis.error} Category Cleared\n${formatCategory(guild, category.id)} · the category was kept`,
+        blocks: [`**Deleted** \`${deleted}\` · **Failed** \`${failed}\``],
+        footer: actorFooter("Cleared", interaction.user.id),
+        ephemeral: false,
+      }),
     ),
   );
 

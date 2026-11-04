@@ -43,7 +43,7 @@ import {
   type V2Draft,
   type V2Session,
 } from "./session.js";
-import { asMessageEdit, utilityError, utilityInfo, utilitySuccess } from "./view.js";
+import { asMessageEdit, linkRow, utilityCard, utilityError, utilityInfo } from "./view.js";
 
 function optionalUrl(input: string): string | undefined | "invalid" {
   const trimmed = input.trim();
@@ -168,13 +168,13 @@ function controlRows(draft: V2Draft): ActionRowBuilder<ButtonBuilder>[] {
 function builderPayload(guild: Guild, session: V2Session): InteractionReplyOptions & InteractionUpdateOptions {
   const target = formatChannel(guild, session.channelId);
   const mode = session.edit
-    ? `Editing message \`${session.edit.messageId}\` in ${formatChannel(guild, session.edit.channelId)}.`
-    : `New Components V2 message. Publishes to ${target}.`;
+    ? `Editing message \`${session.edit.messageId}\` in ${formatChannel(guild, session.edit.channelId)}`
+    : `New message · publishes to ${target}`;
   const controls = new ContainerBuilder()
     .setAccentColor(embedColors.info)
     .addTextDisplayComponents(
-      textBlock(`# ${emojis.settings} Components V2 builder`),
-      textBlock(`${mode}\n*Session expires after 15 minutes of inactivity. Markdown works in text blocks.*`),
+      textBlock(`## ${emojis.settings} Components V2 Builder\n${mode}`),
+      textBlock("-# Session expires after 15 minutes of inactivity · Markdown works in text blocks"),
     )
     .addSeparatorComponents(divider());
 
@@ -492,6 +492,7 @@ async function publishV2(interaction: ButtonInteraction, guild: Guild, session: 
     allowedMentions: { parse: [] },
   };
 
+  let messageUrl: string;
   try {
     if (session.edit) {
       const fetched = await fetchGuildMessage(guild, session.edit.channelId, session.edit.messageId);
@@ -499,9 +500,9 @@ async function publishV2(interaction: ButtonInteraction, guild: Guild, session: 
         await interaction.reply(utilityError("Message not found", fetched));
         return;
       }
-      await fetched.message.edit(payload);
+      messageUrl = (await fetched.message.edit(payload)).url;
     } else {
-      await channel.send(payload);
+      messageUrl = (await channel.send(payload)).url;
     }
   } catch {
     await interaction.reply(
@@ -514,12 +515,15 @@ async function publishV2(interaction: ButtonInteraction, guild: Guild, session: 
   }
 
   clearSession(guild.id, interaction.user.id);
-  const copy = session.edit
-    ? `Rewrote the Components V2 message in ${formatChannel(guild, channel.id)}.`
-    : `Posted the Components V2 message in ${formatChannel(guild, channel.id)}.`;
-  await interaction.update(
-    asMessageEdit(utilitySuccess(session.edit ? "Components V2 updated" : "Components V2 published", copy, false)),
-  );
+  const done = utilityCard({
+    color: embedColors.success,
+    heading: session.edit
+      ? `## ${emojis.success} Components V2 Updated\nRewrote the message in ${formatChannel(guild, channel.id)}.`
+      : `## ${emojis.success} Components V2 Published\nPosted in ${formatChannel(guild, channel.id)}.`,
+    rows: [linkRow("Jump to message", messageUrl)],
+    ephemeral: false,
+  });
+  await interaction.update(asMessageEdit(done));
 
   await auditUtility(interaction, guild, {
     action: session.edit ? "updated" : "created",
