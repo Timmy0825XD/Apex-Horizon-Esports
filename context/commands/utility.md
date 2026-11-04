@@ -31,6 +31,18 @@ El panel de `/utility embed create` es un embed clásico (el draft es el preview
 | Embed | Title, description, color, author, footer, thumbnail, image, fields, timestamp |
 | V2 | Text display (markdown), section (heading + extra + thumbnail), separator, media gallery, accent color. Undo last. |
 
+## Respuestas
+
+- `clear messages`: V2 rojo `## Channel Purged`, con el canal y el filtro (*last N messages* / *last N days*), **Deleted** y, si los hay, **Left in place** (más de 14 días). Footer `Purged by` con hora.
+- `clear category`: la confirmación es un V2 naranja con la categoría y cuántos canales caen. Debajo van los canales seguidos (máx. 15 y *and N more*), el aviso de que no se puede deshacer y quién puede pulsar. Los botones van dentro: **Delete N channels** (rojo) / **Cancel**. El resultado es rojo *Category Cleared*, con **Deleted** y **Failed** y footer `Cleared by`. Cancelar deja *Category Wipe Cancelled* con `Cancelled by`.
+- `emoji steal`: V2 rojo `## Emoji Removed`, con nombre, ID y si es animado. Lleva el File con la imagen (o la galería si no se pudo descargar) y el footer `Removed by`.
+- `random`: `## Random Picks`, en `-#` cuántos de cuántas opciones, y cada elegido en `###` con su emoji de número, seguidos. Footer *Picked for*.
+- `toss`: el lado es el título (`## Heads` / `## Tails`), en azul. Footer *Flipped for*.
+- `utc`: `## UTC Timestamp`, en `-#` la fecha UTC escrita (`día/mes/año hora`) y que es el mismo reloj que los schedules. Debajo solo **Full**, **Short** y **Relative**: sin Unix ni el código `<t:…>`.
+- `discord tag`: `## Discord Tags`, en `-#` el conteo, y el bloque de código. Si no cabe, va un File. Los IDs sin resolver se avisan con `alert` y se quedan como ID en su fila.
+- `avatar` / `enlarge`: título `##` con quién (y si es el avatar del servidor o de la cuenta) o nombre, ID y tipo del emoji. Debajo, la galería y el botón de enlace **Open full size**.
+- `v2 create` / `edit`: el panel de controles lleva `## Components V2 Builder` con el modo y el canal, y la nota de la sesión en `-#`. Al publicar o editar queda *Components V2 Published* / *Updated* con el botón **Jump to message**.
+
 `clear category` muta el servidor de forma destructiva. Lecturas (`random`, `utc`, `discord tag`, `avatar`, `toss`, `enlarge`) no entran en la auditoría.
 
 ## Relacionado
