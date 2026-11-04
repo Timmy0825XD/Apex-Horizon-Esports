@@ -6,13 +6,21 @@ Reglas: [../domains/moderation.md](../domains/moderation.md).
 
 **Para qué:** Instantánea en vivo del servidor. Components V2 (container + thumbnail del icono). El título es el **nombre del servidor**, no un rótulo genérico.
 
-Muestra: nombre, ID, owner (mención), enlace del icono, miembros (total / humanos / bots), canales (texto / voz / categorías), roles, fecha de creación y antigüedad. No incluye boosts ni emojis del servidor.
+Muestra lo siguiente:
+
+- `## nombre` y el ID en `-#`.
+- Junto al icono, el owner (mención) y la fecha de creación con la antigüedad.
+- Separador y tres líneas: miembros (total / humanos / bots), canales (texto / voz / categorías), y roles con boosts y nivel.
+- Footer `Requested by` con mención y hora.
+- Botón de enlace **Server icon** si hay icono.
+
+No incluye los emojis del servidor.
 
 **Campos:** ninguno. Admin u Organiser. No audita.
 
 ## `/server banlist`
 
-**Para qué:** Exportar los bans actuales de Discord del servidor. Components V2 con thumbnail del icono, el archivo va en un componente File. Por defecto adjunta un `.txt`; con `excel: true`, un `.xlsx`. Columnas: **ID**, **Date**, **Reason**. La fecha sale del ban que el bot tenga rastreado; si no, del audit log reciente; si tampoco, `Unknown`. El ID va en texto plano para no perder el snowflake en Excel.
+**Para qué:** Exportar los bans actuales de Discord del servidor. Components V2 con thumbnail del icono: `## Ban List Exported` (emoji `banned`), el servidor y el formato en `-#`, y **Bans**, **With reason** y **Date known** en una línea. Después el archivo en un componente File y el footer `Exported by` con mención y hora. Por defecto adjunta un `.txt`; con `excel: true`, un `.xlsx`. Columnas: **ID**, **Date**, **Reason**. La fecha sale del ban que el bot tenga rastreado; si no, del audit log reciente; si tampoco, `Unknown`. El ID va en texto plano para no perder el snowflake en Excel.
 
 **Campos:**
 
@@ -24,7 +32,7 @@ Organiser (`manager_role` o Administrator). Respuesta efímera. No audita (solo 
 
 ## `/server tree`
 
-**Para qué:** Exportar el árbol de categorías y canales (sin hilos). Components V2 con thumbnail del icono y componente File. Por defecto `.txt` indentado; con `excel: true`, tabla plana (categoría, IDs, tipo, posición). Los nombres van en el archivo, no en el panel.
+**Para qué:** Exportar el árbol de categorías y canales (sin hilos). Components V2 con thumbnail del icono: `## Channel Tree Exported` (emoji `channels`), servidor y formato en `-#`, **Categories**, **Text** y **Voice** en una línea, componente File y footer `Exported by`. Por defecto `.txt` indentado; con `excel: true`, tabla plana (categoría, IDs, tipo, posición). Los nombres van en el archivo, no en el panel.
 
 **Campos:**
 
@@ -36,7 +44,7 @@ Organiser. Respuesta efímera. No audita.
 
 ## `/server invites`
 
-**Para qué:** Exportar invites activos (código, usos, máximo, canal, invitador, caducidad, temporal, creación). Incluye vanity (`discord.gg/code` y usos) si existe. Components V2 con thumbnail y File. Por defecto `.txt`; con `excel: true`, `.xlsx`. IDs en texto plano.
+**Para qué:** Exportar invites activos (código, usos, máximo, canal, invitador, caducidad, temporal, creación). Incluye vanity (`discord.gg/code` y usos) si existe. Components V2 con thumbnail: `## Invite List Exported` (emoji `link`), servidor y formato en `-#`, **Invites** y **Total uses**, y la línea **Vanity** si existe. Después el File y el footer `Exported by`. Por defecto `.txt`; con `excel: true`, `.xlsx`. IDs en texto plano.
 
 **Campos:**
 

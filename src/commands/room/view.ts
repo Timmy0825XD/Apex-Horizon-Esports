@@ -14,11 +14,12 @@ import {
 import { emojis } from "../../emojis.js";
 import { customEmoji } from "../../lib/custom-emoji.js";
 import { embedColors } from "../../lib/embeds.js";
-import { formatCategory, formatChannel, formatRole, formatUser } from "../../lib/formatters.js";
+import { formatCategory, formatChannel, formatHelpEntry, formatRole, formatUser } from "../../lib/formatters.js";
+import { roomCommandIdFor } from "../../lib/register-slash.js";
 import { type SheetTeam, type TeamFormat } from "../../lib/sheet.js";
 import { divider, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
 import { captainOf, gameIdLines, type BlockedMatch, type ReadyMatch } from "./bracket.js";
-import { escapeDiscord, matchLabel, roundLabel, ticketTopic } from "./labels.js";
+import { escapeDiscord, matchLabel, roundLabel, stageLabel, ticketTopic } from "./labels.js";
 
 export const AVAILABLE_PAGE_SIZE = 20;
 const AVAILABLE_PREFIX = "room:avail";
@@ -275,17 +276,16 @@ function textChunks(body: string, max = 3500): string[] {
   return chunks;
 }
 
-function availableMatchBlock(number: number, match: AvailableMatch, hasGroups: boolean): string {
-  const round = match.round < 0 ? `Losers Round ${Math.abs(match.round)}` : `Round ${roundLabel(match.round)}`;
-  const group = hasGroups && match.group ? ` - Group ${match.group}` : "";
-  return `${emojis.vs} **Match ${number}** - ${round}${group}\n${escapeDiscord(match.leftName)} vs ${escapeDiscord(match.rightName)}`;
+function availableMatchLine(number: number, match: AvailableMatch, hasGroups: boolean): string {
+  const stage = stageLabel({ group: hasGroups ? match.group : null, round: match.round });
+  const face = `**${number}.** ${emojis.vs} **${escapeDiscord(match.leftName)}** vs **${escapeDiscord(match.rightName)}**`;
+  return stage ? `${face} · *${stage}*` : face;
 }
 
 function availablePager(tournamentId: string, page: number, pages: number): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(availableCustomId(tournamentId, page - 1))
-      .setLabel("Previous")
       .setStyle(ButtonStyle.Secondary)
       .setEmoji(customEmoji(emojis.back))
       .setDisabled(page <= 0),
@@ -296,7 +296,6 @@ function availablePager(tournamentId: string, page: number, pages: number): Acti
       .setDisabled(true),
     new ButtonBuilder()
       .setCustomId(availableCustomId(tournamentId, page + 1))
-      .setLabel("Next")
       .setStyle(ButtonStyle.Secondary)
       .setEmoji(customEmoji(emojis.next))
       .setDisabled(page >= pages - 1),
@@ -304,6 +303,7 @@ function availablePager(tournamentId: string, page: number, pages: number): Acti
 }
 
 export function availableRoomsMessage(
+  guildId: string,
   tournamentName: string,
   tournamentId: string,
   matches: AvailableMatch[],
@@ -317,36 +317,94 @@ export function availableRoomsMessage(
   const start = safePage * AVAILABLE_PAGE_SIZE;
   const slice = matches.slice(start, start + AVAILABLE_PAGE_SIZE);
   const end = start + slice.length;
-  const showing =
-    total === 1
-      ? "Showing **1** available match."
-      : `Showing **${start + 1}** - **${end}** of **${total}** available matches.`;
+  const ready = total === 1 ? "match ready for a ticket" : "matches ready for a ticket";
   const container = new ContainerBuilder()
     .setAccentColor(embedColors.success)
     .addTextDisplayComponents(
-      textBlock(`# ${emojis.success} Available Rooms for **${tournamentName}**`),
-      textBlock(showing),
-    );
-  for (const chunk of textChunks(
-    slice.map((match, index) => availableMatchBlock(start + index + 1, match, hasGroups)).join("\n\n"),
-  )) {
+      textBlock(
+        `## ${emojis.success} Available Rooms\n${emojis.torneo} **${escapeDiscord(tournamentName)}** · \`${total}\` ${ready}`,
+      ),
+    )
+    .addSeparatorComponents(divider());
+  for (const chunk of textChunks(slice.map((match, index) => availableMatchLine(start + index + 1, match, hasGroups)).join("\n"))) {
     container.addTextDisplayComponents(textBlock(chunk));
   }
 
-  if (blockedCount > 0 && safePage === pages - 1) {
+  if (blockedCount > 0) {
     const note =
       blockedCount === 1
-        ? "*1 open match cannot get a ticket until both sides match the sheet.*"
-        : `*${blockedCount} open matches cannot get a ticket until both sides match the sheet.*`;
+        ? `${emojis.alert} **1** more open match waits until both sides match the sheet.`
+        : `${emojis.alert} **${blockedCount}** more open matches wait until both sides match the sheet.`;
     container.addTextDisplayComponents(textBlock(note));
   }
 
+  const create = formatHelpEntry("room create", roomCommandIdFor(guildId));
+  const showing = total === 1 ? "Showing 1 of 1" : `Showing ${start + 1}–${end} of ${total}`;
+  container
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(`-# ${showing} · open them with ${create}`));
   if (pages > 1) {
-    container.addSeparatorComponents(divider()).addActionRowComponents(availablePager(tournamentId, safePage, pages));
+    container.addActionRowComponents(availablePager(tournamentId, safePage, pages));
   }
 
   return {
     flags: v2Flags,
+    allowedMentions: { parse: [] },
+    components: [container],
+  };
+}
+
+export type AutoRoomState = "on" | "off" | "already-on" | "already-off";
+
+/** `/room auto` replies that are not a creation report. */
+export function autoRoomMessage(input: {
+  state: AutoRoomState;
+  guildId: string;
+  tournamentName: string;
+  nextRun: Date;
+  actorId: string;
+}): InteractionReplyOptions {
+  const create = formatHelpEntry("room create", roomCommandIdFor(input.guildId));
+  const auto = formatHelpEntry("room auto", roomCommandIdFor(input.guildId));
+  const nextRun = `${emojis.uptime} **Next run** <t:${Math.floor(input.nextRun.getTime() / 1000)}:R> · 00:00 and 12:00 UTC`;
+  const at = `<t:${Math.floor(Date.now() / 1000)}:F>`;
+  const copy = {
+    on: {
+      color: embedColors.success,
+      title: `${emojis.success} Auto-room On`,
+      body: [nextRun, `${emojis.channels} No open match was waiting, so nothing was created now.`],
+      footer: `Turned on by ${formatUser(input.actorId)} · ${at} · open the queue now with ${create}`,
+    },
+    off: {
+      color: embedColors.error,
+      title: `${emojis.error} Auto-room Off`,
+      body: [`${emojis.channels} No new battle tickets. Existing tickets stay where they are.`],
+      footer: `Turned off by ${formatUser(input.actorId)} · ${at}`,
+    },
+    "already-on": {
+      color: embedColors.info,
+      title: `${emojis.info} Auto-room Already On`,
+      body: [nextRun],
+      footer: `Open the queue now with ${create}`,
+    },
+    "already-off": {
+      color: embedColors.info,
+      title: `${emojis.info} Auto-room Already Off`,
+      body: [`${emojis.channels} No new battle tickets are being opened.`],
+      footer: `Turn it on with ${auto}`,
+    },
+  }[input.state];
+
+  const container = new ContainerBuilder()
+    .setAccentColor(copy.color)
+    .addTextDisplayComponents(textBlock(`## ${copy.title}\n${emojis.torneo} **${escapeDiscord(input.tournamentName)}**`))
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(copy.body.join("\n")))
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(`-# ${copy.footer}`));
+
+  return {
+    flags: [...v2Flags, MessageFlags.Ephemeral],
     allowedMentions: { parse: [] },
     components: [container],
   };

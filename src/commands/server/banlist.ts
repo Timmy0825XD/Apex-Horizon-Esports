@@ -5,6 +5,7 @@ import {
   type ChatInputCommandInteraction,
   type Guild,
 } from "discord.js";
+import { emojis } from "../../emojis.js";
 import { prisma } from "../../lib/prisma.js";
 import { v2Flags } from "../../lib/v2.js";
 import {
@@ -16,6 +17,8 @@ import {
   xlsxBuffer,
 } from "./shared.js";
 import { serverErrorMessage, serverInfoMessage } from "./view.js";
+
+const NO_REASON = "No reason provided";
 
 type BanRow = {
   id: string;
@@ -123,7 +126,7 @@ export async function handleServerBanlist(interaction: ChatInputCommandInteracti
       return {
         id: ban.user.id,
         date: bannedAt ? formatUtc(bannedAt) : "Unknown",
-        reason: flattenReason(ban.reason) ?? flattenReason(saved?.reason) ?? "No reason provided",
+        reason: flattenReason(ban.reason) ?? flattenReason(saved?.reason) ?? NO_REASON,
       };
     }),
   );
@@ -146,12 +149,14 @@ export async function handleServerBanlist(interaction: ChatInputCommandInteracti
         rows.map((row) => [row.id, row.date, row.reason]),
       );
 
-  await replyExport(
-    interaction,
-    guild,
-    "Ban list exported",
-    `**${rows.length}** ${rows.length === 1 ? "ban" : "bans"} in \`${filename}\`.`,
+  const withReason = rows.filter((row) => row.reason !== NO_REASON).length;
+  const dated = rows.filter((row) => row.date !== "Unknown").length;
+  await replyExport(interaction, guild, {
+    emoji: emojis.banned,
+    title: "Ban List Exported",
+    summary: `**Bans** \`${rows.length}\` · **With reason** \`${withReason}\` · **Date known** \`${dated}\``,
+    excel: asExcel,
     filename,
     data,
-  );
+  });
 }

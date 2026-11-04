@@ -49,5 +49,5 @@ export async function handleRoleList(interaction: ChatInputCommandInteraction): 
       return a.id.localeCompare(b.id);
     });
 
-  await respondRole(interaction, roleListMessage(role, members, interaction.user.id));
+  await respondRole(interaction, roleListMessage(role, members, interaction.user.id, new Date()));
 }

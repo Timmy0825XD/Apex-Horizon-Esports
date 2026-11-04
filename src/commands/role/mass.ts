@@ -191,6 +191,7 @@ export async function handleRoleMass(interaction: ChatInputCommandInteraction, a
       failed: progress.failed,
       elapsedMs: Date.now() - startedAt,
       actorId: interaction.user.id,
+      at: new Date(),
     }),
     startedAt,
   );

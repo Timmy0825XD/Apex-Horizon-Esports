@@ -1,15 +1,14 @@
 import type { ChatInputCommandInteraction } from "discord.js";
+import { emojis } from "../../emojis.js";
 import { ChallongeError } from "../../lib/challonge.js";
-import { formatHelpEntry } from "../../lib/formatters.js";
-import { roomCommandIdFor } from "../../lib/register-slash.js";
 import { auditAutoRoom } from "./audit.js";
+import { nextSlotStart } from "./auto-slot.js";
 import { TicketQueueError } from "./bracket.js";
 import { openPendingTickets } from "./open.js";
 import { prepareTournament } from "./prepare.js";
 import { deferRoom, respondRoom } from "./respond.js";
 import { creationReport } from "./report.js";
-import { roomPanel } from "./view.js";
-import { escapeDiscord } from "./labels.js";
+import { autoRoomMessage, roomPanel, type AutoRoomState } from "./view.js";
 import { setAutoRoomRunning } from "../tournament/store.js";
 
 /** `/room auto`: turns the auto-room worker on or off for one tournament. */
@@ -20,34 +19,23 @@ export async function handleRoomAutoSlash(interaction: ChatInputCommandInteracti
   }
 
   const status = interaction.options.getBoolean("status", true);
-  const create = formatHelpEntry("room create", roomCommandIdFor(interaction.guildId));
+  const card = (state: AutoRoomState) =>
+    autoRoomMessage({
+      state,
+      guildId: ready.guild.id,
+      tournamentName: ready.tournament.name,
+      nextRun: nextSlotStart(new Date()),
+      actorId: interaction.user.id,
+    });
 
   if (status === ready.tournament.autoRoomRunning) {
-    await respondRoom(
-      interaction,
-      roomPanel(
-        "info",
-        status ? "Auto-room is already on" : "Auto-room is already off",
-        status
-          ? [
-              `**${ready.tournament.name}** already opens battle tickets on the UTC schedule.`,
-              `Matches that become ready later wait for **00:00** or **12:00** UTC. ${create} opens that queue now.`,
-            ]
-          : [`**${ready.tournament.name}** is not opening new battle tickets.`],
-      ),
-    );
+    await respondRoom(interaction, card(status ? "already-on" : "already-off"));
     return;
   }
 
   if (!status) {
     await setAutoRoomRunning(ready.tournament.id, false);
-    await respondRoom(
-      interaction,
-      roomPanel("success", "Auto-room turned off", [
-        `**${ready.tournament.name}** will not open new battle tickets.`,
-        "Tickets that already exist stay where they are.",
-      ]),
-    );
+    await respondRoom(interaction, card("off"));
     await auditAutoRoom(interaction, ready.guild, ready.settings, ready.tournament.name, false, []);
     return;
   }
@@ -56,22 +44,17 @@ export async function handleRoomAutoSlash(interaction: ChatInputCommandInteracti
   try {
     await setAutoRoomRunning(ready.tournament.id, true);
     const result = await openPendingTickets(ready.guild, ready.tournament, undefined, interaction.user);
-    const schedule = `Matches that open later wait for **00:00** or **12:00** UTC. ${create} opens that queue now.`;
     if (result.created.length === 0 && result.failed.length === 0) {
-      await respondRoom(
-        interaction,
-        roomPanel("success", "Auto-room turned on", [
-          `**${escapeDiscord(ready.tournament.name)}** will open battle tickets from the bracket.`,
-          "No open match was waiting, so nothing was created just now.",
-          schedule,
-        ]),
-      );
+      await respondRoom(interaction, card("on"));
     } else {
+      const nextRun = Math.floor(nextSlotStart(new Date()).getTime() / 1000);
       await respondRoom(
         interaction,
         creationReport(ready.guild, ready.tournament.name, result, {
-          title: "Auto-room turned on",
-          intro: [`**${escapeDiscord(ready.tournament.name)}** will open battle tickets from the bracket.`, schedule],
+          title: "Auto-room On",
+          intro: [`${emojis.uptime} **Next run** <t:${nextRun}:R> · 00:00 and 12:00 UTC`],
+          actorId: interaction.user.id,
+          verb: "Turned on",
         }),
       );
     }

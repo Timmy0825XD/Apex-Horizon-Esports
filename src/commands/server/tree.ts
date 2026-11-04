@@ -5,6 +5,7 @@ import {
   type Guild,
   type GuildBasedChannel,
 } from "discord.js";
+import { emojis } from "../../emojis.js";
 import { v2Flags } from "../../lib/v2.js";
 import {
   fileSlug,
@@ -146,12 +147,13 @@ export async function handleServerTree(interaction: ChatInputCommandInteraction,
       )
     : textBuffer(tree.lines.join("\n"));
 
-  await replyExport(
-    interaction,
-    guild,
-    "Channel tree exported",
-    `**${tree.categories}** ${tree.categories === 1 ? "category" : "categories"} · **${tree.channels}** ${tree.channels === 1 ? "channel" : "channels"} in \`${filename}\`.`,
+  const voice = tree.rows.filter((row) => row.type === "voice" || row.type === "stage").length;
+  await replyExport(interaction, guild, {
+    emoji: emojis.channels,
+    title: "Channel Tree Exported",
+    summary: `**Categories** \`${tree.categories}\` · **Text** \`${tree.channels - voice}\` · **Voice** \`${voice}\``,
+    excel: asExcel,
     filename,
     data,
-  );
+  });
 }

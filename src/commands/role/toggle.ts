@@ -61,12 +61,11 @@ export async function handleRoleUser(interaction: ChatInputCommandInteraction): 
   }
 
   const added = !target.roles.cache.has(role.id);
+  let updated = target;
   try {
-    if (added) {
-      await target.roles.add(role, `Role toggle by ${interaction.user.id}`);
-    } else {
-      await target.roles.remove(role, `Role toggle by ${interaction.user.id}`);
-    }
+    updated = added
+      ? await target.roles.add(role, `Role toggle by ${interaction.user.id}`)
+      : await target.roles.remove(role, `Role toggle by ${interaction.user.id}`);
   } catch {
     await respondRole(
       interaction,
@@ -85,7 +84,11 @@ export async function handleRoleUser(interaction: ChatInputCommandInteraction): 
       added,
       role,
       targetId: target.id,
+      avatarUrl: updated.displayAvatarURL({ extension: "png", size: 256 }),
+      // @everyone is in the cache but is not a role anyone picks.
+      roleCount: updated.roles.cache.filter((held) => held.id !== guild.id).size,
       actorId: interaction.user.id,
+      at: new Date(),
     }),
   );
   await auditRoleToggle(interaction, guild, role.id, target.id, added);

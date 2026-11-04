@@ -5,10 +5,11 @@ import {
   type ChatInputCommandInteraction,
   type Guild,
 } from "discord.js";
-import { emojis } from "../../emojis.js";
 import { embedColors } from "../../lib/embeds.js";
+import { formatUser } from "../../lib/formatters.js";
 import { isOrganiser } from "../../lib/permissions.js";
-import { attachedFile, divider, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
+import { attachedFile, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
+import { escapeDiscord } from "../room/labels.js";
 import { serverErrorMessage } from "./view.js";
 import { loadGuildConfig } from "../../lib/guild-config.js";
 
@@ -81,22 +82,33 @@ export async function requireOrganiser(
 export async function replyExport(
   interaction: ChatInputCommandInteraction,
   guild: Guild,
-  title: string,
-  summary: string,
-  filename: string,
-  data: Buffer,
+  input: {
+    /** Emoji for this export: `banned`, `link`, `channels`. */
+    emoji: string;
+    title: string;
+    /** One line of counts, e.g. `**Bans** \`23\` · **With reason** \`18\``. */
+    summary: string;
+    excel: boolean;
+    filename: string;
+    data: Buffer;
+  },
 ): Promise<void> {
+  const { filename, data } = input;
   const icon = guild.iconURL({ size: 256 });
-  const heading = `# ${emojis.success} ${title}`;
+  const heading = `## ${input.emoji} ${input.title}\n-# ${escapeDiscord(guild.name)} · ${input.excel ? "Excel" : "Text"}`;
   const container = new ContainerBuilder().setAccentColor(embedColors.success);
 
   if (icon) {
-    container.addSectionComponents(headingWithThumbnail(heading, icon, summary));
+    container.addSectionComponents(headingWithThumbnail(heading, icon, input.summary));
   } else {
-    container.addTextDisplayComponents(textBlock(heading), textBlock(summary));
+    container.addTextDisplayComponents(textBlock(heading), textBlock(input.summary));
   }
 
-  container.addSeparatorComponents(divider()).addFileComponents(attachedFile(filename));
+  container
+    .addFileComponents(attachedFile(filename))
+    .addTextDisplayComponents(
+      textBlock(`-# Exported by ${formatUser(interaction.user.id)} · <t:${Math.floor(Date.now() / 1000)}:F>`),
+    );
 
   await interaction.editReply({
     components: [container],

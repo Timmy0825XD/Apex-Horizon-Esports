@@ -76,6 +76,6 @@ export async function handleSettingsEdit(
   const settings = await saveGuildSettings(guild.id, next);
   await guild.roles.fetch().catch(() => undefined);
   await guild.channels.fetch().catch(() => undefined);
-  await respondSettings(interaction, settingsMessage("edit", guild, settings, commandId));
+  await respondSettings(interaction, settingsMessage({ kind: "edit", guild, settings, commandId, changed, actorId: interaction.user.id }));
   await auditSettingsMutation(interaction, guild, "edit", settings, changed);
 }

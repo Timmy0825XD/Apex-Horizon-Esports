@@ -2,7 +2,15 @@
 
 Patrón: **set** (todo de una vez) → **edit** (solo lo que pases) → **show** (solo lectura).
 
-Las respuestas de set / edit / show son **Components V2** (`Container`, `Text Display`), no un embed clásico.
+Las respuestas de set / edit / show son **Components V2** (`Container`, `Text Display`), no un embed clásico. Es el mismo panel:
+
+- Título `##` y una nota.
+- Si algún rol o canal guardado ya no existe, una línea con `alert` que dice cuántos son.
+- Separador, y los bloques `### Roles` (emoji `gem`) y `### Channels` (emoji `textChannel`). Cada línea es `**Etiqueta** mención`; los canales llevan etiqueta corta (*Schedules*, *Bans*…). Los valores que ya no existen llevan `error` y *missing from this server*.
+- `set`: verde, *Server Settings Saved*, footer `Saved by`.
+- `edit`: verde, *Server Settings Updated*. Dice cuántos valores cambiaron, marca esas líneas con *updated* y el footer es `Updated by`.
+- `show`: azul, *Current Settings*. El footer enlaza `/settings edit`.
+- Las menciones no hacen ping.
 
 Reglas de producto: [../product/overview.md](../product/overview.md). Auditoría: [../platform/audit.md](../platform/audit.md).
 
