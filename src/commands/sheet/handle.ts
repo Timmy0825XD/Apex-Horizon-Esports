@@ -37,6 +37,7 @@ export async function handleSheetSlash(interaction: ChatInputCommandInteraction)
     await handleSheetValidate(interaction, {
       tournamentCommandId: tournamentCommandIdFor(interaction.guildId),
       utilityCommandId: utilityCommandIdFor(interaction.guildId),
+      sheetCommandId: sheetCommandIdFor(interaction.guildId),
     });
   }
 }

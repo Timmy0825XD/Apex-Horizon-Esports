@@ -57,5 +57,5 @@ export async function handleStaffConfigView(
 
   await guild.roles.fetch().catch(() => undefined);
   await guild.channels.fetch().catch(() => undefined);
-  await respondStaff(interaction, staffConfigMessage("view", guild, staff, commandId));
+  await respondStaff(interaction, staffConfigMessage({ kind: "view", guild, staff, commandId, actorId: interaction.user.id }));
 }

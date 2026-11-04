@@ -24,6 +24,7 @@ type PlayerRef = {
 type CommandIds = {
   tournamentCommandId?: string;
   utilityCommandId?: string;
+  sheetCommandId?: string;
 };
 
 function escapeDiscord(value: string): string {

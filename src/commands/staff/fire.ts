@@ -1,5 +1,5 @@
 import type { ChatInputCommandInteraction, Guild, GuildMember } from "discord.js";
-import { formatHelpEntry, formatMember, formatRole, formatUser } from "../../lib/formatters.js";
+import { formatHelpEntry, formatMember, formatUser } from "../../lib/formatters.js";
 import { actorMatches } from "../../lib/command-access.js";
 import { auditStaffMembership } from "./audit.js";
 import {
@@ -140,9 +140,10 @@ export async function handleStaffFire(
     staffMembershipMessage({
       kind: "fire",
       targetId: target.id,
-      actorName: interaction.user.username,
-      position: post === "complete" ? "All Staff Roles" : fireLabel(post),
-      roles: held.map((id) => formatRole(guild, id)).join("\n"),
+      actorId: interaction.user.id,
+      position: post === "complete" ? null : fireLabel(post),
+      roleIds: held,
+      guild,
       thumbnailUrl: target.displayAvatarURL({ size: 256 }),
     }),
   );

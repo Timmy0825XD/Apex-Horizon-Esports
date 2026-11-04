@@ -161,13 +161,16 @@ export async function handleTournamentEdit(interaction: ChatInputCommandInteract
   await guild.channels.fetch().catch(() => undefined);
   await respondTournament(
     interaction,
-    tournamentWorldMessage(
-      "edit",
+    tournamentWorldMessage({
+      kind: "edit",
       guild,
-      saved,
+      tournament: saved,
       commandId,
-      interaction.client.user?.displayAvatarURL({ size: 256 }),
-    ),
+      thumbnailUrl: interaction.client.user?.displayAvatarURL({ size: 256 }),
+      changed,
+      keyChanged,
+      actorId: interaction.user.id,
+    }),
   );
   await auditTournamentEdit(interaction, guild, settings, saved, changed, keyChanged);
 }

@@ -12,10 +12,13 @@ import { deferStaff, respondStaff } from "./respond.js";
 import { loadGuildStaffState } from "./store.js";
 import { staffErrorMessage } from "./view.js";
 
+/** `matches` counts attendance records; `games` adds up both scores of each one. */
+const ROSTER_CHARS = 1200;
+
 type PersonStats = {
   userId: string;
-  rounds: number;
   matches: number;
+  games: number;
 };
 
 function isDefaultWin(remark: string | null): boolean {
@@ -26,40 +29,40 @@ function objectIdLike(value: string): boolean {
   return /^[a-fA-F0-9]{24}$/.test(value);
 }
 
-function addStat(map: Map<string, PersonStats>, userId: string, matches: number): void {
-  const current = map.get(userId) ?? { userId, rounds: 0, matches: 0 };
-  current.rounds += 1;
-  current.matches += matches;
+function addStat(map: Map<string, PersonStats>, userId: string, games: number): void {
+  const current = map.get(userId) ?? { userId, matches: 0, games: 0 };
+  current.matches += 1;
+  current.games += games;
   map.set(userId, current);
 }
 
 function ranked(map: Map<string, PersonStats>): PersonStats[] {
   return [...map.values()].sort((a, b) => {
+    if (b.games !== a.games) {
+      return b.games - a.games;
+    }
     if (b.matches !== a.matches) {
       return b.matches - a.matches;
-    }
-    if (b.rounds !== a.rounds) {
-      return b.rounds - a.rounds;
     }
     return a.userId.localeCompare(b.userId);
   });
 }
 
-function roster(title: string, emoji: string, rows: PersonStats[], tags: Map<string, string>): string {
-  const heading = `## ${emoji} ${title}`;
+function roster(title: string, emoji: string, rows: PersonStats[], empty: string): string {
+  const heading = `### ${emoji} ${title} · ${rows.length}`;
   if (rows.length === 0) {
-    return `${heading}\n*None.*`;
+    return `${heading}\n*${empty}*`;
   }
   const lines = rows.map((row, index) => {
-    const rounds = row.rounds === 1 ? "1 round" : `${row.rounds} rounds`;
-    const tag = tags.get(row.userId);
-    const who = tag ? `${formatUser(row.userId)} ${escapeDiscord(tag)}` : formatUser(row.userId);
-    return `${index + 1}. ${who} — **${row.matches}** matches (**${rounds}**)`;
+    const matches = row.matches === 1 ? "match" : "matches";
+    const games = row.games === 1 ? "game" : "games";
+    return `**${index + 1}.** ${formatUser(row.userId)} · \`${row.matches}\` ${matches} · \`${row.games}\` ${games}`;
   });
   const shown: string[] = [];
   let size = heading.length + 1;
   for (const line of lines) {
-    if (size + line.length + 1 > 3500) {
+    // A V2 message holds 4000 characters in total, and three rosters share it.
+    if (size + line.length + 1 > ROSTER_CHARS) {
       shown.push("*And more staff not shown.*");
       break;
     }
@@ -150,42 +153,32 @@ export async function handleStaffWork(interaction: ChatInputCommandInteraction):
       continue;
     }
 
-    const matches = row.team1Score + row.team2Score;
+    const games = row.team1Score + row.team2Score;
     if (row.judgeId !== row.recorderId) {
-      addStat(judges, row.judgeId, matches);
-      addStat(recorders, row.recorderId, matches);
+      addStat(judges, row.judgeId, games);
+      addStat(recorders, row.recorderId, games);
       continue;
     }
 
-    addStat(duals, row.judgeId, matches);
+    addStat(duals, row.judgeId, games);
   }
-  const tags = new Map<string, string>();
-  const ids = [...new Set([...judges.keys(), ...recorders.keys(), ...duals.keys()])];
-  if (ids.length > 0) {
-    const members = await guild.members.fetch({ user: ids }).catch(() => null);
-    for (const id of ids) {
-      const username = members?.get(id)?.user.username;
-      if (username) {
-        tags.set(id, username);
-      }
-    }
-  }
-  const dw = includeDw ? "Including" : "Excluding";
   const header = [
-    `# ${emojis.stats} Staff Work Count`,
-    `${emojis.torneo} **Tournament:** **${escapeDiscord(tournament.name)}**`,
-    `**Default wins:** ${dw}`,
-    `${emojis.owner} **Requested by:** ${formatUser(interaction.user.id)}`,
+    `## ${emojis.stats} Staff Work Count`,
+    `${emojis.torneo} **${escapeDiscord(tournament.name)}** · default wins ${includeDw ? "included" : "excluded"}`,
   ].join("\n");
   const container = new ContainerBuilder()
     .setAccentColor(embedColors.success)
     .addTextDisplayComponents(textBlock(header))
     .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(roster("Judges", emojis.judge, ranked(judges), tags)))
+    .addTextDisplayComponents(
+      textBlock(roster("Judges", emojis.judge, ranked(judges), "Nobody judged a match yet.")),
+      textBlock(roster("Recorders", emojis.recorder, ranked(recorders), "Nobody recorded a match yet.")),
+      textBlock(roster("Judge & Recorder", emojis.judge_recorder, ranked(duals), "Nobody worked both roles.")),
+    )
     .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(roster("Recorders", emojis.recorder, ranked(recorders), tags)))
-    .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(roster("Judge & Recorder", emojis.judge_recorder, ranked(duals), tags)));
+    .addTextDisplayComponents(
+      textBlock(`-# Requested by ${formatUser(interaction.user.id)} · <t:${Math.floor(Date.now() / 1000)}:F>`),
+    );
 
   await interaction.editReply({
     content: null,

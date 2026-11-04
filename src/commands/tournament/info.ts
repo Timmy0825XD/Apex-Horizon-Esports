@@ -32,5 +32,5 @@ export async function handleTournamentInfo(interaction: ChatInputCommandInteract
 
   await guild.roles.fetch().catch(() => undefined);
   await guild.channels.fetch().catch(() => undefined);
-  await respondTournament(interaction, tournamentWorldMessage("info", guild, tournament, commandId));
+  await respondTournament(interaction, tournamentWorldMessage({ kind: "info", guild, tournament, commandId, actorId: interaction.user.id }));
 }

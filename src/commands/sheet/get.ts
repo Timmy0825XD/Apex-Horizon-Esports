@@ -7,7 +7,8 @@ import {
 } from "discord.js";
 import { emojis } from "../../emojis.js";
 import { embedColors } from "../../lib/embeds.js";
-import { formatHelpEntry, formatSheetLink } from "../../lib/formatters.js";
+import { formatHelpEntry, formatSheetLink, formatUser } from "../../lib/formatters.js";
+import { escapeDiscord } from "../room/labels.js";
 import { attachedFile, divider, textBlock, v2Flags } from "../../lib/v2.js";
 import {
   findStoredSheetById,
@@ -17,7 +18,7 @@ import {
 } from "../tournament/store.js";
 import { actorMatches } from "../../lib/command-access.js";
 import { deferSheet, respondSheet } from "./respond.js";
-import { sheetErrorMessage } from "./view.js";
+import { sheetButtonRow, sheetErrorMessage } from "./view.js";
 
 const SHEET_CSV_NAME = "tournament-sheets.csv";
 
@@ -51,14 +52,10 @@ export function storedSheetCatalogCsv(sheets: StoredSheetSummary[]): Buffer {
   return Buffer.from(`\uFEFF${lines.join("\n")}\n`, "utf8");
 }
 
-function sheetLines(sheet: StoredSheetSummary): string {
-  const event = sheet.tournamentName ? `**${sheet.tournamentName}**` : "Untitled sheet";
-  const server = sheet.guildName || "Unknown server";
-  return [
-    `> ${event} (\`${sheet.format}\`, ${originLabel(sheet.origin)})`,
-    `> **Server:** **${server}**`,
-    `> ${formatSheetLink(sheet.sheetLink)}`,
-  ].join("\n");
+function sheetLine(sheet: StoredSheetSummary): string {
+  const event = sheet.tournamentName ? `**${escapeDiscord(sheet.tournamentName)}**` : "Untitled sheet";
+  const server = escapeDiscord(sheet.guildName || "Unknown server");
+  return `- ${event} · \`${sheet.format}\` · ${originLabel(sheet.origin)} · **${server}** · ${formatSheetLink(sheet.sheetLink)}`;
 }
 
 function lookupContainer(query: string, matches: StoredSheetSummary[]): ContainerBuilder {
@@ -66,43 +63,48 @@ function lookupContainer(query: string, matches: StoredSheetSummary[]): Containe
     return new ContainerBuilder()
       .setAccentColor(embedColors.error)
       .addTextDisplayComponents(
-        textBlock(`# ${emojis.error} No sheet named that`),
-        textBlock(`Nothing in the global archive matched **${query}**. Try another name or export the CSV catalog.`),
+        textBlock(`## ${emojis.error} No Sheet Named That`),
+        textBlock(`Nothing in the global archive matched **${escapeDiscord(query)}**. Try another name or export the CSV catalog.`),
       );
   }
 
-  if (matches.length === 1) {
-    const sheet = matches[0];
-    const title = sheet?.tournamentName ? `**${sheet.tournamentName}**` : "this sheet";
-    return new ContainerBuilder()
+  const sheet = matches[0];
+  if (matches.length === 1 && sheet) {
+    const title = sheet.tournamentName ? escapeDiscord(sheet.tournamentName) : "Untitled sheet";
+    const container = new ContainerBuilder()
       .setAccentColor(embedColors.info)
       .addTextDisplayComponents(
-        textBlock(`# ${emojis.info} Sheet for ${title}`),
-        textBlock("This is the stored Google Sheet for that tournament in the global archive."),
-        textBlock(sheet ? sheetLines(sheet) : ""),
+        textBlock(`## ${emojis.info} ${title}\n-# Global archive · ${originLabel(sheet.origin)}`),
+        textBlock(`\`${sheet.format}\` · ${emojis.server} **${escapeDiscord(sheet.guildName || "Unknown server")}**`),
       );
+    const button = sheetButtonRow(sheet.sheetLink);
+    if (button) {
+      container.addActionRowComponents(button);
+    }
+    return container;
   }
 
   return new ContainerBuilder()
     .setAccentColor(embedColors.info)
     .addTextDisplayComponents(
-      textBlock(`# ${emojis.info} Several sheets matched`),
-      textBlock(`**${matches.length}** stored sheets matched **${query}**. Each one is a different archive entry.`),
-      textBlock(matches.map(sheetLines).join("\n\n")),
-    );
+      textBlock(`## ${emojis.info} Sheets Matched\n\`${matches.length}\` stored sheets matched **${escapeDiscord(query)}**.`),
+    )
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(matches.map(sheetLine).join("\n")));
 }
 
-function catalogContainer(count: number): ContainerBuilder {
+function catalogContainer(count: number, actorId: string): ContainerBuilder {
   return new ContainerBuilder()
     .setAccentColor(embedColors.success)
     .addTextDisplayComponents(
-      textBlock(`# ${emojis.success} Sheet catalog`),
       textBlock(
-        `Exported **${count}** stored tournament${count === 1 ? "" : "s"} and their Google Sheet links from the global archive.`,
+        `## ${emojis.success} Sheet Catalog\n\`${count}\` stored ${count === 1 ? "tournament" : "tournaments"} and their Google Sheet links.`,
       ),
     )
-    .addSeparatorComponents(divider())
-    .addFileComponents(attachedFile(SHEET_CSV_NAME));
+    .addFileComponents(attachedFile(SHEET_CSV_NAME))
+    .addTextDisplayComponents(
+      textBlock(`-# Exported by ${formatUser(actorId)} · <t:${Math.floor(Date.now() / 1000)}:F>`),
+    );
 }
 
 export function sheetGetMessage(input: {
@@ -111,6 +113,7 @@ export function sheetGetMessage(input: {
   catalog: StoredSheetSummary[];
   csv: boolean;
   commandId?: string;
+  actorId: string;
 }): InteractionReplyOptions {
   const containers: ContainerBuilder[] = [];
   const files: AttachmentBuilder[] = [];
@@ -125,14 +128,14 @@ export function sheetGetMessage(input: {
         new ContainerBuilder()
           .setAccentColor(embedColors.info)
           .addTextDisplayComponents(
-            textBlock(`# ${emojis.info} Archive is empty`),
+            textBlock(`## ${emojis.info} Archive Is Empty`),
             textBlock(
               `There are no stored sheets to put in a CSV yet. Archive one with ${formatHelpEntry("sheet add", input.commandId)}.`,
             ),
           ),
       );
     } else {
-      containers.push(catalogContainer(input.catalog.length));
+      containers.push(catalogContainer(input.catalog.length, input.actorId));
       files.push(new AttachmentBuilder(storedSheetCatalogCsv(input.catalog), { name: SHEET_CSV_NAME }));
     }
   }
@@ -195,6 +198,7 @@ export async function handleSheetGet(interaction: ChatInputCommandInteraction, c
       catalog: catalog.map((sheet) => withLiveGuildName(sheet, liveName(sheet.guildId, sheet.guildName))),
       csv,
       commandId,
+      actorId: interaction.user.id,
     }),
   );
 }

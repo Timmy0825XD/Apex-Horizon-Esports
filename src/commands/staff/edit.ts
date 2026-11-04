@@ -89,14 +89,15 @@ export async function handleStaffConfigEdit(
   await guild.channels.fetch().catch(() => undefined);
   await respondStaff(
     interaction,
-    staffConfigMessage(
-      "edit",
+    staffConfigMessage({
+      kind: "edit",
       guild,
-      saved,
+      staff: saved,
       commandId,
-      undefined,
-      interaction.client.user?.displayAvatarURL({ size: 256 }),
-    ),
+      thumbnailUrl: interaction.client.user?.displayAvatarURL({ size: 256 }),
+      changed,
+      actorId: interaction.user.id,
+    }),
   );
   await auditStaffConfigMutation(interaction, guild, settings, "edit", saved, changed);
 }
