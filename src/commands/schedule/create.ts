@@ -7,6 +7,7 @@ import { isTournamentAdminOrHelper, memberHasRole } from "./access.js";
 import { auditSchedule, peopleLine, ticketLine } from "./audit.js";
 import { takeNextBackground } from "./backgrounds.js";
 import { isAtLeastTenMinutesAhead, utcFromParts } from "./clock.js";
+import { bookedAround, fullMinuteBody, fullMinuteTitle, minuteIsFull, staffBusyBody, staffBusyTitle, staffClash } from "./conflicts.js";
 import { grantTicket, markTicket, revokeTicket, textChannel } from "./channel.js";
 import { within } from "./deadline.js";
 import { attachmentUrl, deleteTracked, postBoardSchedule, postTicketSchedule, publishThumbnail } from "./messages.js";
@@ -76,6 +77,18 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
   const judgeId = judge?.id ?? null;
   const recorderId = recorder?.id ?? null;
   const staffIds = [...new Set([judgeId, recorderId].filter((id): id is string => Boolean(id)))];
+  const booked = await bookedAround(guild.id, when);
+  if (minuteIsFull(booked, when)) {
+    await replySchedule(interaction, scheduleNotice("error", fullMinuteTitle, fullMinuteBody(when)));
+    return;
+  }
+  for (const userId of staffIds) {
+    const clash = staffClash(booked, userId, when);
+    if (clash) {
+      await replySchedule(interaction, scheduleNotice("error", staffBusyTitle, staffBusyBody(userId, clash)));
+      return;
+    }
+  }
   const createdAt = new Date();
   const draft = {
     scheduledAt: when,

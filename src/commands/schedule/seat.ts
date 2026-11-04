@@ -49,6 +49,13 @@ export function seatAssignedLine(seat: Seat, userId: string): string {
   return `${emoji} ${formatUser(userId)} is set as **${label}** for this match ${emojis.arrive}`;
 }
 
+/** The seat was released because the new time clashes with another match the same member holds. */
+export function seatClashLine(seat: Seat, userId: string): string {
+  const label = seat === "judge" ? "Judge" : "Recorder";
+  const emoji = seat === "judge" ? emojis.judge : emojis.recorder;
+  return `${emoji} ${formatUser(userId)} was removed as **${label}** for this match: the new time clashes with another match they hold ${emojis.resign}`;
+}
+
 /** One line when the same member takes both seats. */
 export function bothSeatsAssignedLine(userId: string): string {
   return `${emojis.judge_recorder} ${formatUser(userId)} is set as **Judge** and **Recorder** for this match ${emojis.arrive}`;

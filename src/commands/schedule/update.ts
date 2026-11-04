@@ -11,8 +11,24 @@ import { grantTicket, revokeTicket, ticketChannel } from "./channel.js";
 import { deleteTracked } from "./messages.js";
 import { paintSchedule } from "./live.js";
 import { replySchedule, scheduleNotice } from "./respond.js";
-import { closedSeatBody, closedSeatTitle, postSeatLine, seatAssignedLine, seatResignedLine, seatsAreClosed } from "./seat.js";
+import { closedSeatBody, closedSeatTitle, postSeatLine, seatAssignedLine, seatClashLine, seatResignedLine, seatsAreClosed, type Seat } from "./seat.js";
+import { bookedAround, fullMinuteBody, fullMinuteTitle, minuteIsFull, staffBusyBody, staffBusyTitle, staffClash } from "./conflicts.js";
+import { formatUser } from "../../lib/formatters.js";
+import { slashMention } from "../../lib/register-slash.js";
 import type { TicketBundle } from "./ticket.js";
+
+interface FreedSeat {
+  seat: Seat;
+  userId: string;
+}
+
+function replacementBody(guildId: string, freed: FreedSeat[]): string {
+  const lines = freed.map(
+    (entry) =>
+      `- ${formatUser(entry.userId)} left the **${entry.seat === "judge" ? "Judge" : "Recorder"}** seat: they have another match less than **30 minutes** from the new time.`,
+  );
+  return [...lines, `Assign someone else with ${slashMention(guildId, "schedule update")} or reopen the claim buttons with ${slashMention(guildId, "schedule refresh")}.`].join("\n");
+}
 
 function readClock(interaction: ChatInputCommandInteraction, current: Date): ClockParts | null {
   const hour = interaction.options.getInteger("hour");
@@ -109,17 +125,42 @@ export async function runUpdate(interaction: ChatInputCommandInteraction, bundle
       resetReminders = true;
     }
   }
+  const incoming = [
+    ...new Set([assigningJudge ? judge?.id : null, assigningRecorder ? recorder?.id : null].filter((id): id is string => Boolean(id))),
+  ];
+  const booked = resetReminders || incoming.length ? await bookedAround(guild.id, scheduledAt, schedule.id) : [];
+  if (resetReminders && minuteIsFull(booked, scheduledAt)) {
+    await replySchedule(interaction, scheduleNotice("error", fullMinuteTitle, fullMinuteBody(scheduledAt)));
+    return;
+  }
+  for (const userId of incoming) {
+    const clash = staffClash(booked, userId, scheduledAt);
+    if (clash) {
+      await replySchedule(interaction, scheduleNotice("error", staffBusyTitle, staffBusyBody(userId, clash)));
+      return;
+    }
+  }
+  // Staff who keep their seat but clash with another match at the new time lose that seat.
+  const clashing = (seat: Seat, holder: string | null, removing: boolean, assigning: boolean): FreedSeat | null =>
+    resetReminders && holder && !removing && !assigning && staffClash(booked, holder, scheduledAt) ? { seat, userId: holder } : null;
+  const freed = [
+    clashing("judge", schedule.judgeId, removeJudge, assigningJudge),
+    clashing("recorder", schedule.recorderId, removeRecorder, assigningRecorder),
+  ].filter((entry): entry is FreedSeat => entry !== null);
+  const freedFrom = (seat: Seat) => freed.some((entry) => entry.seat === seat);
+  const dropJudge = removeJudge || freedFrom("judge");
+  const dropRecorder = removeRecorder || freedFrom("recorder");
   const previousJudge = schedule.judgeId;
   const previousRecorder = schedule.recorderId;
   let judgeId = previousJudge;
   let recorderId = previousRecorder;
   let confirmations = { ...schedule.confirmations };
-  if (removeJudge && judgeId) {
-    await revokeTicket(bundle.channel, judgeId, recorderId === judgeId && !removeRecorder);
+  if (dropJudge && judgeId) {
+    await revokeTicket(bundle.channel, judgeId, recorderId === judgeId && !dropRecorder);
     judgeId = null;
     confirmations.judge = false;
   }
-  if (removeRecorder && recorderId) {
+  if (dropRecorder && recorderId) {
     await revokeTicket(bundle.channel, recorderId, judgeId === recorderId);
     recorderId = null;
     confirmations.recorder = false;
@@ -160,19 +201,29 @@ export async function runUpdate(interaction: ChatInputCommandInteraction, bundle
   });
   await paintSchedule(guild, bundle.channel, bundle.settings, bundle.tournament, bundle.match, next, regenerate || resetReminders, "staff");
   if (previousJudge && previousJudge !== judgeId) {
-    await postSeatLine(bundle.channel, seatResignedLine("judge", previousJudge), previousJudge);
+    const line = freedFrom("judge") ? seatClashLine("judge", previousJudge) : seatResignedLine("judge", previousJudge);
+    await postSeatLine(bundle.channel, line, previousJudge);
   }
   if (judgeId && judgeId !== previousJudge) {
     await postSeatLine(bundle.channel, seatAssignedLine("judge", judgeId), judgeId);
   }
   if (previousRecorder && previousRecorder !== recorderId) {
-    await postSeatLine(bundle.channel, seatResignedLine("recorder", previousRecorder), previousRecorder);
+    const line = freedFrom("recorder") ? seatClashLine("recorder", previousRecorder) : seatResignedLine("recorder", previousRecorder);
+    await postSeatLine(bundle.channel, line, previousRecorder);
   }
   if (recorderId && recorderId !== previousRecorder) {
     await postSeatLine(bundle.channel, seatAssignedLine("recorder", recorderId), recorderId);
   }
-  await replySchedule(interaction, scheduleNotice("success", "Schedule updated", [ticketLine(guild, bundle.channel.id), peopleLine(judgeId, recorderId)].join("\n")));
+  const updated = scheduleNotice("success", "Schedule updated", [ticketLine(guild, bundle.channel.id), peopleLine(judgeId, recorderId)].join("\n"));
+  if (freed.length) {
+    const replacement = scheduleNotice("error", "Find a replacement", replacementBody(guild.id, freed));
+    updated.components = [...(updated.components ?? []), ...(replacement.components ?? [])];
+  }
+  await replySchedule(interaction, updated);
   const details = [ticketLine(guild, bundle.channel.id), peopleLine(judgeId, recorderId)];
+  if (freed.length) {
+    details.push(`**Removed for clash** ${freed.map((entry) => `${formatUser(entry.userId)} (${entry.seat})`).join(", ")}`);
+  }
   if (reason) {
     details.push(`**Reason** ${reason}`);
   }
