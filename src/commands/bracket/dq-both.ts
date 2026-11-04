@@ -11,7 +11,8 @@ import { auditScoreUpload } from "./audit.js";
 import { markPendingForfeit, settlePendingForfeits } from "./forfeit.js";
 import { deferBracket, respondBracket } from "./respond.js";
 import { archiveBattleTicket } from "./archive.js";
-import { bothDisqualifiedMessage, bracketPanel } from "./view.js";
+import { bothDisqualifiedMessage, bracketPanel, closeStarted, type CloseProgress } from "./view.js";
+import { stageLabel } from "../room/labels.js";
 import { slashMention } from "../../lib/register-slash.js";
 
 export async function runBracketDqBoth(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -183,22 +184,26 @@ export async function runBracketDqBoth(interaction: ChatInputCommandInteraction)
       ).map((row) => row.participantId),
     );
 
-    const actorTag = interaction.user.username;
-    await respondBracket(
-      interaction,
+    const disqualifiedAt = new Date();
+    const stillMarked = pendingLeft.has(winnerId) || forfeited.some((settled) => pendingLeft.has(settled.winnerId));
+    const card = (progress: CloseProgress) =>
       bothDisqualifiedMessage({
         tournamentName: tournament.name,
+        channelId: channel.id,
+        stage: stageLabel({ group: existing?.group ?? null, round: match.round }),
         leftName,
         rightName,
-        winnerName,
-        channelId: channel.id,
-        actorTag,
-        avatarUrl: interaction.user.displayAvatarURL({ extension: "png", size: 256 }),
+        score1,
+        score2,
+        actorId: interaction.user.id,
+        at: disqualifiedAt,
+        transcriptChannelId: tournament.transcriptChannelId,
+        progress,
         forfeited,
-        stillMarked: pendingLeft.has(winnerId) || forfeited.some((match) => pendingLeft.has(match.winnerId)),
+        stillMarked,
         forfeitFailed,
-      }),
-    );
+      });
+    await respondBracket(interaction, card(closeStarted));
 
     await archiveBattleTicket({
       interaction,
@@ -207,6 +212,7 @@ export async function runBracketDqBoth(interaction: ChatInputCommandInteraction)
       tournament,
       matchId: match.id,
       reason: "Both sides disqualified",
+      render: card,
     });
   } catch (error) {
     const message =

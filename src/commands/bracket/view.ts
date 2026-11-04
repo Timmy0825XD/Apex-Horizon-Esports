@@ -14,9 +14,11 @@ import { embedColors } from "../../lib/embeds.js";
 import { customEmoji, emojiAssetUrl } from "../../lib/custom-emoji.js";
 import { formatChannel, formatUser } from "../../lib/formatters.js";
 import { divider, textBlock, v2Flags } from "../../lib/v2.js";
-import { escapeDiscord, roundTitle } from "../room/labels.js";
+import { escapeDiscord, scoreLine, stageLabel } from "../room/labels.js";
 
 type Tone = "success" | "error" | "info" | "warn";
+
+const warnColor = 0xe67e22;
 
 function toneColor(tone: Tone): number {
   if (tone === "success") {
@@ -26,7 +28,7 @@ function toneColor(tone: Tone): number {
     return embedColors.error;
   }
   if (tone === "warn") {
-    return 0xe67e22;
+    return warnColor;
   }
   return embedColors.info;
 }
@@ -60,165 +62,230 @@ export function bracketPanel(
   };
 }
 
-function uploadCard(color: number, title: string, body: string, footer: string, thumbnailUrl?: string | null): InteractionReplyOptions {
-  const section = new SectionBuilder().addTextDisplayComponents(
-    textBlock(`# ${title}`),
-    textBlock(body),
-    textBlock(`-# ${footer}`),
-  );
-  if (thumbnailUrl) {
-    section.setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbnailUrl));
-  }
+function v2(container: ContainerBuilder): InteractionReplyOptions {
   return {
-    components: [new ContainerBuilder().setAccentColor(color).addSectionComponents(section)],
+    components: [container],
     flags: v2Flags,
     allowedMentions: { parse: [] },
   };
 }
 
-export function matchUpdatedMessage(input: {
+function heading(title: string, stage: string | null): string {
+  return stage ? `${title}\n-# ${stage}` : title;
+}
+
+function headSection(texts: string[], thumbnailEmoji: string): SectionBuilder {
+  const section = new SectionBuilder().addTextDisplayComponents(texts.map((text) => textBlock(text)));
+  const url = emojiAssetUrl(thumbnailEmoji);
+  if (url) {
+    section.setThumbnailAccessory(new ThumbnailBuilder().setURL(url));
+  }
+  return section;
+}
+
+function stamp(date: Date): string {
+  return `<t:${Math.floor(date.getTime() / 1000)}:F>`;
+}
+
+function byline(verb: string, actorId: string, at: Date): string {
+  return `-# ${verb} by ${formatUser(actorId)} · ${stamp(at)}`;
+}
+
+function quote(text: string): string {
+  return `> ${escapeDiscord(text).replace(/\n/g, "\n> ")}`;
+}
+
+// ---------- Closing card: /bracket upload and /bracket dq both ----------
+
+export type CloseStep = "pending" | "done" | "failed";
+
+export type CloseProgress = {
+  archive: CloseStep;
+  transcript: CloseStep;
+  transcriptUrl: string | null;
+};
+
+export const closeStarted: CloseProgress = { archive: "pending", transcript: "pending", transcriptUrl: null };
+
+function closeFinished(progress: CloseProgress): boolean {
+  return progress.archive === "done" && progress.transcript === "done";
+}
+
+function closeSteps(scoreLabel: string, progress: CloseProgress, transcriptChannelId: string | null): string {
+  const lines = [`${emojis.challonge} **${scoreLabel}** on Challonge`];
+  if (progress.archive === "pending") {
+    lines.push("-# Archiving the ticket…");
+    return lines.join("\n");
+  }
+  if (progress.archive === "failed") {
+    lines.push(`${emojis.error} **Ticket not archived** · close it and generate the transcript by hand`);
+    return lines.join("\n");
+  }
+  lines.push(`${emojis.open_close} **Ticket archived** · moved to the archive category`);
+  if (progress.transcript === "pending") {
+    lines.push("-# Publishing the transcript…");
+  } else if (progress.transcript === "failed") {
+    lines.push(`${emojis.error} **Transcript not published** · generate it by hand`);
+  } else {
+    const where = transcriptChannelId ? ` · ${formatChannel(null, transcriptChannelId)}` : "";
+    lines.push(`${emojis.transcript} **Transcript published**${where}`);
+  }
+  return lines.join("\n");
+}
+
+function transcriptRow(url: string): ActionRowBuilder<ButtonBuilder> {
+  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setStyle(ButtonStyle.Link)
+      .setURL(url)
+      .setLabel("View transcript")
+      .setEmoji(customEmoji(emojis.transcript)),
+  );
+}
+
+type ClosingCard = {
   tournamentName: string;
+  channelId: string;
+  stage: string | null;
   leftName: string;
   rightName: string;
   score1: number;
   score2: number;
-  winnerName: string;
-  channelId: string;
-  actorTag: string;
-  avatarUrl: string;
-  note?: string | null;
-}): InteractionReplyOptions {
-  const lines = [
-    `${emojis.challonge} The match has been updated with the following details:`,
-    `${emojis.torneo} **Tournament:** ${escapeDiscord(input.tournamentName)}`,
-    `${emojis.vs} **Match:** ${escapeDiscord(input.leftName)} vs ${escapeDiscord(input.rightName)}`,
-    `${emojis.scoreboard} **Score:** \`${input.score1} - ${input.score2}\``,
-    `${emojis.winner} **Winner:** ${escapeDiscord(input.winnerName)}`,
-    `${emojis.textChannel} **Channel:** ${formatChannel(null, input.channelId)}`,
-  ];
-  if (input.note?.trim()) {
-    lines.push(`${emojis.info} **Note:** ${escapeDiscord(input.note.trim())}`);
-  }
-  return uploadCard(
-    0xe67e22,
-    `${emojis.success} Match Updated Successfully`,
-    lines.join("\n"),
-    `Updated by ${input.actorTag}`,
-    input.avatarUrl,
-  );
+  actorId: string;
+  at: Date;
+  transcriptChannelId: string | null;
+  progress: CloseProgress;
+};
+
+function matchBlock(input: ClosingCard): string {
+  return [
+    `### ${scoreLine(input.leftName, input.rightName, input.score1, input.score2)}`,
+    `${emojis.torneo} **${escapeDiscord(input.tournamentName)}** · ${formatChannel(null, input.channelId)}`,
+  ].join("\n");
 }
 
-export function bothDisqualifiedMessage(input: {
-  tournamentName: string;
+function closeFooter(container: ContainerBuilder, input: ClosingCard, scoreLabel: string, verb: string): void {
+  container
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(closeSteps(scoreLabel, input.progress, input.transcriptChannelId)))
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(byline(verb, input.actorId, input.at)));
+  if (input.progress.transcriptUrl) {
+    container.addActionRowComponents(transcriptRow(input.progress.transcriptUrl));
+  }
+}
+
+export function matchUpdatedMessage(input: ClosingCard & { note?: string | null }): InteractionReplyOptions {
+  const container = new ContainerBuilder()
+    .setAccentColor(closeFinished(input.progress) ? embedColors.success : warnColor)
+    .addSectionComponents(
+      headSection([heading(`## ${emojis.success} Score Uploaded`, input.stage), matchBlock(input)], emojis.challonge),
+    );
+  const note = input.note?.trim();
+  if (note) {
+    container.addTextDisplayComponents(textBlock(`**Note**\n${quote(note)}`));
+  }
+  closeFooter(container, input, "Score saved", "Uploaded");
+  return v2(container);
+}
+
+export type DisqualifiedForfeit = {
   leftName: string;
   rightName: string;
-  winnerName: string;
-  channelId: string;
-  actorTag: string;
-  avatarUrl: string;
-  forfeited: { leftName: string; rightName: string; score1: number; score2: number; winnerName: string }[];
-  stillMarked: boolean;
-  forfeitFailed: boolean;
-}): InteractionReplyOptions {
-  const lines = [
-    `${emojis.banned} **Side 1** advances on \`0\`. **Side 2** is eliminated on \`-1\`.`,
-    `${emojis.torneo} **Tournament:** ${escapeDiscord(input.tournamentName)}`,
-    `${emojis.vs} **Match:** ${escapeDiscord(input.leftName)} vs ${escapeDiscord(input.rightName)}`,
-    `${emojis.scoreboard} **Score:** \`0 - -1\``,
-    `${emojis.winner} **Advances:** ${escapeDiscord(input.winnerName)}`,
-    `${emojis.banned} **Eliminated:** ${escapeDiscord(input.rightName)}`,
-    `${emojis.textChannel} **Channel:** ${formatChannel(null, input.channelId)}`,
+  score1: number;
+  score2: number;
+  round: number;
+  group: string | null;
+};
+
+export function bothDisqualifiedMessage(
+  input: ClosingCard & {
+    forfeited: DisqualifiedForfeit[];
+    stillMarked: boolean;
+    forfeitFailed: boolean;
+  },
+): InteractionReplyOptions {
+  const advances = input.score1 > input.score2 ? input.leftName : input.rightName;
+  const eliminated = input.score1 > input.score2 ? input.rightName : input.leftName;
+  const outcome = [
+    `${emojis.winner} **Advances** ${escapeDiscord(advances)} · *forfeits their next match*`,
+    `${emojis.banned} **Eliminated** ${escapeDiscord(eliminated)}`,
   ];
-  if (input.forfeited.length > 0) {
-    lines.push(`${emojis.alert} **Forfeited before a ticket**`);
-    for (const match of input.forfeited) {
-      lines.push(
-        `- ${escapeDiscord(match.leftName)} vs ${escapeDiscord(match.rightName)} — \`${match.score1} - ${match.score2}\` — **${escapeDiscord(match.winnerName)}** advances`,
-      );
-    }
-  }
   if (input.stillMarked) {
-    lines.push(
-      `${emojis.info} The advancing side stays marked. Their next match is forfeited once both sides are set, and that ticket is not opened.`,
-    );
+    outcome.push("-# Their next match is forfeited once both sides are set, and that ticket is not opened.");
+  }
+
+  const container = new ContainerBuilder()
+    .setAccentColor(embedColors.error)
+    .addSectionComponents(
+      headSection([heading(`## ${emojis.banned} Both Sides Disqualified`, input.stage), matchBlock(input)], emojis.banned),
+    )
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(outcome.join("\n")));
+  if (input.forfeited.length > 0) {
+    const lines = input.forfeited.map((match) => {
+      const stage = stageLabel(match);
+      const score = scoreLine(match.leftName, match.rightName, match.score1, match.score2);
+      return `- ${score}${stage ? ` · ${stage}` : ""}`;
+    });
+    container.addTextDisplayComponents(textBlock([`${emojis.alert} **Forfeited before a ticket**`, ...lines].join("\n")));
   }
   if (input.forfeitFailed) {
-    lines.push(`${emojis.error} The next match could not be forfeited yet. Opening rooms will try again.`);
+    container.addTextDisplayComponents(
+      textBlock(`${emojis.error} The next match could not be forfeited yet. Opening rooms will try again.`),
+    );
   }
-  return uploadCard(
-    embedColors.error,
-    `${emojis.banned} Both Sides Disqualified`,
-    lines.join("\n"),
-    `Disqualified by ${input.actorTag}`,
-    input.avatarUrl,
-  );
+  closeFooter(container, input, "Scores saved", "Disqualified");
+  return v2(container);
 }
 
-export function channelClosedMessage(actorId: string, actorTag: string): InteractionReplyOptions {
-  return uploadCard(
-    embedColors.info,
-    `${emojis.success} Channel Closed Successfully`,
-    [
-      `${emojis.channels} This channel has been closed and moved to the archived category.`,
-      `${emojis.members} **Staff Responsible:** ${formatUser(actorId)} (\`${actorTag}\`)`,
-    ].join("\n"),
-    `Closed by ${actorTag}`,
-    emojiAssetUrl(emojis.open_close),
-  );
-}
+// ---------- /bracket correct ----------
 
-export function transcriptGeneratedMessage(transcriptUrl: string, actorTag: string): InteractionReplyOptions {
-  return uploadCard(
-    embedColors.success,
-    `${emojis.success} Transcript generated`,
-    [
-      `${emojis.transcript} A transcript has been generated.`,
-      `${emojis.link} **View transcript:** [Click here](${transcriptUrl})`,
-    ].join("\n"),
-    `Generated by ${actorTag}`,
-    emojiAssetUrl(emojis.transcript_thumnail),
-  );
+function scoreText(score1: number | null, score2: number | null): string {
+  return score1 != null && score2 != null ? `\`${score1} - ${score2}\`` : "*Unknown*";
 }
 
 export function scoreCorrectedMessage(input: {
   tournamentName: string;
+  stage: string | null;
   leftName: string;
   rightName: string;
   oldScore1: number | null;
   oldScore2: number | null;
   score1: number;
   score2: number;
-  winnerName: string;
   rebuilt: number;
-  actorTag: string;
+  actorId: string;
+  at: Date;
 }): InteractionReplyOptions {
-  const before =
-    input.oldScore1 != null && input.oldScore2 != null ? `\`${input.oldScore1} - ${input.oldScore2}\`` : "*Unknown*";
-  const lines = [
-    `${emojis.torneo} **Tournament:** ${escapeDiscord(input.tournamentName)}`,
-    `${emojis.vs} **Match:** ${escapeDiscord(input.leftName)} vs ${escapeDiscord(input.rightName)}`,
-    `${emojis.scoreboard} **Score:** ${before} → \`${input.score1} - ${input.score2}\``,
-    `${emojis.winner} **Winner:** ${escapeDiscord(input.winnerName)}`,
+  const details = [
+    `${emojis.scoreboard} **Before** ${scoreText(input.oldScore1, input.oldScore2)} → **now** ${scoreText(input.score1, input.score2)}`,
   ];
   if (input.rebuilt > 0) {
-    lines.push(
-      `${emojis.alert} **Rooms rebuilt:** **${input.rebuilt}** invalid ticket${input.rebuilt === 1 ? "" : "s"} removed and open matches reopened with the correct captains.`,
+    const noun = input.rebuilt === 1 ? "ticket" : "tickets";
+    details.push(
+      `${emojis.alert} **Rooms rebuilt** \`${input.rebuilt}\` ${noun} removed · open matches reopened with the right captains`,
     );
   }
-  const section = new SectionBuilder().addTextDisplayComponents(
-    textBlock(`# ${emojis.success} Bracket Corrected Successfully`),
-    textBlock(lines.join("\n")),
-    textBlock(`-# Corrected by \`${input.actorTag}\``),
-  );
-  const logo = emojiAssetUrl(emojis.challonge);
-  if (logo) {
-    section.setThumbnailAccessory(new ThumbnailBuilder().setURL(logo));
-  }
-  return {
-    components: [new ContainerBuilder().setAccentColor(embedColors.success).addSectionComponents(section)],
-    flags: v2Flags,
-    allowedMentions: { parse: [] },
-  };
+  const container = new ContainerBuilder()
+    .setAccentColor(embedColors.success)
+    .addSectionComponents(
+      headSection(
+        [
+          heading(`## ${emojis.success} Bracket Corrected`, input.stage),
+          [
+            `### ${scoreLine(input.leftName, input.rightName, input.score1, input.score2)}`,
+            `${emojis.torneo} **${escapeDiscord(input.tournamentName)}**`,
+          ].join("\n"),
+        ],
+        emojis.challonge,
+      ),
+    )
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(details.join("\n")))
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(byline("Corrected", input.actorId, input.at)));
+  return v2(container);
 }
 
 function simpleCard(color: number, title: string, body: string, footer?: string): InteractionReplyOptions {
@@ -226,22 +293,23 @@ function simpleCard(color: number, title: string, body: string, footer?: string)
   if (footer) {
     blocks.push(textBlock(`-# ${footer}`));
   }
-  return {
-    components: [new ContainerBuilder().setAccentColor(color).addTextDisplayComponents(blocks)],
-    flags: v2Flags,
-    allowedMentions: { parse: [] },
-  };
+  return v2(new ContainerBuilder().setAccentColor(color).addTextDisplayComponents(blocks));
 }
 
 export function bracketNotice(tone: Tone, title: string, lines: string[]): InteractionReplyOptions {
   return simpleCard(toneColor(tone), `${toneEmoji(tone)} ${title}`, lines.filter((line) => line.trim()).join("\n"));
 }
 
-export function correctionCancelledMessage(): InteractionReplyOptions {
-  return simpleCard(
-    embedColors.info,
-    `${emojis.info} Correction cancelled`,
-    "No tickets were deleted and the bracket was left unchanged.",
+export function correctionCancelledMessage(actorId: string, at: Date): InteractionReplyOptions {
+  return v2(
+    new ContainerBuilder()
+      .setAccentColor(embedColors.info)
+      .addTextDisplayComponents(
+        textBlock(
+          `## ${emojis.info} Correction Cancelled\nNo tickets were deleted. The bracket and every ticket are unchanged.`,
+        ),
+        textBlock(byline("Cancelled", actorId, at)),
+      ),
   );
 }
 
@@ -254,26 +322,18 @@ export type CorrectTicket = {
   status: string;
 };
 
-function ticketStage(ticket: CorrectTicket): string {
-  const round = ticket.round == null ? "Round unknown" : roundTitle(ticket.round);
-  return ticket.group ? `Group ${escapeDiscord(ticket.group)} · ${round}` : round;
-}
-
 function ticketLines(tickets: CorrectTicket[]): string {
   const shown = tickets.slice(0, 12);
-  const blocks = shown.map((ticket) => {
+  const lines = shown.map((ticket) => {
     const status = ticket.status === "closed" ? "Closed" : "Open";
-    return [
-      `> **Channel:** ${formatChannel(null, ticket.channelId)}`,
-      `> **Round:** ${ticketStage(ticket)}`,
-      `> **Status:** **${status}**`,
-    ].join("\n");
+    const stage = stageLabel(ticket) ?? "Round unknown";
+    return `- ${formatChannel(null, ticket.channelId)} · ${stage} · **${status}**`;
   });
   const hidden = tickets.length - shown.length;
   if (hidden > 0) {
-    blocks.push(`> *and **${hidden}** more*`);
+    lines.push(`*and **${hidden}** more*`);
   }
-  return blocks.join("\n\n");
+  return lines.join("\n");
 }
 
 export function correctConfirmCustomId(
@@ -319,6 +379,7 @@ export function parseCorrectConfirmCustomId(customId: string): {
 
 export function correctConfirmMessage(input: {
   tournamentName: string;
+  stage: string | null;
   leftName: string;
   rightName: string;
   oldScore1: number | null;
@@ -327,89 +388,70 @@ export function correctConfirmMessage(input: {
   score2: number;
   winnerName: string;
   tickets: CorrectTicket[];
-  actorTag: string;
   userId: string;
   tournamentId: string;
   matchId: number;
 }): InteractionReplyOptions {
   const count = input.tickets.length;
-  const previous =
+  const score =
     input.oldScore1 != null && input.oldScore2 != null
       ? `\`${input.oldScore1} - ${input.oldScore2}\` → \`${input.score1} - ${input.score2}\``
       : `\`${input.score1} - ${input.score2}\``;
-  const header = new SectionBuilder().addTextDisplayComponents(
-    textBlock(`# ${emojis.alert} Confirm bracket correction`),
-    textBlock(
-      `The winner of **${escapeDiscord(input.leftName)} vs ${escapeDiscord(input.rightName)}** would change. Review the tickets below before accepting. Nothing is changed until you do.`,
-    ),
-  );
-  const logo = emojiAssetUrl(emojis.challonge);
-  if (logo) {
-    header.setThumbnailAccessory(new ThumbnailBuilder().setURL(logo));
-  }
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId(
-        correctConfirmCustomId("ok", input.userId, input.tournamentId, input.matchId, input.score1, input.score2),
-      )
-      .setLabel("Aceptar")
-      .setStyle(ButtonStyle.Success)
+      .setCustomId(correctConfirmCustomId("ok", input.userId, input.tournamentId, input.matchId, input.score1, input.score2))
+      .setLabel("Confirm correction")
+      .setStyle(ButtonStyle.Danger)
       .setEmoji(customEmoji(emojis.success)),
     new ButtonBuilder()
-      .setCustomId(
-        correctConfirmCustomId("no", input.userId, input.tournamentId, input.matchId, input.score1, input.score2),
-      )
-      .setLabel("Cancelar")
+      .setCustomId(correctConfirmCustomId("no", input.userId, input.tournamentId, input.matchId, input.score1, input.score2))
+      .setLabel("Cancel")
       .setStyle(ButtonStyle.Secondary)
       .setEmoji(customEmoji(emojis.error)),
   );
 
-  return {
-    components: [
-      new ContainerBuilder()
-        .setAccentColor(0xe67e22)
-        .addSectionComponents(header)
-        .addSeparatorComponents(divider())
-        .addTextDisplayComponents(
-          textBlock(
-            [
-              `## ${emojis.challonge} Proposed correction`,
-              `${emojis.torneo} **Tournament:** ${escapeDiscord(input.tournamentName)}`,
-              `${emojis.vs} **Match:** ${escapeDiscord(input.leftName)} vs ${escapeDiscord(input.rightName)}`,
-              `${emojis.scoreboard} **Score:** ${previous}`,
-              `${emojis.winner} **New winner:** ${escapeDiscord(input.winnerName)}`,
-            ].join("\n"),
-          ),
-        )
-        .addSeparatorComponents(divider())
-        .addTextDisplayComponents(
-          textBlock(
-            [
-              `## ${emojis.textChannel} Tickets that will be deleted`,
-              `**${count}** ticket${count === 1 ? "" : "s"} created from the current winner.`,
-              "",
-              ticketLines(input.tickets),
-            ].join("\n"),
-          ),
-        )
-        .addSeparatorComponents(divider())
-        .addTextDisplayComponents(
-          textBlock(
-            [
-              `## ${emojis.alert} If you accept`,
-              "> Those tickets are **deleted**, including their schedules.",
-              "> Their scores on Challonge are **reset**.",
-              "> Matches that open again are **recreated** with the correct captains.",
-              "> Matches still waiting on a winner stay closed until that round is ready.",
-              "> **Cancelar** leaves the bracket and every ticket unchanged.",
-            ].join("\n"),
-          ),
-          textBlock(`-# Only \`${input.actorTag}\` can confirm this correction.`),
-        )
-        .addActionRowComponents(row),
-    ],
-    flags: v2Flags,
-    allowedMentions: { parse: [] },
-  };
+  const container = new ContainerBuilder()
+    .setAccentColor(warnColor)
+    .addSectionComponents(
+      headSection(
+        [
+          heading(`## ${emojis.alert} Confirm Bracket Correction`, input.stage),
+          `The winner of **${escapeDiscord(input.leftName)}** vs **${escapeDiscord(input.rightName)}** changes. Nothing is touched until you confirm.`,
+        ],
+        emojis.challonge,
+      ),
+    )
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(
+      textBlock(
+        [
+          `${emojis.scoreboard} **Score** ${score}`,
+          `${emojis.winner} **New winner** ${escapeDiscord(input.winnerName)}`,
+          `${emojis.torneo} **${escapeDiscord(input.tournamentName)}**`,
+        ].join("\n"),
+      ),
+    )
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(
+      textBlock(
+        [`### ${emojis.textChannel} ${count} ticket${count === 1 ? "" : "s"} will be deleted`, ticketLines(input.tickets)].join(
+          "\n",
+        ),
+      ),
+    )
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(
+      textBlock(
+        [
+          "### If you confirm",
+          "- Those tickets and their schedules are **deleted**.",
+          "- Their scores on Challonge are **reset**.",
+          "- Matches that open again are **recreated** with the right captains. The rest wait for their round.",
+        ].join("\n"),
+      ),
+      textBlock(`-# Only ${formatUser(input.userId)} can use these buttons.`),
+    )
+    .addActionRowComponents(row);
+  return v2(container);
 }

@@ -20,6 +20,8 @@ export type SettledForfeit = {
   score2: number;
   winnerName: string;
   winnerId: number;
+  round: number;
+  group: string | null;
 };
 
 type ForfeitPlan = {
@@ -93,7 +95,7 @@ async function syncForfeitRow(
   match: ChallongeMatch,
   leftName: string,
   rightName: string,
-): Promise<void> {
+): Promise<string | null> {
   const existing = await prisma.match.findUnique({
     where: { tournamentId_challongeMatchId: { tournamentId, challongeMatchId: match.id } },
     select: { group: true },
@@ -117,6 +119,7 @@ async function syncForfeitRow(
       player2Name: rightName,
     },
   });
+  return existing?.group ?? null;
 }
 
 export async function settlePendingForfeits(input: {
@@ -167,7 +170,7 @@ export async function settlePendingForfeits(input: {
         scoresCsv(plan.score1, plan.score2),
         winnerId,
       );
-      await syncForfeitRow(input.guild.id, input.tournament.id, match, leftName, rightName);
+      const group = await syncForfeitRow(input.guild.id, input.tournament.id, match, leftName, rightName);
       done.add(match.id);
       const drop = [
         plan.dropSide1 ? match.player1Id : null,
@@ -188,6 +191,8 @@ export async function settlePendingForfeits(input: {
         score2: plan.score2,
         winnerName,
         winnerId,
+        round: match.round,
+        group,
       });
       if (input.actor && settings) {
         await auditScoreUpload({ user: input.actor }, input.guild, settings, {

@@ -11,7 +11,7 @@ import { customEmoji } from "../../lib/custom-emoji.js";
 import { embedColors, errorEmbed } from "../../lib/embeds.js";
 import { formatChannel, formatUser } from "../../lib/formatters.js";
 import { divider, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
-import { escapeDiscord, matchLabel, roundTitle } from "../room/labels.js";
+import { escapeDiscord, matchLabel, scoreLine, stageLabel } from "../room/labels.js";
 import {
   PAY_RATES,
   formatArtCoin,
@@ -22,21 +22,7 @@ import {
   type RoleWork,
 } from "./payroll.js";
 
-export function scoreLine(leftName: string, rightName: string, team1: number, team2: number): string {
-  const left = `**${escapeDiscord(leftName)}**`;
-  const right = `**${escapeDiscord(rightName)}**`;
-  const leftShown = team1 > team2 ? `${emojis.winner} ${left}` : left;
-  const rightShown = team2 > team1 ? `${emojis.winner} ${right}` : right;
-  return `${leftShown} \`${team1}\` vs \`${team2}\` ${rightShown}`;
-}
-
-export function stageLabel(match: { group: string | null; round: number } | null): string | null {
-  if (!match) {
-    return null;
-  }
-  const round = roundTitle(match.round);
-  return match.group ? `Group ${escapeDiscord(match.group)} · ${round}` : round;
-}
+export { scoreLine, stageLabel };
 
 type CardMatch = {
   tournamentName: string;

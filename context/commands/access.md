@@ -479,7 +479,7 @@ Ninguna.
 
 - `admin_role` no entra. Administrator de Discord entra por Organiser.
 - Cualquier canal. No exige estar en el ticket.
-- Si el ganador cambia y hay tickets aguas abajo, Aceptar y Cancelar solo los pulsa quien lanzó el comando.
+- Si el ganador cambia y hay tickets aguas abajo, Confirm correction y Cancel solo los pulsa quien lanzó el comando.
 
 ## Schedule
 
