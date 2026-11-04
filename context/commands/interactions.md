@@ -12,6 +12,7 @@ Las mismas reglas de permiso y de “un partido / un schedule” aplican. Ver [.
 | Confirmar corrección de bracket | `/bracket correct` cuando hay tickets aguas abajo | Components V2 con logo de Challonge y la lista de tickets. Sin Confirm correction no se borra ni se recrea nada |
 | Confirmar borrar categoría | `/utility clear category` | Sin confirmación no se borra nada |
 | Confirmar rol a todos | `/tournament role` sin `id_header` | Sin confirmación no se asigna el rol a todo el roster |
+| Elegir guías | `/panel tutorial` | Menú de familia y menú de comandos de esa familia; lo marcado se suma a la cola. **Send** borra el panel y publica las guías; **Clear queue** la vacía; **Cancel** borra el panel sin publicar. Solo Admin |
 | Builder de embed | `/utility embed create` · `/utility embed edit` | Sesión temporal de edición visual (embed clásico) |
 | Builder de Components V2 | `/utility v2 create` · `/utility v2 edit` | Sesión temporal de edición visual (container, text, section, media) |
 | Decidir un aviso de baneo | Tarjeta en `bans_channel` (no viene de un slash) | Confirm ban (Permanent por defecto), Change duration (lista de duraciones; luego hay que confirmar), Cancel. En un aviso de unban: Confirm unban / Cancel. Ver [../domains/moderation.md](../domains/moderation.md) |

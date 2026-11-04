@@ -162,4 +162,11 @@ export const helpCatalog: HelpCategory[] = [
       { slash: "utility v2 edit", summary: "Edit a Components V2 message the bot posted.", access: "Admin or Organiser" },
     ],
   },
+  {
+    title: "Panel",
+    description: "Informative panels to teach the staff how the bot works.",
+    entries: [
+      { slash: "panel tutorial", summary: "Pick commands and post a staff guide for each one in this channel.", access: "Admin" },
+    ],
+  },
 ];

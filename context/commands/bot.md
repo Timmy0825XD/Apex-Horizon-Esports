@@ -24,7 +24,7 @@ Cabecera `Pong` con el avatar y una frase del estado general. Debajo, bloque **L
 
 ## `/bot help`
 
-**Para qué:** Mapa de comandos por sección y quién puede usarlos. El heading de cada página es la familia (`Bot`, `Settings`, `Schedule`, …) con su descripción. Cada comando va como mención clicable, su resumen y una línea pequeña con quién lo usa (`Admin · Organiser`). Debajo, un menú **Jump to a section** con todas las secciones (el placeholder dice en cuál estás, `7 of 12`) y, en la fila de navegación, flechas ◀ ▶ delante de About / Help / Ping.
+**Para qué:** Mapa de comandos por sección y quién puede usarlos. El heading de cada página es la familia (`Bot`, `Settings`, `Schedule`, …) con su descripción. Cada comando va como mención clicable, su resumen y una línea pequeña con quién lo usa (`Admin · Organiser`). Debajo, un menú **Jump to a section** con todas las secciones (el placeholder dice en cuál estás, `7 of 13`) y, en la fila de navegación, flechas ◀ ▶ delante de About / Help / Ping.
 
 **Campos:** ninguno.
 
