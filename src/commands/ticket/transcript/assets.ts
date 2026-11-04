@@ -193,6 +193,7 @@ function collectUrls(value: unknown, urls: Set<string>): void {
 
 export function assetUrls(snapshot: TranscriptSnapshot): string[] {
   const urls = new Set<string>();
+  if (snapshot.guildIconUrl) addUrl(snapshot.guildIconUrl, urls);
   for (const message of snapshot.messages) {
     addUrl(message.author.avatarUrl, urls);
     for (const attachment of message.attachments) {

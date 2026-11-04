@@ -4,6 +4,7 @@ export interface TranscriptAuthor {
   displayName: string;
   avatarUrl: string;
   color: string | null;
+  roleName: string | null;
   bot: boolean;
 }
 
@@ -83,6 +84,7 @@ export interface TranscriptMentionMaps {
 export interface TranscriptSnapshot {
   guildId: string;
   guildName: string;
+  guildIconUrl: string | null;
   channelId: string;
   channelName: string;
   channelTopic: string | null;

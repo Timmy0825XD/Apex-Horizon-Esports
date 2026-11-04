@@ -3,6 +3,13 @@ import type { TranscriptMentionMaps } from "./types.js";
 
 type UnknownRecord = Record<string, unknown>;
 
+export const FILE_ICON =
+  '<svg class="file-icon" viewBox="0 0 30 40" aria-hidden="true"><path d="M2 0h18l10 10v28a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2Z" fill="#5865f2"/><path d="M20 0v8a2 2 0 0 0 2 2h8Z" fill="#8f99f5"/><path d="M7 20h16M7 25h16M7 30h10" stroke="#fff" stroke-width="2"/></svg>';
+const EXTERNAL_ICON =
+  '<svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M14 3v2h3.6l-9.3 9.3 1.4 1.4L19 6.4V10h2V3h-7ZM5 5h6V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2v6H5V5Z"/></svg>';
+const CHEVRON_ICON =
+  '<svg class="select-chevron" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5.3 9.3a1 1 0 0 1 1.4 0l5.3 5.3 5.3-5.3a1 1 0 1 1 1.4 1.4l-6 6a1 1 0 0 1-1.4 0l-6-6a1 1 0 0 1 0-1.4Z"/></svg>';
+
 function record(value: unknown): UnknownRecord {
   return value && typeof value === "object" ? (value as UnknownRecord) : {};
 }
@@ -110,7 +117,7 @@ function renderComponent(
 
   if (type === 17) {
     const accent = color(component.accent_color);
-    return `<section class="v2-container"${accent ? ` style="--v2-color:${accent}"` : ""}>${nested
+    return `<section class="v2-container${accent ? " accent" : ""}"${accent ? ` style="--v2-color:${accent}"` : ""}>${nested
       .map((entry) => renderComponent(entry, mentions, resolveAsset))
       .join("")}</section>`;
   }
@@ -150,7 +157,7 @@ function renderComponent(
     } catch {
       // Keep the encoded name when the remote URL contains malformed percent escapes.
     }
-    return `<a class="v2-file" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">📄 ${escapeHtml(filename)}</a>`;
+    return `<a class="v2-file" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${FILE_ICON}<span class="file-name">${escapeHtml(filename)}</span></a>`;
   }
   if (type === 14) {
     return component.divider === false ? '<div class="v2-space"></div>' : "<hr>";
@@ -163,16 +170,18 @@ function renderComponent(
   if (type === 2) {
     const url = safeHttpUrl(string(component.url));
     const label = `${renderEmoji(component.emoji, resolveAsset)}${component.emoji ? " " : ""}${escapeHtml(string(component.label) || "Button")}`;
+    const style = number(component.style) ?? 1;
+    const disabled = component.disabled ? " disabled" : "";
     return url
-      ? `<a class="component-button style-${number(component.style) ?? 1}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${label}</a>`
-      : `<span class="component-button style-${number(component.style) ?? 1}${component.disabled ? " disabled" : ""}">${label}</span>`;
+      ? `<a class="component-button style-${style}${disabled}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${label}${EXTERNAL_ICON}</a>`
+      : `<span class="component-button style-${style}${disabled}">${label}</span>`;
   }
   if (type != null && type >= 3 && type <= 8) {
     const options = children(component.options)
       .map((entry) => escapeHtml(string(record(entry).label)))
       .filter(Boolean);
     const summary = escapeHtml(string(component.placeholder) || "Select menu");
-    return `<details class="component-select"><summary>${summary}</summary>${options.length ? `<div>${options.join("<br>")}</div>` : ""}</details>`;
+    return `<details class="component-select"><summary><span>${summary}</span>${CHEVRON_ICON}</summary>${options.length ? `<div class="component-options">${options.map((option) => `<span>${option}</span>`).join("")}</div>` : ""}</details>`;
   }
   if (nested.length) {
     return nested.map((entry) => renderComponent(entry, mentions, resolveAsset)).join("");
