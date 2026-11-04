@@ -9,7 +9,13 @@ import {
 import { emojis } from "../../emojis.js";
 import { embedColors } from "../../lib/embeds.js";
 import { formatMember, formatRoleFromRole, formatUser } from "../../lib/formatters.js";
-import { attachedFile, divider, textBlock, v2Flags } from "../../lib/v2.js";
+import { attachedFile, divider, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
+
+const workingColor = 0xe67e22;
+
+function stamp(date: Date): string {
+  return `<t:${Math.floor(date.getTime() / 1000)}:F>`;
+}
 
 export function roleErrorMessage(title: string, description: string, ephemeral = true): InteractionReplyOptions {
   return {
@@ -39,23 +45,31 @@ export function roleToggleMessage(input: {
   added: boolean;
   role: Role;
   targetId: string;
+  avatarUrl: string | null;
+  roleCount: number;
   actorId: string;
+  at: Date;
 }): InteractionReplyOptions {
   const mention = formatRoleFromRole(input.role);
   const who = formatUser(input.targetId);
-  const title = input.added ? `${emojis.success} Role granted` : `${emojis.success} Role removed`;
-  const summary = input.added ? `Gave ${mention} to ${who}.` : `Removed ${mention} from ${who}.`;
+  const title = input.added ? `## ${emojis.success} Role Granted` : `## ${emojis.error} Role Removed`;
+  const summary = [
+    input.added ? `${who} now has ${mention}.` : `${who} no longer has ${mention}.`,
+    `${emojis.gem} **Roles** \`${input.roleCount}\` in total`,
+  ].join("\n");
+  const container = new ContainerBuilder().setAccentColor(input.added ? embedColors.success : embedColors.error);
+  if (input.avatarUrl) {
+    container.addSectionComponents(headingWithThumbnail(title, input.avatarUrl, summary));
+  } else {
+    container.addTextDisplayComponents(textBlock(title), textBlock(summary));
+  }
+  container
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(
+      textBlock(`-# ${input.added ? "Granted" : "Removed"} by ${formatUser(input.actorId)} · ${stamp(input.at)}`),
+    );
 
-  return {
-    components: [
-      new ContainerBuilder()
-        .setAccentColor(embedColors.success)
-        .addTextDisplayComponents(textBlock(`# ${title}`), textBlock(summary))
-        .addSeparatorComponents(divider())
-        .addTextDisplayComponents(textBlock(`-# Triggered by ${formatUser(input.actorId)}`)),
-    ],
-    allowedMentions: { parse: [] },
-  };
+  return { components: [container], allowedMentions: { parse: [] } };
 }
 
 export type MassAction = "add" | "remove";
@@ -93,22 +107,22 @@ export function roleMassProgressMessage(
   startedAt: number,
 ): InteractionReplyOptions {
   const mention = formatRoleFromRole(role);
-  const title = action === "add" ? "Giving role in bulk" : "Removing role in bulk";
-  const container = new ContainerBuilder()
-    .setAccentColor(embedColors.info)
-    .addTextDisplayComponents(textBlock(`# ${emojis.uptime} ${title}`));
+  const title = action === "add" ? "Giving Role in Bulk" : "Removing Role in Bulk";
+  const container = new ContainerBuilder().setAccentColor(workingColor);
 
   if (!progress) {
     container.addTextDisplayComponents(
-      textBlock(`Loading the member list to find who needs ${mention}. Large servers take a few seconds.`),
+      textBlock(
+        `## ${emojis.uptime} ${title}\nLoading the member list to find who needs ${mention}. Large servers take a few seconds.`,
+      ),
     );
   } else {
     const target =
       action === "add"
-        ? `Giving ${mention} to ${plural(progress.total, "member")} who do not have it.`
-        : `Removing ${mention} from ${plural(progress.total, "member")} who have it.`;
+        ? `${mention} → \`${progress.total}\` ${progress.total === 1 ? "member who does" : "members who do"} not have it`
+        : `${mention} → \`${progress.total}\` ${progress.total === 1 ? "member who has" : "members who have"} it`;
     container
-      .addTextDisplayComponents(textBlock(target))
+      .addTextDisplayComponents(textBlock(`## ${emojis.uptime} ${title}\n${target}`))
       .addSeparatorComponents(divider())
       .addTextDisplayComponents(
         textBlock(progressBar(progress.done, progress.total)),
@@ -129,15 +143,16 @@ export function roleMassResultMessage(input: {
   failed: number;
   elapsedMs: number;
   actorId: string;
+  at: Date;
 }): InteractionReplyOptions {
   const mention = formatRoleFromRole(input.role);
   const add = input.action === "add";
   const allFailed = input.changed === 0 && input.failed > 0;
   const title = allFailed
-    ? `${emojis.error} Could not update roles`
+    ? `${emojis.error} Could Not Update Roles`
     : add
-      ? `${emojis.success} Role granted in bulk`
-      : `${emojis.success} Role removed in bulk`;
+      ? `${emojis.success} Role Granted in Bulk`
+      : `${emojis.success} Role Removed in Bulk`;
   const summary = allFailed
     ? `Discord rejected every update for ${mention}.`
     : add
@@ -145,27 +160,24 @@ export function roleMassResultMessage(input: {
       : `${mention} was removed from ${plural(input.changed, "member")}.`;
 
   const facts = [
-    `> **${add ? "Given" : "Removed"}:** \`${input.changed}\``,
-    `> **${add ? "Already had it" : "Did not have it"}:** \`${input.skipped}\``,
-    `> **Failed:** \`${input.failed}\``,
-  ].join("\n");
-
-  const container = new ContainerBuilder()
-    .setAccentColor(allFailed ? embedColors.error : embedColors.success)
-    .addTextDisplayComponents(textBlock(`# ${title}`), textBlock(summary))
-    .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(facts));
-
+    `**${add ? "Given" : "Removed"}** \`${input.changed}\` · **${add ? "Already had it" : "Did not have it"}** \`${input.skipped}\` · **Failed** \`${input.failed}\``,
+  ];
   if (input.failed > 0) {
-    container.addTextDisplayComponents(
-      textBlock(`*Discord refused ${plural(input.failed, "member")}. Check that my highest role is above ${mention}.*`),
+    facts.push(
+      `${emojis.alert} *Discord refused ${plural(input.failed, "member")}. Move my highest role above ${mention}.*`,
     );
   }
 
-  container
+  const container = new ContainerBuilder()
+    .setAccentColor(allFailed ? embedColors.error : embedColors.success)
+    .addTextDisplayComponents(textBlock(`## ${title}\n${summary}`))
+    .addSeparatorComponents(divider())
+    .addTextDisplayComponents(textBlock(facts.join("\n")))
     .addSeparatorComponents(divider())
     .addTextDisplayComponents(
-      textBlock(`-# Took ${duration(input.elapsedMs)} · Triggered by ${formatUser(input.actorId)}`),
+      textBlock(
+        `-# ${add ? "Granted" : "Removed"} by ${formatUser(input.actorId)} · took ${duration(input.elapsedMs)} · ${stamp(input.at)}`,
+      ),
     );
 
   return { components: [container], allowedMentions: { parse: [] } };
@@ -177,35 +189,35 @@ export function roleListMessage(
   role: Role,
   members: GuildMember[],
   actorId: string,
+  at: Date,
 ): InteractionReplyOptions {
   const humans = members.filter((member) => !member.user.bot);
   const bots = members.filter((member) => member.user.bot);
   const mention = formatRoleFromRole(role);
-  const summary = [
-    `${emojis.members} **Total:** \`${members.length}\``,
-    `${emojis.humans} **Human:** \`${humans.length}\``,
-    `${emojis.bots} **Bot:** \`${bots.length}\``,
+  const header = [
+    `## ${emojis.members} Members of ${mention}`,
+    `${emojis.members} **Total** \`${members.length}\` · ${emojis.humans} **Humans** \`${humans.length}\` · ${emojis.bots} **Bots** \`${bots.length}\``,
   ].join("\n");
 
-  const list = members.map((member) => `> ${formatMember(member)}`).join("\n");
-  const fits = list.length > 0 && list.length <= LIST_CHAR_LIMIT;
+  const groups = [
+    { label: `**${emojis.humans} Humans**`, list: humans },
+    { label: `**${emojis.bots} Bots**`, list: bots },
+  ]
+    .filter((group) => group.list.length > 0)
+    .map((group) => `${group.label}\n${group.list.map((member) => formatMember(member)).join(" ")}`);
+  const fits = groups.join("\n\n").length <= LIST_CHAR_LIMIT;
 
   const container = new ContainerBuilder()
     .setAccentColor(embedColors.info)
-    .addTextDisplayComponents(
-      textBlock(`# ${emojis.members} Members of ${mention}`),
-      textBlock(summary),
-    );
+    .addTextDisplayComponents(textBlock(header))
+    .addSeparatorComponents(divider());
 
   if (members.length === 0) {
-    container
-      .addSeparatorComponents(divider())
-      .addTextDisplayComponents(textBlock("*Nobody currently holds this role.*"));
+    container.addTextDisplayComponents(textBlock("*Nobody currently holds this role.*"));
   } else if (fits) {
-    container.addSeparatorComponents(divider()).addTextDisplayComponents(textBlock(list));
+    container.addTextDisplayComponents(...groups.map((group) => textBlock(group)));
   } else {
     container
-      .addSeparatorComponents(divider())
       .addTextDisplayComponents(
         textBlock(`The roster does not fit here, so it is attached as \`${role.id}-members.csv\`.`),
       )
@@ -214,7 +226,7 @@ export function roleListMessage(
 
   container
     .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(`-# Requested by ${formatUser(actorId)}`));
+    .addTextDisplayComponents(textBlock(`-# Requested by ${formatUser(actorId)} · ${stamp(at)}`));
 
   const payload: InteractionReplyOptions = {
     flags: [...v2Flags, MessageFlags.Ephemeral],
@@ -227,7 +239,7 @@ export function roleListMessage(
       "ID,Kind",
       ...members.map((member) => `${member.id},${member.user.bot ? "Bot" : "Human"}`),
     ].join("\n");
-    payload.files = [new AttachmentBuilder(Buffer.from(`\uFEFF${csv}\n`, "utf8"), { name: `${role.id}-members.csv` })];
+    payload.files = [new AttachmentBuilder(Buffer.from(`﻿${csv}\n`, "utf8"), { name: `${role.id}-members.csv` })];
   }
 
   return payload;

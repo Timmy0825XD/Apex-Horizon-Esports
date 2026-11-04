@@ -1,8 +1,10 @@
-import { ChannelType, ContainerBuilder, type Guild } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, ContainerBuilder, type Guild } from "discord.js";
 import { emojis } from "../../emojis.js";
+import { customEmoji } from "../../lib/custom-emoji.js";
 import { embedColors } from "../../lib/embeds.js";
 import { formatUser } from "../../lib/formatters.js";
 import { divider, headingWithThumbnail, textBlock } from "../../lib/v2.js";
+import { escapeDiscord } from "../room/labels.js";
 
 function unixSeconds(date: Date): number {
   return Math.floor(date.getTime() / 1000);
@@ -67,59 +69,41 @@ export async function buildServerInfoContainer(
   const requested = unixSeconds(requestedAt);
   const { text, voice, categories } = channelCounts(guild);
   const { total, humans, bots } = memberCounts(guild);
-  const title = `# ${guild.name}`;
+  const title = `## ${escapeDiscord(guild.name)}\n-# ID ${guild.id}`;
+  const identity = [
+    `${emojis.owner} **Owner** ${formatUser(guild.ownerId)}`,
+    `${emojis.creation} **Created** <t:${created}:D> · <t:${created}:R>`,
+  ].join("\n");
   const container = new ContainerBuilder().setAccentColor(embedColors.success);
 
   if (icon) {
-    container.addSectionComponents(headingWithThumbnail(title, icon));
+    container.addSectionComponents(headingWithThumbnail(title, icon, identity));
   } else {
-    container.addTextDisplayComponents(textBlock(title));
+    container.addTextDisplayComponents(textBlock(title), textBlock(identity));
   }
 
-  const identity = [
-    `${emojis.id} **ID:** \`${guild.id}\``,
-    `${emojis.owner} **Owner:** ${formatUser(guild.ownerId)}`,
-    iconLink ? `${emojis.info} **Icon:** [Link](${iconLink})` : `${emojis.info} **Icon:** *None*`,
+  const boosts = guild.premiumSubscriptionCount ?? 0;
+  const counts = [
+    `${emojis.members} **Members** \`${total}\` · ${emojis.humans} \`${humans}\` humans · ${emojis.bots} \`${bots}\` bots`,
+    `${emojis.textChannel} **Text** \`${text}\` · ${emojis.voice} **Voice** \`${voice}\` · ${emojis.categories} **Categories** \`${categories}\``,
+    `${emojis.gem} **Roles** \`${guild.roles.cache.size}\` · ${emojis.party} **Boosts** \`${boosts}\` · Level ${guild.premiumTier}`,
   ];
 
-  return container
+  container
     .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(identity.join("\n")))
+    .addTextDisplayComponents(textBlock(counts.join("\n")))
     .addSeparatorComponents(divider())
-    .addTextDisplayComponents(
-      textBlock(
-        [
-          `## ${emojis.members} Members`,
-          `${emojis.members} **Total:** \`${total}\``,
-          `${emojis.humans} **Human:** \`${humans}\``,
-          `${emojis.bots} **Bot:** \`${bots}\``,
-        ].join("\n"),
+    .addTextDisplayComponents(textBlock(`-# Requested by ${formatUser(requesterId)} · <t:${requested}:F>`));
+  if (iconLink) {
+    container.addActionRowComponents(
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Link)
+          .setURL(iconLink)
+          .setLabel("Server icon")
+          .setEmoji(customEmoji(emojis.link)),
       ),
-    )
-    .addSeparatorComponents(divider())
-    .addTextDisplayComponents(
-      textBlock(
-        [
-          `## ${emojis.channels} Channels & Roles`,
-          `${emojis.textChannel} **Text:** \`${text}\``,
-          `${emojis.voice} **Voice:** \`${voice}\``,
-          `${emojis.categories} **Categories:** \`${categories}\``,
-          `${emojis.gem} **Roles:** \`${guild.roles.cache.size}\``,
-        ].join("\n"),
-      ),
-    )
-    .addSeparatorComponents(divider())
-    .addTextDisplayComponents(
-      textBlock(
-        [
-          `## ${emojis.creation} Creation`,
-          `${emojis.calendar} **Created:** <t:${created}:F>`,
-          `${emojis.uptime} **Age:** <t:${created}:R>`,
-        ].join("\n"),
-      ),
-    )
-    .addSeparatorComponents(divider())
-    .addTextDisplayComponents(
-      textBlock(`-# Requested by ${formatUser(requesterId)}`),
     );
+  }
+  return container;
 }

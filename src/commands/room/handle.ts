@@ -72,6 +72,12 @@ function scopeText(scope: RoomScope): string {
   return parts.join(" · ");
 }
 
+/** Plain `Group B · Round 3` for the report's `-#` line; null when the whole queue is opened. */
+function scopeLabel(scope: RoomScope): string | null {
+  const parts = [scope.group ? `Group ${scope.group}` : "", scope.round != null ? roundTitle(scope.round) : ""].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
 async function handleCreate(interaction: ChatInputCommandInteraction): Promise<void> {
   const ready = await prepareTournament(interaction, "open battle tickets");
   if (!ready) {
@@ -102,7 +108,11 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
 
     await respondRoom(
       interaction,
-      creationReport(ready.guild, ready.tournament.name, result, where ? { intro: [`Opening ${where}.`] } : undefined),
+      creationReport(ready.guild, ready.tournament.name, result, {
+        scope: scopeLabel(scope),
+        actorId: interaction.user.id,
+        verb: "Opened",
+      }),
     );
     await auditRoomsCreated(
       ready.guild,
@@ -156,7 +166,7 @@ async function availableReply(guildId: string, tournamentId: string, page: numbe
       ...blockedSummary(queue.blocked),
     ]);
   }
-  return availableRoomsMessage(tournament.name, tournament.id, queue.ready, page, queue.blocked.length);
+  return availableRoomsMessage(guildId, tournament.name, tournament.id, queue.ready, page, queue.blocked.length);
 }
 
 export async function handleRoomButton(interaction: ButtonInteraction): Promise<void> {

@@ -11,7 +11,7 @@ Un solo comando. Organiser.
 | tournament | STRING (Autocomplete) | Sí |
 | status | BOOLEAN | Sí |
 
-`status` true enciende la automatización. Si venía de off, abre en ese momento los partidos `open` sin sala y publica en el canal el mismo reporte que `/room create`. Los que se abran después esperan a **00:00 UTC** o **12:00 UTC**. `status` false apaga el escaneo y no cierra tickets. Ya encendido, apagado, y el error si el bracket no se puede leer, siguen efímeros. Si el bracket no se puede leer al encender, auto-room **sigue off**. Audita en **Rooms**.
+`status` true enciende la automatización. Si venía de off, abre en ese momento los partidos `open` sin sala y publica en el canal el mismo reporte que `/room create`. Los que se abran después esperan a **00:00 UTC** o **12:00 UTC**. `status` false apaga el escaneo y no cierra tickets. Ya encendido, apagado, y el error si el bracket no se puede leer, siguen efímeros. Los avisos son V2 con `## Auto-room On` / `Auto-room Off` / `Auto-room Already On` / `Auto-room Already Off` y el torneo. Encendido muestra **Next run** como hora relativa (00:00 o 12:00 UTC) y está en verde; apagado está en rojo; *already* en azul. Llevan footer con autor y hora, o con la mención del comando que toca. Si al encender se abren tickets, el reporte es el de `/room create` titulado *Auto-room On*, con la línea **Next run**. Si el bracket no se puede leer al encender, auto-room **sigue off**. Audita en **Rooms**.
 
 ## `/room create`
 
@@ -23,7 +23,15 @@ Un solo comando. Organiser.
 
 Abre la cola pendiente de ese torneo ahora. Sin `group` ni `round`, abre toda. Con uno o ambos, solo los partidos de ese grupo y/o esa ronda. Las opciones salen del bracket de **ese** torneo. No exige que auto-room esté encendido y **no cambia** el flag: si estaba off, sigue off. Misma tubería que el encendido y que el worker. Audita en **Rooms**.
 
-La respuesta se publica en el canal (no efímera). V2 con **Created**, **Succeeded** y **Errors**, el cupo de las categorías abiertas (slots libres antes y después; si la cola no cabe, cuántos partidos siguen esperando) y, al final, **Issues**: capitán que no está en el servidor como `- @capitán (**tag** / **equipo**)`, o tag y equipo cuando el Discord ID es inválido o falta. No lista los canales creados.
+La respuesta se publica en el canal (no efímera). V2 con el icono del servidor como thumbnail:
+
+- `## Battle Tickets Created` (verde), `Battle Tickets Opened` (naranja, con errores o partidos esperando) o `No Tickets Opened` (rojo). Si se filtró, `group`/`round` en `-#`, y el torneo.
+- Separador, y **Created**, **Errors** y **Waiting** en una línea, con viñetas para lo que falló (fuera de la hoja, canal no creado, bienvenida fallida).
+- **Categories** y **Free slots** antes → después, con una viñeta si la cola no cabe.
+- Al final **Issues**: capitán que no está en el servidor como `- @capitán · **equipo**`, o `- **tag** · **equipo** · id` cuando el Discord ID es inválido o falta.
+- Footer `Opened by` con mención, hora y la mención de `/room available`.
+
+No lista los canales creados.
 
 ## `/room available`
 
@@ -31,7 +39,13 @@ La respuesta se publica en el canal (no efímera). V2 con **Created**, **Succeed
 |---|---|---|
 | tournament | STRING (Autocomplete) | Sí |
 
-Solo lectura. Se publica en el canal (no efímero). V2 con barra verde: título *Available Rooms for* el torneo, `Showing 1 - 20 of N`, y cada partido en dos líneas: emoji `vs` **Match N** - Round N - Group N (el grupo solo si el torneo tiene grupos) y `nombre vs nombre`, con `_` escapado para que Discord no lo pinte en cursiva. A partir de **20** partidos hay Previous / Next. No audita.
+Solo lectura. Se publica en el canal (no efímero). V2 de barra verde:
+
+- `## Available Rooms`, y el torneo con cuántos partidos están listos.
+- Separador, y cada partido en una línea: número, emoji `vs`, los dos lados en negrita y la fase en cursiva (el grupo solo si el torneo tiene grupos). Los `_` van escapados para que Discord no los pinte en cursiva.
+- Si hay partidos bloqueados por la hoja, una línea con `alert` y cuántos son.
+- Footer `-# Showing a–b of N` con la mención de `/room create`.
+- A partir de **20** partidos, flechas e indicador `1/N`. No audita.
 
 ## `/bracket upload`
 

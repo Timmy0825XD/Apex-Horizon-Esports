@@ -22,17 +22,26 @@ test("progress before members load explains the wait", () => {
 
 test("result is a summary without member mentions", () => {
   const body = text(
-    roleMassResultMessage({ action: "remove", role, changed: 77, skipped: 5253, failed: 0, elapsedMs: 72_000, actorId: "9" }),
+    roleMassResultMessage({
+      action: "remove",
+      role,
+      changed: 77,
+      skipped: 5253,
+      failed: 0,
+      elapsedMs: 72_000,
+      actorId: "9",
+      at: new Date(),
+    }),
   );
-  assert.match(body, /Removed:\*\* `77`/);
-  assert.match(body, /Did not have it:\*\* `5253`/);
-  assert.match(body, /Took 1m 12s/);
+  assert.match(body, /\*\*Removed\*\* `77`/);
+  assert.match(body, /\*\*Did not have it\*\* `5253`/);
+  assert.match(body, /took 1m 12s/);
   assert.doesNotMatch(body, /<@(?!&|9>)/);
 });
 
 test("result turns red only when every update failed", () => {
   const body = text(
-    roleMassResultMessage({ action: "add", role, changed: 0, skipped: 3, failed: 4, elapsedMs: 1_000, actorId: "9" }),
+    roleMassResultMessage({ action: "add", role, changed: 0, skipped: 3, failed: 4, elapsedMs: 1_000, actorId: "9", at: new Date() }),
   );
-  assert.match(body, /Could not update roles/);
+  assert.match(body, /Could Not Update Roles/);
 });

@@ -46,5 +46,5 @@ export async function handleSettingsShow(
 
   await guild.roles.fetch().catch(() => undefined);
   await guild.channels.fetch().catch(() => undefined);
-  await respondSettings(interaction, settingsMessage("show", guild, settings, commandId));
+  await respondSettings(interaction, settingsMessage({ kind: "show", guild, settings, commandId, actorId: interaction.user.id }));
 }

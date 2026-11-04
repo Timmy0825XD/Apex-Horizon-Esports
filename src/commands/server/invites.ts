@@ -5,6 +5,7 @@ import {
   type Guild,
   type Invite,
 } from "discord.js";
+import { emojis } from "../../emojis.js";
 import { v2Flags } from "../../lib/v2.js";
 import {
   fileSlug,
@@ -159,16 +160,18 @@ export async function handleServerInvites(interaction: ChatInputCommandInteracti
       )
     : toTsv(rows);
 
-  const vanityNote = vanity
-    ? ` Vanity: \`discord.gg/${vanity.code}\` · **${vanity.uses}** uses.`
-    : "";
+  const totalUses = rows.reduce((sum, row) => sum + (Number.isFinite(Number(row.uses)) ? Number(row.uses) : 0), 0);
+  const summary = [`**Invites** \`${rows.length}\` · **Total uses** \`${totalUses}\``];
+  if (vanity) {
+    summary.push(`**Vanity** \`discord.gg/${vanity.code}\` · \`${vanity.uses}\` uses`);
+  }
 
-  await replyExport(
-    interaction,
-    guild,
-    "Invite list exported",
-    `**${rows.length}** ${rows.length === 1 ? "invite" : "invites"} in \`${filename}\`.${vanityNote}`,
+  await replyExport(interaction, guild, {
+    emoji: emojis.link,
+    title: "Invite List Exported",
+    summary: summary.join("\n"),
+    excel: asExcel,
     filename,
     data,
-  );
+  });
 }
