@@ -9,6 +9,7 @@ import { grantTicket, ticketChannel } from "./channel.js";
 import { paintSchedule } from "./live.js";
 import { formatUser } from "../../lib/formatters.js";
 import { schedulePlain } from "./respond.js";
+import { bookedAround, selfBusyBody, staffBusyTitle, staffClash } from "./conflicts.js";
 import { closedSeatBody, closedSeatTitle, postSeatLine, seatAssignedLine, seatHeldBy, seatsAreClosed, seatWrite } from "./seat.js";
 import { handleOpenButton } from "./query.js";
 import { handleShowButton } from "./show.js";
@@ -90,6 +91,11 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
   if ((seat === "judge" && schedule.judgeId) || (seat === "recorder" && schedule.recorderId)) {
     const label = seat === "judge" ? "judge" : "recorder";
     await privateReply(interaction, "error", "Seat taken", `A ${label} is already assigned.`);
+    return;
+  }
+  const clash = staffClash(await bookedAround(guild.id, schedule.scheduledAt, schedule.id), interaction.user.id, schedule.scheduledAt);
+  if (clash) {
+    await privateReply(interaction, "error", staffBusyTitle, selfBusyBody(clash));
     return;
   }
   const tournament = await findTournamentById(guild.id, schedule.tournamentId);

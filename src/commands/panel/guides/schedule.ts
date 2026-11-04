@@ -18,6 +18,8 @@ export const scheduleGuides: GuideBook = {
     },
     notes: [
       "The time must be at least **10 minutes** from now.",
+      "A server can have at most **4** active schedules on the same UTC minute.",
+      "A judge or recorder cannot hold two matches less than **30 minutes** apart.",
       "Always convert to UTC first. {/utility utc} helps if you are unsure.",
       "If a step cannot finish, you get a private **Finish manually** list with what is left.",
     ],
@@ -40,6 +42,8 @@ export const scheduleGuides: GuideBook = {
     },
     notes: [
       "The new time cannot be in the past or less than 10 minutes away.",
+      "The new time cannot land on a minute that already has **4** active schedules.",
+      "Staff left less than **30 minutes** from another of their matches lose the seat. Your answer lists them so you can find a replacement.",
       "Once the match has a result or the ticket is closed, staff can no longer be assigned.",
       "Your answer is private. The ticket gets the public update.",
     ],

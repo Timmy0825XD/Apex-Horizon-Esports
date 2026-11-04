@@ -4,6 +4,15 @@ Un partido tiene **como máximo un schedule activo**. Se crea **dentro del ticke
 
 Sin `schedules_channel` de `/settings` no hay `/schedule create`.
 
+## Cupo por minuto y choques de staff
+
+Solo cuentan los schedules **vivos**: sin `/schedule results add` y con el ticket abierto. Se cuentan en todo el servidor, sumando torneos.
+
+- **Cupo:** como máximo **4** schedules vivos en el mismo minuto UTC (cuatro a las 21:00 llenan las 21:00; las 21:15 tienen su propio cupo). `/schedule create` y el cambio de hora de `/schedule update` se rechazan con *Time slot full* si ese minuto ya tiene 4.
+- **Staff:** un juez o grabador no puede tener puesto en dos schedules vivos que empiecen a **menos de 30 minutos** entre sí (30 minutos justos sí se permiten). La misma persona puede ser juez y grabador del mismo schedule. Se rechaza con *Staff already booked*, sin excepciones de rol, en las tres vías: botón **Assign**, `judge` / `recorder` de `/schedule create` y de `/schedule update`. El mensaje enlaza el ticket y la hora del partido con el que choca.
+- **Cambio de hora:** si al mover un schedule su juez o grabador queda a menos de 30 minutos de otro partido suyo, el cambio se guarda y esa persona **sale del puesto** (pierde el ticket y su confirmación). El ticket publica que fue retirado por el choque y la respuesta efímera de quien actualizó añade un bloque **Find a replacement** con los nombres. La auditoría de la actualización lo lista como *Removed for clash*.
+- Los rechazos no se auditan: no hubo mutación.
+
 Las respuestas del comando son **Components V2**, publicadas en el canal. `/schedule update` es la excepción: el aviso de que se actualizó y los errores de ese subcomando son **efímeros**. El aviso de asignar, el de renuncia o reemplazo y la confirmación de asistencia siguen en texto plano. El post del schedule creado (ticket y canal de schedules) y la declaración de results siguen siendo el embed clásico.
 
 | Acción | Rol |
