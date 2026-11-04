@@ -65,6 +65,8 @@ export const emojis = {
   stats : "<:stats:1557586404244983928>",
   judge_recorder : "<:judgerecorder:1557586288507355178>",
   mw : "<:MW:1566720140005867661>",
+  spanish: "🇪🇸",
+  english: "🇬🇧",
 } as const;
 
 export const numberEmojis = [

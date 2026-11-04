@@ -1105,3 +1105,42 @@ Ninguna.
 - Admin es el `admin_role` de `/settings` o el permiso Administrator.
 - Los menús y botones del panel vuelven a comprobar que quien los pulsa es Admin.
 - Publica en el canal donde se ejecuta; el bot necesita poder enviar mensajes ahí.
+
+### `/panel tournament rules`
+
+- [x] Admin
+- [x] Organiser
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
+
+- Admin es el `admin_role` de `/settings` o el permiso Administrator.
+- Helper y admin de un torneo no cuentan: hace falta Admin u Organiser del servidor.
+- Publica en el canal donde se ejecuta.
+
+### `/panel tournament bracket`
+
+- [x] Admin
+- [x] Organiser
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
+
+- Mismas restricciones que `/panel tournament rules`.
+
+### `/panel tournament deadline`
+
+- [x] Admin
+- [x] Organiser
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
+
+- Mismas restricciones que `/panel tournament rules`.
+- Al enviar el formulario de rondas se vuelve a comprobar que quien lo envía es Admin u Organiser.
