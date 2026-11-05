@@ -18,7 +18,7 @@ import {
 } from "../tournament/store.js";
 import { actorMatches } from "../../lib/command-access.js";
 import { deferSheet, respondSheet } from "./respond.js";
-import { sheetButtonRow, sheetErrorMessage } from "./view.js";
+import { csvCell, sheetButtonRow, sheetErrorMessage } from "./view.js";
 
 const SHEET_CSV_NAME = "tournament-sheets.csv";
 
@@ -30,13 +30,6 @@ function originLabel(origin: StoredSheetSummary["origin"]): string {
     return "manual archive";
   }
   return "active tournament";
-}
-
-function csvCell(value: string): string {
-  if (/[",\n\r]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
 }
 
 export function storedSheetCatalogCsv(sheets: StoredSheetSummary[]): Buffer {

@@ -1,5 +1,6 @@
 import {
   ActionRowBuilder,
+  AttachmentBuilder,
   ButtonBuilder,
   ButtonStyle,
   ContainerBuilder,
@@ -11,7 +12,7 @@ import { customEmoji } from "../../lib/custom-emoji.js";
 import { embedColors } from "../../lib/embeds.js";
 import { formatHelpEntry, formatSheetLink, formatUser } from "../../lib/formatters.js";
 import type { SheetPlayer, TeamFormat } from "../../lib/sheet.js";
-import { divider, textBlock, v2Flags } from "../../lib/v2.js";
+import { attachedFile, divider, textBlock, v2Flags } from "../../lib/v2.js";
 import { escapeDiscord } from "../room/labels.js";
 import { formatCurrentTitle } from "../team/view.js";
 import type { SheetOrigin, StoredSheetRecord } from "../tournament/store.js";
@@ -229,52 +230,140 @@ export type PlayerHit = {
   sheets: StoredSheetRecord[];
 };
 
-export function playerFoundMessages(hits: PlayerHit[]): InteractionReplyOptions {
+/** Discord caps one Components V2 message at 40 components and 4000 characters of text. */
+const MESSAGE_COMPONENTS = 40;
+const MESSAGE_CHARS = 4000;
+/** Room left in a message for the CSV notice that may close it. */
+const NOTICE_CHARS = 300;
+const CARD_CHARS = MESSAGE_CHARS - NOTICE_CHARS;
+/** Container + heading + captain + divider + sheets. */
+const CARD_COMPONENTS = 5;
+/** Past this many messages the rest of the players only go in the CSV, so a vague search cannot flood the chat. */
+export const MAX_RESULT_MESSAGES = 10;
+export const PLAYERS_CSV_NAME = "sheet-players.csv";
+
+export function csvCell(value: string): string {
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+type PlayerCard = { container: ContainerBuilder; chars: number };
+
+function playerCard(hit: PlayerHit, index: number, total: number): PlayerCard {
+  const found = `Found in ${hit.sheets.length} stored ${hit.sheets.length === 1 ? "sheet" : "sheets"}`;
+  const position = total > 1 ? `Player ${index + 1} of ${total} · ${found}` : found;
+  const heading = `## ${emojis.members} ${escapeDiscord(hit.displayName)}\n-# ${position}`;
+  const captain = playerLines(hit.captain, hit.teamName, hit.format).join("\n");
+  // A player in dozens of sheets must still fit in one message: cut the list and say how many are left.
+  const sheetLines = [`### ${emojis.torneo} Sheets`];
+  let used = heading.length + captain.length + sheetLines[0].length;
+  for (const [shown, sheet] of hit.sheets.entries()) {
+    const line = sheetLine(sheet);
+    const left = hit.sheets.length - shown;
+    if (used + line.length + 60 > CARD_CHARS) {
+      sheetLines.push(`-# …and ${left} more ${left === 1 ? "sheet" : "sheets"}. Search by this player's ID to see fewer.`);
+      break;
+    }
+    sheetLines.push(line);
+    used += line.length + 1;
+  }
+  const sheets = sheetLines.join("\n");
+  return {
+    container: new ContainerBuilder()
+      .setAccentColor(embedColors.info)
+      .addTextDisplayComponents(textBlock(heading), textBlock(captain))
+      .addSeparatorComponents(divider())
+      .addTextDisplayComponents(textBlock(sheets)),
+    chars: heading.length + captain.length + sheets.length,
+  };
+}
+
+/** One row per player and sheet, with the same captain data the cards show. */
+export function playersCsv(hits: PlayerHit[]): Buffer {
+  const header = ["Player", "Team", "Discord tag", "Discord ID", "In-game name", "In-game ID", "Tournament", "Format", "Origin", "Server", "Sheet"];
+  const rows = hits.flatMap((hit) =>
+    hit.sheets.map((sheet) =>
+      [
+        hit.displayName,
+        hit.format === "1vs1" ? "" : hit.teamName,
+        hit.captain.discordTag,
+        hit.captain.discordId,
+        hit.captain.gameName,
+        hit.captain.gameId,
+        sheet.tournamentName || "Manual sheet",
+        sheet.format,
+        originLabel(sheet.origin),
+        sheet.guildName || "Unknown server",
+        sheet.sheetLink,
+      ]
+        .map(csvCell)
+        .join(","),
+    ),
+  );
+  return Buffer.from(`\uFEFF${[header.join(","), ...rows].join("\n")}\n`, "utf8");
+}
+
+/**
+ * Every matched player, packed into as few ephemeral messages as Discord allows (by components and by
+ * characters). If they need more than {@link MAX_RESULT_MESSAGES}, the last message adds a CSV with all of them.
+ */
+export function playerFoundMessages(hits: PlayerHit[]): InteractionReplyOptions[] {
+  const flags = [...v2Flags, MessageFlags.Ephemeral] as const;
   if (hits.length === 0) {
-    return {
-      flags: [...v2Flags, MessageFlags.Ephemeral],
-      components: [
-        new ContainerBuilder()
-          .setAccentColor(embedColors.error)
-          .addTextDisplayComponents(
-            textBlock(`## ${emojis.error} No Players Matched`),
-            textBlock("None of the stored sheets across this bot matched those identifiers. Try another field or a shorter name."),
-          ),
-      ],
-    };
+    return [
+      {
+        flags,
+        components: [
+          new ContainerBuilder()
+            .setAccentColor(embedColors.error)
+            .addTextDisplayComponents(
+              textBlock(`## ${emojis.error} No Players Matched`),
+              textBlock("None of the stored sheets across this bot matched those identifiers. Try another field or a shorter name."),
+            ),
+        ],
+      },
+    ];
   }
 
-  const shown = hits.slice(0, 5);
-  const extra = hits.length - shown.length;
-  const containers = shown.map((hit, index) => {
-    const found = `Found in ${hit.sheets.length} stored ${hit.sheets.length === 1 ? "sheet" : "sheets"}`;
-    const position = hits.length > 1 ? `Player ${index + 1} of ${hits.length} · ${found}` : found;
-    return new ContainerBuilder()
-      .setAccentColor(embedColors.info)
-      .addTextDisplayComponents(
-        textBlock(`## ${emojis.members} ${escapeDiscord(hit.displayName)}\n-# ${position}`),
-        textBlock(playerLines(hit.captain, hit.teamName, hit.format).join("\n")),
-      )
-      .addSeparatorComponents(divider())
-      .addTextDisplayComponents(textBlock([`### ${emojis.torneo} Sheets`, ...hit.sheets.map(sheetLine)].join("\n")));
-  });
+  const pages: PlayerCard[][] = [[]];
+  let shown = 0;
+  for (const [index, hit] of hits.entries()) {
+    const card = playerCard(hit, index, hits.length);
+    let page = pages[pages.length - 1];
+    const chars = page.reduce((sum, item) => sum + item.chars, 0);
+    if (page.length > 0 && ((page.length + 1) * CARD_COMPONENTS > MESSAGE_COMPONENTS - 2 || chars + card.chars > CARD_CHARS)) {
+      if (pages.length === MAX_RESULT_MESSAGES) break;
+      page = [];
+      pages.push(page);
+    }
+    page.push(card);
+    shown += 1;
+  }
 
-  if (extra > 0) {
-    containers.push(
+  const messages: InteractionReplyOptions[] = pages.map((page) => ({
+    flags,
+    allowedMentions: { parse: [] },
+    components: page.map((card) => card.container),
+  }));
+
+  const missing = hits.length - shown;
+  if (missing > 0) {
+    const last = messages[messages.length - 1];
+    last.components = [
+      ...(last.components ?? []),
       new ContainerBuilder()
         .setAccentColor(embedColors.info)
         .addTextDisplayComponents(
-          textBlock(`## ${emojis.next} More Matches · ${extra}`),
-          textBlock("Narrow the search with a Discord ID or in-game ID."),
-        ),
-    );
+          textBlock(`## ${emojis.next} ${missing} More ${missing === 1 ? "Player" : "Players"} in the CSV`),
+          textBlock(`Cards stop at **${shown}** of **${hits.length}** players. The file has every match, one row per player and sheet.`),
+        )
+        .addFileComponents(attachedFile(PLAYERS_CSV_NAME)),
+    ];
+    last.files = [new AttachmentBuilder(playersCsv(hits), { name: PLAYERS_CSV_NAME })];
   }
-
-  return {
-    flags: [...v2Flags, MessageFlags.Ephemeral],
-    allowedMentions: { parse: [] },
-    components: containers,
-  };
+  return messages;
 }
 
 export type SheetIssueKind =

@@ -55,7 +55,7 @@ Un ban de Discord **no** es el cruce con la lista de IDs de juego baneados. Esa 
 
 Busca en **todas** las copies almacenadas del bot (activas, manuales e histórico, **cualquier servidor**). No es `/team info`.
 
-Cuatro STRING libres, todos opcionales: ID de juego, ID de Discord, tag de Discord, nombre del jugador. **Al menos uno** obligatorio. Varios rellenos = **OR** (vale coincidir en cualquiera).
+Cuatro STRING libres, todos opcionales: ID de juego, ID de Discord, tag de Discord, nombre del jugador. **Al menos uno** obligatorio. Varios rellenos = **OR** (vale coincidir en cualquiera). ID de juego e ID de Discord admiten varios valores separados por espacios, también en **OR**.
 
 Agrupación: **un jugador distinto → un V2**. Misma persona en varias sheets → un V2, lista de esas sheets. El OR pegó a dos personas distintas → dos V2.
 
@@ -63,6 +63,8 @@ Cada V2 trae:
 
 1. **Datos del capitán** del equipo (tag / Discord ID / in-game / current title). En `2vs2`, `3vs3`, `4vs4` y `5vs5` también el nombre de equipo. **Sin** campos extra.
 2. **Lista de sheets** en las que ese jugador aparece: nombre del torneo, formato, origen, **servidor**, y el link.
+
+Se muestran **todas** las coincidencias, repartidas en los mensajes efímeros que hagan falta (límites de Discord por mensaje). Tope de **10** mensajes; si se pasa, el último lleva un CSV con todas. Detalle: [../commands/sheet-teams.md](../commands/sheet-teams.md).
 
 Sin coincidencias: un V2 de vacío/error, no una lista hueca.
 

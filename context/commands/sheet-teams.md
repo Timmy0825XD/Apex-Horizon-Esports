@@ -50,7 +50,11 @@ CSV: columnas `Tournament,Sheet,Server` (con header). Incluye activas, manuales 
 
 \*Al menos uno. Varios rellenos = **OR**.
 
+`game_id` y `discord_id` aceptan **varios valores separados por espacios** (`123 456 789`); cada uno cuenta como otro **OR**. Los repetidos se ignoran. `game_id` compara sin distinguir mayúsculas; `discord_id`, exacto. `discord_tag` y `player_name` siguen siendo un solo texto (puede llevar espacios).
+
 Un V2 **por jugador distinto**. El título `##` es el nombre y debajo, en `-#`, en cuántas hojas aparece. El capitán va en cuatro líneas: equipo (si no es 1vs1), Discord (tag y mención o ID), in-game (nombre e ID) y título con `hero` / `legend`. Debajo, `### Sheets` con una línea por hoja (nombre · formato · origen · servidor · enlace). Los campos extra de la hoja **no** entran aquí. Varios jugadores → varios V2, cada uno con copy de *ese* jugador.
+
+**Todos** los jugadores encontrados salen, sin tope fijo de tarjetas. Las tarjetas se empaquetan en mensajes efímeros respetando los límites de Discord por mensaje (**40** componentes y **4000** caracteres; hasta 7 tarjetas por mensaje): la primera es la respuesta y el resto van como follow-ups, en orden. Si un jugador sale en tantas hojas que su tarjeta no cabe, la lista de `### Sheets` se corta con *…and N more sheets*. Para que una búsqueda vaga no inunde el chat, como mucho **10** mensajes; si aun así faltan jugadores, el último mensaje añade un bloque *N More Players in the CSV* con `sheet-players.csv`: **todas** las coincidencias, una fila por jugador y hoja (`Player,Team,Discord tag,Discord ID,In-game name,In-game ID,Tournament,Format,Origin,Server,Sheet`, con los datos del capitán como en la tarjeta).
 
 ## `/sheet validate`
 

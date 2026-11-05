@@ -40,6 +40,8 @@ export const sheetGuides: GuideBook = {
       "game_id discord_id discord_tag player_name": "Any of them. With several, a match on any one counts.",
     },
     notes: [
+      "`game_id` and `discord_id` take several IDs separated by spaces, like `123 456 789`.",
+      "Every match is shown, over several private messages if needed. A very wide search also gets a CSV with all of them.",
       "It searches stored copies. For the live sheet of a running tournament, use {/team info}.",
       "It only reads. Nothing changes.",
     ],
