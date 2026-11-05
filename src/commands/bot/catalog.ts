@@ -168,7 +168,7 @@ export const helpCatalog: HelpCategory[] = [
     entries: [
       { slash: "panel tutorial", summary: "Pick commands and post a staff guide for each one in this channel.", access: "Admin" },
       { slash: "panel tournament rules", summary: "Post a tournament's rules panel with the Spanish and English links.", access: "Admin or Organiser" },
-      { slash: "panel tournament bracket", summary: "Post the Challonge bracket and the team shuffle video of a tournament.", access: "Admin or Organiser" },
+      { slash: "panel tournament bracket", summary: "Post the Challonge bracket link and the team shuffle video of a tournament.", access: "Admin or Organiser" },
       { slash: "panel tournament deadline", summary: "Post the dates of every round and ping the participants role.", access: "Admin or Organiser" },
     ],
   },

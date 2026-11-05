@@ -6,13 +6,13 @@ Paneles informativos. Slash: comando `panel`. `/panel tutorial` es solo **Admin*
 
 **Para qué:** Publicar en el canal donde se ejecuta un panel informativo de un torneo. Es la respuesta pública al comando, en Components V2 con el acento dorado de la familia Tournament. Arriba va el nombre del torneo en `-#`; abajo, `-# Posted by` con mención (sin ping) y hora.
 
-`tournament` es obligatorio en los tres: autocomplete con los torneos del servidor.
+`name` es obligatorio en los tres: el nombre del torneo, **texto libre** (máx. 100). Estos paneles se publican **antes** de registrar el torneo con `/tournament add`, así que no hay autocomplete ni se busca nada en la base de datos: el nombre solo se muestra en el panel (escapado).
 
 | Subcomando | Campos | Panel |
 |---|---|---|
-| `rules` | `spanish`, `english`: enlaces `https://` obligatorios | `## Tournament Rules` (emoji `rules`, icono del servidor de thumbnail si tiene). Texto en inglés con la traducción al español en `-#`. Botones de enlace **Reglas en español** y **English rules** con su bandera |
-| `bracket` | `shuffle`: enlace de YouTube (`youtube.com` o `youtu.be`) obligatorio | `## Bracket` (emoji `torneo`, emoji `challonge` de thumbnail). Sección **Challonge bracket** con el botón **Open bracket** y sección **Team shuffle evidence** con **Watch on YouTube**. El enlace del bracket no se escribe: el bot lo pide a Challonge (`full_challonge_url`) con el ID y la API key guardados del torneo. Si Challonge no responde, no publica y lo dice en efímero |
-| `deadline` | `role`: rol de participantes | Abre un formulario **Rounds** (una ronda por línea, `10/10 - 14/10`). Publica la mención del rol, que **sí hace ping**, y debajo `## Round Deadlines` (emoji `calendar`), una frase para que estén atentos a las fechas y `**Round N** · dd/mm → dd/mm` por línea |
+| `rules` | `spanish`, `english`: enlaces `https://` obligatorios · `image` (opcional): adjunto PNG, JPG, GIF o WEBP | `## Tournament Rules` (emoji `rules`, icono del servidor de thumbnail si tiene). Texto en inglés con la traducción al español en `-#`. Si hay `image`, debajo va en una galería: el bot la descarga y la vuelve a subir con el panel (`rules.<ext>`), así no depende del enlace temporal del adjunto; si no puede descargarla, no publica y lo dice en efímero. Otro tipo de archivo se rechaza en efímero. Botones de enlace **Reglas en español** y **English rules** con su bandera |
+| `bracket` | `bracket`: enlace `https://` de Challonge (`challonge.com` o un subdominio) obligatorio · `shuffle`: enlace de YouTube (`youtube.com` o `youtu.be`) obligatorio | `## Bracket` (emoji `torneo`, emoji `challonge` de thumbnail). Sección **Challonge bracket** con el botón **Open bracket** y sección **Team shuffle evidence** con **Watch on YouTube**. Un enlace inválido se rechaza en efímero y no se publica nada |
+| `deadline` | `role`: rol de participantes | Abre un formulario **Round Deadlines** con **Tournament name** (rellenado con `name`, editable) y **Rounds** (una ronda por línea, `10/10 - 14/10`). El nombre viaja en el formulario porque no cabe en el ID del modal. Publica la mención del rol, que **sí hace ping**, y debajo `## Round Deadlines` (emoji `calendar`), una frase para que estén atentos a las fechas y `**Round N** · dd/mm → dd/mm` por línea. Las dos últimas rondas siempre se llaman **Semifinals** y **Final / 3rd Place** (con una sola ronda, es la final) |
 
 ### Fechas de `deadline`
 

@@ -185,7 +185,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
-    if (interaction.isAutocomplete() && (interaction.commandName === "tournament" || interaction.commandName === "panel")) {
+    if (interaction.isAutocomplete() && interaction.commandName === "tournament") {
       await handleTournamentAuto(interaction);
       return;
     }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { formatRounds, isYoutubeUrl, parseRounds } from "../src/commands/panel/tournament.js";
+import { formatRounds, isChallongeUrl, isYoutubeUrl, parseRounds, roundLabel, rulesImageName } from "../src/commands/panel/tournament.js";
 
 const now = new Date("2026-10-05T12:00:00Z");
 
@@ -36,4 +36,25 @@ test("only YouTube https links are accepted for the shuffle video", () => {
   assert.equal(isYoutubeUrl("http://youtube.com/watch?v=abc123"), false);
   assert.equal(isYoutubeUrl("https://vimeo.com/123"), false);
   assert.equal(isYoutubeUrl("https://youtube.com.evil.example/watch"), false);
+});
+
+test("only Challonge https links are accepted for the bracket", () => {
+  assert.equal(isChallongeUrl("https://challonge.com/apex_cup"), true);
+  assert.equal(isChallongeUrl("https://apexhorizon.challonge.com/cup1"), true);
+  assert.equal(isChallongeUrl("http://challonge.com/apex_cup"), false);
+  assert.equal(isChallongeUrl("https://challonge.com.evil.example/x"), false);
+  assert.equal(isChallongeUrl("apex cup"), false);
+});
+
+test("the rules image keeps its format under a fixed name and rejects other files", () => {
+  assert.equal(rulesImageName({ name: "banner.PNG", contentType: "image/png" }), "rules.png");
+  assert.equal(rulesImageName({ name: "photo", contentType: "image/jpeg" }), "rules.jpg");
+  assert.equal(rulesImageName({ name: "anim.gif", contentType: null }), "rules.gif");
+  assert.equal(rulesImageName({ name: "rules.pdf", contentType: "application/pdf" }), null);
+});
+
+test("the last two deadline rounds are the semifinals and the final", () => {
+  assert.deepEqual([0, 1, 2, 3].map((index) => roundLabel(index, 4)), ["Round 1", "Round 2", "Semifinals", "Final / 3rd Place"]);
+  assert.deepEqual([0, 1].map((index) => roundLabel(index, 2)), ["Semifinals", "Final / 3rd Place"]);
+  assert.equal(roundLabel(0, 1), "Final / 3rd Place");
 });
