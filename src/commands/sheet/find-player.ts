@@ -6,8 +6,9 @@ import { deferSheet, respondSheet } from "./respond.js";
 import { playerFoundMessages, sheetErrorMessage, type PlayerHit } from "./view.js";
 
 type Query = {
-  gameId?: string;
-  discordId?: string;
+  /** Already normalized. */
+  gameIds: string[];
+  discordIds: string[];
   discordTag?: string;
   playerName?: string;
 };
@@ -16,13 +17,19 @@ function normalize(value: string): string {
   return value.trim().toLowerCase();
 }
 
-function playerMatches(player: SheetPlayer, query: Query): boolean {
+/** Several IDs go in one field separated by spaces; repeats are dropped. */
+export function splitIds(raw: string | null | undefined, normalizeEach = false): string[] {
+  const ids = (raw ?? "").split(/\s+/).filter(Boolean);
+  return [...new Set(normalizeEach ? ids.map(normalize) : ids)];
+}
+
+export function playerMatches(player: SheetPlayer, query: Query): boolean {
   const checks: boolean[] = [];
-  if (query.discordId) {
-    checks.push(player.discordId === query.discordId);
+  if (query.discordIds.length > 0) {
+    checks.push(query.discordIds.includes(player.discordId));
   }
-  if (query.gameId) {
-    checks.push(normalize(player.gameId) === normalize(query.gameId));
+  if (query.gameIds.length > 0) {
+    checks.push(query.gameIds.includes(normalize(player.gameId)));
   }
   if (query.discordTag) {
     checks.push(normalize(player.discordTag).includes(normalize(query.discordTag)));
@@ -98,13 +105,13 @@ export async function handleSheetFindPlayer(interaction: ChatInputCommandInterac
   }
 
   const query: Query = {
-    gameId: interaction.options.getString("game_id")?.trim() || undefined,
-    discordId: interaction.options.getString("discord_id")?.trim() || undefined,
+    gameIds: splitIds(interaction.options.getString("game_id"), true),
+    discordIds: splitIds(interaction.options.getString("discord_id")),
     discordTag: interaction.options.getString("discord_tag")?.trim() || undefined,
     playerName: interaction.options.getString("player_name")?.trim() || undefined,
   };
 
-  if (!query.gameId && !query.discordId && !query.discordTag && !query.playerName) {
+  if (query.gameIds.length === 0 && query.discordIds.length === 0 && !query.discordTag && !query.playerName) {
     await respondSheet(
       interaction,
       sheetErrorMessage(
@@ -163,5 +170,10 @@ export async function handleSheetFindPlayer(interaction: ChatInputCommandInterac
     sheets: [...hit.sheets.values()],
   }));
 
-  await respondSheet(interaction, playerFoundMessages(hits));
+  const [first, ...rest] = playerFoundMessages(hits);
+  await respondSheet(interaction, first);
+  // One by one keeps the order; each message is already packed to Discord's limits.
+  for (const message of rest) {
+    await interaction.followUp(message);
+  }
 }

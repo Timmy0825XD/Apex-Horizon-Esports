@@ -48,9 +48,9 @@ export const sheetSlash = new SlashCommandBuilder()
         subcommand
           .setName("player")
           .setDescription("Find a player in every stored sheet")
-          .addStringOption((option) => option.setName("game_id").setDescription("In-game ID").setRequired(false))
+          .addStringOption((option) => option.setName("game_id").setDescription("In-game ID. Several separated by spaces").setRequired(false))
           .addStringOption((option) =>
-            option.setName("discord_id").setDescription("Discord user ID").setRequired(false),
+            option.setName("discord_id").setDescription("Discord user ID. Several separated by spaces").setRequired(false),
           )
           .addStringOption((option) =>
             option.setName("discord_tag").setDescription("Discord tag / username").setRequired(false),
