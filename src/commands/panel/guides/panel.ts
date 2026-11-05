@@ -18,42 +18,44 @@ export const panelGuides: GuideBook = {
   "panel tournament rules": {
     where: "The panel is posted in the channel where you run it.",
     steps: [
-      "Pick the tournament and paste both rules links.",
+      "Write the tournament name and paste both rules links.",
       "The bot posts the panel with a button for each language.",
     ],
     options: {
-      tournament: "The tournament whose name goes on the panel.",
+      name: "The tournament name shown on top of the panel.",
       spanish: "Full link to the rules in Spanish.",
       english: "Full link to the rules in English.",
+      image: "A picture shown on the panel, like the tournament banner. PNG, JPG, GIF or WEBP.",
     },
-    notes: ["Both links must start with `https://`.", "To change a link, post the panel again and delete the old one."],
+    notes: ["The tournament does not need to exist yet. The name is only text on the panel.", "Both links must start with `https://`.", "To change a link, post the panel again and delete the old one."],
     related: ["panel tournament bracket", "panel tournament deadline"],
   },
   "panel tournament bracket": {
     where: "The panel is posted in the channel where you run it.",
     steps: [
-      "Pick the tournament and paste the YouTube link of the team shuffle.",
-      "The bot reads the bracket link from Challonge and posts both as buttons.",
+      "Write the tournament name and paste the Challonge bracket link and the YouTube link of the team shuffle.",
+      "The bot posts both links as buttons.",
     ],
     options: {
-      tournament: "The tournament whose bracket goes on the panel.",
+      name: "The tournament name shown on top of the panel.",
+      bracket: "Full link to the Challonge bracket.",
       shuffle: "YouTube link of the recorded team shuffle.",
     },
     notes: [
-      "The bracket link comes from the tournament's Challonge data. You do not paste it.",
-      "Only `youtube.com` and `youtu.be` links are accepted for the shuffle.",
+      "The tournament does not need to exist yet. The name is only text on the panel.",
+      "Only `challonge.com` links are accepted for the bracket, and only `youtube.com` and `youtu.be` for the shuffle.",
     ],
     related: ["panel tournament rules", "panel tournament deadline"],
   },
   "panel tournament deadline": {
     where: "The panel is posted in the channel where you run it.",
     steps: [
-      "Pick the tournament and the participants role.",
-      "A form opens. Write one round per line, like `10/10 - 14/10`.",
-      "The bot numbers the rounds, posts the list and pings the role.",
+      "Write the tournament name and pick the participants role.",
+      "A form opens with the name filled in. Write one round per line, like `10/10 - 14/10`.",
+      "The bot numbers the rounds, names the last two **Semifinals** and **Final / 3rd Place**, posts the list and pings the role.",
     ],
     options: {
-      tournament: "The tournament whose name goes on the panel.",
+      name: "The tournament name shown on top of the panel. You can still fix it in the form.",
       role: "The participants role. It gets a real ping.",
     },
     notes: [
