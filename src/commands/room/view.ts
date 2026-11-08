@@ -10,6 +10,7 @@ import {
   type GuildMember,
   type InteractionReplyOptions,
   type TextChannel,
+  type TextDisplayBuilder,
 } from "discord.js";
 import { emojis } from "../../emojis.js";
 import { customEmoji } from "../../lib/custom-emoji.js";
@@ -19,7 +20,7 @@ import { roomCommandIdFor } from "../../lib/register-slash.js";
 import { type SheetTeam, type TeamFormat } from "../../lib/sheet.js";
 import { divider, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
 import { captainOf, gameIdLines, type BlockedMatch, type ReadyMatch } from "./bracket.js";
-import { escapeDiscord, matchLabel, roundLabel, stageLabel, ticketTopic } from "./labels.js";
+import { escapeDiscord, matchLabel, stageLabel, ticketTopic } from "./labels.js";
 
 export const AVAILABLE_PAGE_SIZE = 20;
 const AVAILABLE_PREFIX = "room:avail";
@@ -34,18 +35,6 @@ const CHAT = [
   PermissionFlagsBits.UseExternalEmojis,
 ];
 
-function snowflake(value: string): boolean {
-  return /^\d{17,20}$/.test(value.trim());
-}
-
-function sideLabel(team: SheetTeam, format: TeamFormat, fallback: string): string {
-  const captain = captainOf(team);
-  if (format === "1vs1" && captain && snowflake(captain.discordId)) {
-    return formatUser(captain.discordId.trim());
-  }
-  return `**${escapeDiscord(team.teamName || fallback)}**`;
-}
-
 function titleSide(team: SheetTeam, format: TeamFormat, fallback: string): string {
   if (format === "1vs1") {
     const tag = captainOf(team)?.discordTag.trim() || team.teamName.trim() || fallback;
@@ -54,68 +43,64 @@ function titleSide(team: SheetTeam, format: TeamFormat, fallback: string): strin
   return `**${escapeDiscord(team.teamName.trim() || fallback)}**`;
 }
 
-function teamBlock(index: number, team: SheetTeam, format: TeamFormat, fallback: string, lines: string): string {
-  return `**Team ${index}:** ${sideLabel(team, format, fallback)}\n${lines}`;
+const TICKET_WINDOW_SECONDS = 36 * 60 * 60;
+
+type TicketCaptain = { id: string; avatar?: string };
+
+/** One team: its name, the captain mention and the in-game IDs, with the captain's avatar beside it. */
+function addTeam(container: ContainerBuilder, team: SheetTeam, format: TeamFormat, fallback: string, captain: TicketCaptain): void {
+  const block = [`### ${titleSide(team, format, fallback)}`, `${emojis.captains} ${formatUser(captain.id)}`, gameIdLines(team)].join("\n");
+  if (captain.avatar) {
+    container.addSectionComponents(headingWithThumbnail(block, captain.avatar));
+  } else {
+    container.addTextDisplayComponents(textBlock(block));
+  }
 }
 
-export function battleTicketContainer(
-  guild: Guild,
-  tournamentName: string,
-  format: TeamFormat,
-  rulesChannelId: string,
-  deadlineChannelId: string,
-  match: ReadyMatch,
-  avatars: { left?: string; right?: string },
-): ContainerBuilder {
-  const meta = [
-    `${emojis.torneo} **Tournament:** **${escapeDiscord(tournamentName)}**`,
-    match.group
-      ? `**Round:** \`${roundLabel(match.round)}\` - **Group:** ${match.group}`
-      : `**Round:** \`${roundLabel(match.round)}\``,
-  ].join("\n");
-  const leftBlock = teamBlock(1, match.left, format, match.leftName, gameIdLines(match.left));
-  const rightBlock = teamBlock(2, match.right, format, match.rightName, gameIdLines(match.right));
-  const details = [
-    `${emojis.rules} **Rules:** ${formatChannel(guild, rulesChannelId)}`,
-    `${emojis.calendar} **Deadline:** ${formatChannel(guild, deadlineChannelId)}`,
-  ].join("\n");
-
+/**
+ * The single battle ticket message: the captains' ping as a Text Display above the card (in V2 it notifies),
+ * then the match, both teams, what to do next and the 36-hour warning inside the container.
+ */
+export function battleTicketPayload(input: {
+  guild: Guild;
+  tournamentName: string;
+  format: TeamFormat;
+  helperRoleId: string;
+  rulesChannelId: string;
+  deadlineChannelId: string;
+  match: ReadyMatch;
+  captains: { left: TicketCaptain; right: TicketCaptain };
+}): { flags: typeof v2Flags; components: [TextDisplayBuilder, ContainerBuilder] } {
+  const { guild, format, match, captains } = input;
+  const opened = Math.floor(Date.now() / 1000);
+  const endsAt = opened + TICKET_WINDOW_SECONDS;
+  const stage = stageLabel(match);
+  const eyebrow = `-# ${emojis.torneo} ${escapeDiscord(input.tournamentName)}${stage ? ` · ${stage}` : ""}`;
   const title = `# ${titleSide(match.left, format, match.leftName)} ${emojis.vs} ${titleSide(match.right, format, match.rightName)}`;
+  const intro = `Your battle ticket is open. Agree on a **date and time** with your opponent here, then ping ${formatRole(null, input.helperRoleId)} so they can create the schedule.`;
+  const steps = [
+    "### Before you play",
+    `${emojis.rules} Read the ${formatChannel(guild, input.rulesChannelId)}`,
+    `${emojis.calendar} Check the round deadline in ${formatChannel(guild, input.deadlineChannelId)}`,
+    `${emojis.uptime} Reply here before <t:${endsAt}:F> (<t:${endsAt}:R>)`,
+  ].join("\n");
+  const warning = `> ${emojis.alert} No reply or no coordination within **36 hours** means **automatic disqualification**.`;
+
   const container = new ContainerBuilder()
     .setAccentColor(embedColors.info)
-    .addTextDisplayComponents(textBlock(title), textBlock(meta))
+    .addTextDisplayComponents(textBlock(`${eyebrow}\n${title}`), textBlock(intro))
     .addSeparatorComponents(divider());
-
-  if (avatars.left) {
-    container.addSectionComponents(headingWithThumbnail(leftBlock, avatars.left));
-  } else {
-    container.addTextDisplayComponents(textBlock(leftBlock));
-  }
-
+  addTeam(container, match.left, format, match.leftName, captains.left);
   container.addSeparatorComponents(divider());
-
-  if (avatars.right) {
-    container.addSectionComponents(headingWithThumbnail(rightBlock, avatars.right));
-  } else {
-    container.addTextDisplayComponents(textBlock(rightBlock));
-  }
-
-  const endsAt = Math.floor(Date.now() / 1000) + 36 * 60 * 60;
-  return container
+  addTeam(container, match.right, format, match.rightName, captains.right);
+  container
     .addSeparatorComponents(divider())
-    .addTextDisplayComponents(textBlock(details))
+    .addTextDisplayComponents(textBlock(steps), textBlock(warning))
     .addSeparatorComponents(divider())
-    .addTextDisplayComponents(
-      textBlock(`-# **Match ID:** \`${match.id}\` · <t:${endsAt}:d> <t:${endsAt}:t>`),
-    );
-}
+    .addTextDisplayComponents(textBlock(`-# **Match ID:** \`${match.id}\` · Opened <t:${opened}:f>`));
 
-export function battleTicketPing(captain1Id: string, captain2Id: string, helperRoleId: string): string {
-  return [
-    `Hello ${formatUser(captain1Id)} and ${formatUser(captain2Id)}. Your Battle Ticket has been created. Please coordinate with your opponent to agree on a Schedule date and time. Once you reach an agreement, ping ${formatRole(null, helperRoleId)} to create the Schedule.`,
-    "",
-    "> Remember to read the rules, check the deadline, and respond to this ticket within **36 hours**. Failure to respond or coordinate with your opponent will result in **automatic disqualification**.",
-  ].join("\n");
+  const ping = textBlock(`${emojis.party} **Battle Ticket Open!** ${formatUser(captains.left.id)} ${formatUser(captains.right.id)}`);
+  return { flags: v2Flags, components: [ping, container] };
 }
 
 export async function publishBattleTicket(
@@ -129,32 +114,26 @@ export async function publishBattleTicket(
   match: ReadyMatch,
   captains: { left: GuildMember; right: GuildMember },
 ): Promise<void> {
-  const container = battleTicketContainer(
-    guild,
-    tournamentName,
-    format,
-    rulesChannelId,
-    deadlineChannelId,
-    match,
-    {
-      left: captains.left.displayAvatarURL({ extension: "png", size: 256 }),
-      right: captains.right.displayAvatarURL({ extension: "png", size: 256 }),
-    },
-  );
+  const captain = (member: GuildMember): TicketCaptain => ({
+    id: member.id,
+    avatar: member.displayAvatarURL({ extension: "png", size: 256 }),
+  });
   const posted = await channel.send({
-    flags: MessageFlags.IsComponentsV2,
-    components: [container],
-    allowedMentions: { parse: [] },
+    ...battleTicketPayload({
+      guild,
+      tournamentName,
+      format,
+      helperRoleId,
+      rulesChannelId,
+      deadlineChannelId,
+      match,
+      captains: { left: captain(captains.left), right: captain(captains.right) },
+    }),
+    // Only the captains are notified; the helper role is named without a ping.
+    allowedMentions: { users: [...new Set([captains.left.id, captains.right.id])], parse: [] },
   });
   await posted.pin("Battle ticket").catch((error) => {
     console.error(`Battle ticket pin failed for match ${match.id}`, error);
-  });
-  await channel.send({
-    content: battleTicketPing(captains.left.id, captains.right.id, helperRoleId),
-    allowedMentions: {
-      users: [...new Set([captains.left.id, captains.right.id])],
-      roles: [helperRoleId],
-    },
   });
 }
 

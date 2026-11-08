@@ -43,10 +43,17 @@ La descripción del canal queda `Tournament ID: <id de Challonge guardado en add
 Permisos del canal:
 
 - `@everyone` no lo ve.
-- Rol admin y rol helper **de ese torneo** pueden chatear (el mensaje pide ping al helper).
+- Rol admin y rol helper **de ese torneo** pueden chatear (el mensaje pide a los capitanes hacer ping al helper; el bot no lo pingea).
 - De la hoja solo entran los **capitanes**. Cada uno puede ver el canal, leer el historial, escribir, reaccionar, adjuntar archivos, embeds y emojis externos.
 
-El primer mensaje es un Components V2: título `lado VS lado` (emoji `vs`). En `1vs1` cada lado es el **tag** del capitán; en formatos de equipo, el **nombre del equipo**. Debajo, al mismo nivel, **Tournament:**, **Round:** y **Group:** (el grupo solo si el partido tiene grupo). Luego cada equipo: la línea del capitán al mismo nivel que los **in-game ID** (no como subtítulo) y el avatar del capitán, y los canales de reglas y deadline. El footer es el **Match ID** y la fecha y hora exactas en que terminan las **36 horas** (`día/mes/año` y hora), en la zona horaria de quien ve el mensaje. Ese V2 queda fijado en el canal. Después un mensaje de texto: el párrafo que menciona a los dos capitanes y al rol helper, y un blockquote de las **36 horas** o descalificación.
+El canal abre con **un solo** mensaje Components V2, fijado:
+
+- Encima del container, un Text Display `Battle Ticket Open!` (emoji `party`) con la mención de los dos capitanes. Es lo único que notifica.
+- Dentro del container: torneo y fase (`Group A · Round 2`, `Losers Round 1`, sin grupo si no hay) en `-#` con el emoji `torneo`, y el título `lado VS lado` (emoji `vs`). En `1vs1` cada lado es el **tag** del capitán; en formatos de equipo, el **nombre del equipo**.
+- Un párrafo que pide acordar fecha y hora con el rival y hacer ping al rol helper para crear el schedule. El rol se menciona sin ping.
+- Cada equipo: nombre en `###`, el capitán mencionado (emoji `captains`), los **in-game ID** y el avatar del capitán.
+- **Before you play**: canal de reglas, canal de deadline y la fecha y hora en que terminan las **36 horas** (absoluta y relativa, en la zona horaria de quien ve el mensaje). Debajo, en cita, el aviso de descalificación automática (emoji `alert`).
+- Footer: **Match ID** y cuándo se abrió el ticket.
 
 El lado de Challonge se busca en la copia de la hoja: en `1vs1` por el tag del capitán; en `2vs2`…`5vs5` por el nombre del equipo. Si un lado no está, o el capitán no tiene Discord ID o no está en el servidor, ese partido no se abre y se reporta.
 
