@@ -156,6 +156,8 @@ export const helpCatalog: HelpCategory[] = [
       { slash: "utility avatar", summary: "Show a user's avatar, or your own.", access: "Public" },
       { slash: "utility toss", summary: "Flip a coin: heads or tails.", access: "Public" },
       { slash: "utility enlarge", summary: "Show a custom or standard emoji at full size.", access: "Public" },
+      { slash: "utility dot", summary: "Put a red, green, yellow, or orange dot at the start of this channel's name.", access: "Admin, Organiser, or Helper" },
+      { slash: "utility add member", summary: "Let a user see and write in this channel.", access: "Admin, Organiser, or Helper" },
       { slash: "utility embed create", summary: "Build an embed step by step and post it.", access: "Admin or Organiser" },
       { slash: "utility embed edit", summary: "Edit an embed the bot posted.", access: "Admin or Organiser" },
       { slash: "utility v2 create", summary: "Build a Components V2 message step by step and post it.", access: "Admin or Organiser" },

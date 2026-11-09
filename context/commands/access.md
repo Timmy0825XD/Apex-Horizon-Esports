@@ -1038,6 +1038,30 @@ Ninguna.
 
 Ninguna.
 
+### `/utility dot`
+
+- [x] Admin
+- [x] Organiser
+- [x] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
+
+- Helper: `helper_role` de cualquier torneo del servidor.
+
+### `/utility add member`
+
+- [x] Admin
+- [x] Organiser
+- [x] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
+
+- Helper: `helper_role` de cualquier torneo del servidor.
+
 ### `/utility embed create`
 
 - [x] Admin
