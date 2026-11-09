@@ -136,9 +136,9 @@ Si no pasa, se abre un canal de texto en `category` (o en `secondary_category` s
 
 Al crear el canal se publica un Components V2 y, después, un mensaje de texto:
 
-1. Título: `Group Validation Ticket`
+1. Título: `Group Validation Ticket` y, debajo, `Captain · @usuario` con **ping** a quien quedó en el canal (`Team contact` si no es el capitán). Es la única mención del V2 que notifica
 2. Separador
-3. Reglas: todos los registrados deben estar verificados. Menciona el `verified_role` de `/settings` y, al cerrar, el `admin_role` del torneo (sin ping en el V2)
+3. Reglas: todos los registrados deben estar verificados. Menciona el `verified_role` de `/settings` y, al cerrar, el `admin_role` del torneo (sin ping)
 4. Separador
 5. Subtítulo **Issues**: una línea por slot con problema, `- @usuario **tag** -` y el mismo rótulo que Verification en `/team info` (`Not verified` o `Not in server`, con el emoji de error). Sin ID válido no hay mención: va el tag o el nombre del slot
 6. Mensaje de texto que menciona a quien quedó en el canal: *Please read this and take care of solving it as soon as possible.*
