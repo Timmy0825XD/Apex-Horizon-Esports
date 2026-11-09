@@ -8,6 +8,9 @@ import type { Client } from "discord.js";
  * Edits never notify, so every message edit that goes through the bot's REST client gets its user
  * mentions allowed, and every new message with unresolved mentions gets one silent edit afterwards.
  * Pings on new messages stay exactly as each command set them.
+ *
+ * Silent channels (the audit log) are skipped: an edit that allows a user still counts as a mention
+ * (highlight + mentions inbox), and nobody may be mentioned from a log.
  */
 
 const USER_MENTION = /<@!?(\d{17,20})>/g;
@@ -26,6 +29,17 @@ const INTERACTION_CALLBACK = /^\/interactions\/(\d+)\/([^/]+)\/callback$/;
 
 const REPLY = 4;
 const UPDATE = 7;
+
+const silentChannels = new Set<string>();
+
+/** Messages in this channel keep their mentions exactly as sent: never resolved, never highlighted. */
+export function silenceChannel(channelId: string): void {
+  silentChannels.add(channelId);
+}
+
+function isSilent(result: unknown): boolean {
+  return isBody(result) && silentChannels.has(String(result.channel_id));
+}
 
 function isBody(value: unknown): value is Body {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -132,7 +146,9 @@ export function installMentionResolver(client: Client): void {
     if (method === "PATCH" && body) {
       const channelEdit = CHANNEL_MESSAGE_EDIT.exec(route);
       const webhookEdit = WEBHOOK_MESSAGE_EDIT.exec(route);
-      if (channelEdit?.[2]) {
+      if (channelEdit?.[1] && silentChannels.has(channelEdit[1])) {
+        // Audit logs: leave the edit as the caller wrote it.
+      } else if (channelEdit?.[2]) {
         settle(channelEdit[2]);
         allowUsers(body);
       } else if (webhookEdit?.[3]) {
@@ -148,7 +164,7 @@ export function installMentionResolver(client: Client): void {
 
     const result = await send(request);
 
-    if (method !== "POST" || !body) {
+    if (method !== "POST" || !body || isSilent(result)) {
       return result;
     }
 
