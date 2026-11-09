@@ -27,6 +27,7 @@ import { handleUserSlash } from "./commands/user/handle.js";
 import { handleUtilityButton, handleUtilityModal, handleUtilitySlash } from "./commands/utility/handle.js";
 import { isAllowedGuild } from "./lib/allowed-guilds.js";
 import { env } from "./lib/env.js";
+import { installMentionResolver } from "./lib/mentions.js";
 import { prisma } from "./lib/prisma.js";
 import { repairLegacyStaffRulesChannels } from "./commands/staff/store.js";
 import { registerSlashCommands } from "./lib/register-slash.js";
@@ -41,6 +42,8 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
   ],
 });
+
+installMentionResolver(client);
 
 async function leaveIfUnauthorized(guildId: string, leave: () => Promise<unknown>): Promise<void> {
   if (!isAllowedGuild(guildId)) {
