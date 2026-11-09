@@ -2,6 +2,8 @@ import { MessageFlags, type ButtonInteraction, type ChatInputCommandInteraction,
 import { isAllowedGuild } from "../../lib/allowed-guilds.js";
 import { handleClear, handleClearCategory, handleClearCategoryButton } from "./clear.js";
 import { handleEmbedButton, handleEmbedCreate, handleEmbedEdit, handleEmbedModal } from "./embed.js";
+import { handleAddMember } from "./add-member.js";
+import { handleDot } from "./dot.js";
 import { handleEmojiSteal } from "./emoji-steal.js";
 import {
   handleAvatar,
@@ -60,6 +62,12 @@ export async function handleUtilitySlash(interaction: ChatInputCommandInteractio
       return;
     case "enlarge":
       await handleEnlarge(interaction);
+      return;
+    case "dot":
+      await handleDot(interaction, guild);
+      return;
+    case "add member":
+      await handleAddMember(interaction, guild);
       return;
     case "embed create":
       await handleEmbedCreate(interaction, guild);

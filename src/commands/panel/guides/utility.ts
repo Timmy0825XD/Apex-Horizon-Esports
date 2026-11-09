@@ -44,6 +44,27 @@ export const utilityGuides: GuideBook = {
     notes: ["The emoji is deleted from the server. Keep the image if you want to upload it again."],
     related: ["utility enlarge"],
   },
+  "utility dot": {
+    steps: [
+      "Run it in the channel to mark, and pick a color if you want one other than red.",
+      "The bot puts the dot at the start of the channel name.",
+    ],
+    options: { color: "Red, green, yellow, or orange. Red if empty." },
+    notes: [
+      "A dot already at the start is replaced, never doubled.",
+      "Discord allows only **2** renames per channel every **10 minutes**. Past that, the rename waits and applies on its own.",
+    ],
+    related: ["utility add member"],
+  },
+  "utility add member": {
+    steps: [
+      "Run it in the channel and pick the user.",
+      "The bot lets that user see the channel, write, read the history, and attach files.",
+    ],
+    options: { user: "The person to add." },
+    notes: ["Bots cannot be added.", "If the user can already see and write here, nothing changes."],
+    related: ["utility dot"],
+  },
   "utility random": {
     steps: [
       "Write the options, separated by commas, pipes, or new lines.",

@@ -81,3 +81,11 @@ export const numberEmojis = [
   emojis.numero9,
   emojis.numero10,
 ] as const;
+
+/** Status dots `/utility dot` puts at the start of a channel name. Unicode so they work in names. */
+export const channelDots = {
+  red: "🔴",
+  green: "🟢",
+  yellow: "🟡",
+  orange: "🟠",
+} as const;

@@ -144,6 +144,34 @@ export const utilitySlash = new SlashCommandBuilder()
   .addSubcommand((subcommand) => subcommand.setName("toss").setDescription("Flip a coin"))
   .addSubcommand((subcommand) =>
     subcommand
+      .setName("dot")
+      .setDescription("Put a status dot at the start of this channel's name")
+      .addStringOption((option) =>
+        option
+          .setName("color")
+          .setDescription("Dot color (default: red)")
+          .addChoices(
+            { name: "🔴 Red", value: "red" },
+            { name: "🟢 Green", value: "green" },
+            { name: "🟡 Yellow", value: "yellow" },
+            { name: "🟠 Orange", value: "orange" },
+          )
+          .setRequired(false),
+      ),
+  )
+  .addSubcommandGroup((group) =>
+    group
+      .setName("add")
+      .setDescription("Give access to this channel")
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName("member")
+          .setDescription("Let a user see and write in this channel")
+          .addUserOption((option) => option.setName("user").setDescription("Who to add").setRequired(true)),
+      ),
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName("enlarge")
       .setDescription("Show an emoji at full size")
       .addStringOption((option) =>
