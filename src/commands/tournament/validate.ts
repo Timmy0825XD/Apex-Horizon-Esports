@@ -294,9 +294,11 @@ async function publishTicket(
     .filter((player) => playerStatus(player, members, verifiedRoleId) !== "verified")
     .map((player) => issueLine(player, playerStatus(player, members, verifiedRoleId)));
   const issues = lines.length > 0 ? lines.join("\n") : "*No failing players were left.*";
+  const isCaptain = players[0]?.discordId.trim() === contactId;
+  const contactLine = `${emojis.captains} **${isCaptain ? "Captain" : "Team contact"}** · ${formatUser(contactId)}`;
   const container = new ContainerBuilder()
     .setAccentColor(embedColors.error)
-    .addTextDisplayComponents(textBlock(`# ${emojis.alert} Group Validation Ticket`))
+    .addTextDisplayComponents(textBlock(`# ${emojis.alert} Group Validation Ticket\n${contactLine}`))
     .addSeparatorComponents(divider())
     .addTextDisplayComponents(textBlock(rulesText(guild, verifiedRoleId, adminRoleId)))
     .addSeparatorComponents(divider())
@@ -305,7 +307,7 @@ async function publishTicket(
   await channel.send({
     components: [container],
     flags: v2Flags,
-    allowedMentions: { parse: [] },
+    allowedMentions: { users: [contactId] },
   });
   await channel.send({
     content: `${formatUser(contactId)} Please read this and take care of solving it as soon as possible.`,
