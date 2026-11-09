@@ -15,6 +15,7 @@ import {
 } from "discord.js";
 import { emojis } from "../emojis.js";
 import { formatUserFromUser } from "./formatters.js";
+import { silenceChannel } from "./mentions.js";
 
 /**
  * Each module signs its logs with its own name (the webhook's visible name is the log type).
@@ -187,6 +188,8 @@ export async function publishAudit(payload: AuditPayload): Promise<boolean> {
   if (!channel) {
     return false;
   }
+  // Before sending: the mention resolver must never turn a log into a mention.
+  silenceChannel(channel.id);
 
   const card = auditCard(payload);
   for (let attempt = 0; attempt < 2; attempt += 1) {

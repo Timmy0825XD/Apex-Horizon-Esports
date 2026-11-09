@@ -39,7 +39,7 @@ El bot no habla “como el bot” en esos canales si puede evitarlo. Usa **un we
 | Challonge logs | **Score Upload** | `/bracket upload`, `/bracket dq both`, `/bracket correct` y forfeits automáticos |
 | Transcript logs | **Transcripts** | Archivo HTML (no es auditoría de “quién pulsó qué”) |
 
-Si el webhook no se puede crear o falló el envío, se **reintenta** y, si sigue fallando, el mismo log lo manda el propio bot. Nadie es mencionado desde un log (`allowed mentions` vacío).
+Si el webhook no se puede crear o falló el envío, se **reintenta** y, si sigue fallando, el mismo log lo manda el propio bot. Nadie es mencionado desde un log (`allowed mentions` vacío): ni notificación ni resaltado. El canal de logs queda fuera del resolver de menciones (`lib/mentions.ts`), que no edita sus mensajes para permitir usuarios; un `@usuario` no cacheado puede verse como `@unknown-user`.
 
 ## Formato del log (Components V2)
 
