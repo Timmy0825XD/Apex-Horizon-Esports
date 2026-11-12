@@ -1,4 +1,4 @@
-import { type ChatInputCommandInteraction } from "discord.js";
+import { type Attachment, type ChatInputCommandInteraction } from "discord.js";
 import { emojis } from "../../emojis.js";
 import { actorMatches } from "../../lib/command-access.js";
 import { embedColors } from "../../lib/embeds.js";
@@ -9,6 +9,7 @@ import { escapeDiscord } from "../room/labels.js";
 import { actorFooter, deferUtility, respondUtility, utilityCard, utilityError } from "./view.js";
 
 const MAX_LISTED = 25;
+const MAX_FILE_BYTES = 512 * 1024;
 
 type IdKind = "discord" | "game";
 
@@ -76,6 +77,15 @@ function duplicateLine(hit: DuplicateHit): string {
   return `- ${who} · **${hit.count}** times`;
 }
 
+function isTxt(file: Attachment): boolean {
+  return file.name.toLowerCase().endsWith(".txt") || (file.contentType ?? "").startsWith("text/plain");
+}
+
+async function readTxt(file: Attachment): Promise<string | null> {
+  const response = await fetch(file.url, { redirect: "follow" }).catch(() => null);
+  return response?.ok ? response.text() : null;
+}
+
 export async function handleDuplicates(interaction: ChatInputCommandInteraction): Promise<void> {
   if (!(await actorMatches(interaction, { admin: true, organiser: true }))) {
     await respondUtility(
@@ -85,8 +95,29 @@ export async function handleDuplicates(interaction: ChatInputCommandInteraction)
     return;
   }
 
-  const input = interaction.options.getString("ids", true);
+  const file = interaction.options.getAttachment("file", true);
+  if (!isTxt(file)) {
+    await respondUtility(
+      interaction,
+      utilityError("Need a .txt", "Attach a `.txt` with the Discord IDs or game IDs separated by spaces."),
+    );
+    return;
+  }
+  if (file.size > MAX_FILE_BYTES) {
+    await respondUtility(
+      interaction,
+      utilityError("File too large", `Keep the \`.txt\` under **${MAX_FILE_BYTES / 1024} KB**.`),
+    );
+    return;
+  }
+
   await deferUtility(interaction, true);
+
+  const input = await readTxt(file);
+  if (input === null) {
+    await respondUtility(interaction, utilityError("Could not read file", "Discord did not hand me the `.txt`. Try again."));
+    return;
+  }
 
   let bannedGameIds: Set<string>;
   try {
@@ -102,7 +133,7 @@ export async function handleDuplicates(interaction: ChatInputCommandInteraction)
   if (checked === 0) {
     await respondUtility(
       interaction,
-      utilityError("No IDs found", "Paste Discord IDs or game IDs separated by spaces."),
+      utilityError("No IDs found", "The `.txt` has no Discord IDs or game IDs. Separate them with spaces."),
     );
     return;
   }
