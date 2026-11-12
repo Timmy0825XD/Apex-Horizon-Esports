@@ -781,6 +781,19 @@ El capitán no ejecuta ningún `/schedule`. Tener un rol no abre los subcomandos
 - Solo Organiser. `admin_role` no entra.
 - Solo en un canal que es ticket.
 
+### `/ticket transcript`
+
+- [ ] Admin
+- [x] Organiser
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
+
+- Solo Organiser. `admin_role` no entra.
+- Solo en un battle ticket (abierto o cerrado). No en un ticket de validación.
+
 ## Roles
 
 ### `/role user`

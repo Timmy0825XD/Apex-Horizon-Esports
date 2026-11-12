@@ -41,6 +41,7 @@ test("each check fires on its own case and nowhere else", () => {
     rooms,
     marks,
     schedules: [
+      schedule(1, hours(-30), { results: results(hours(-29)) }), // scheduled and complete, no attendance
       schedule(4, hours(-3)), // overdue, no result
       schedule(5, hours(5), { recorderId: null }), // soon, missing recorder
       schedule(3, hours(-30), { results: results(hours(-29)) }), // declared, has attendance: no item
@@ -53,6 +54,7 @@ test("each check fires on its own case and nowhere else", () => {
     "attendance-no-recordings:2",
     "complete-no-attendance:1",
     "open-no-ticket:5",
+    "result-no-attendance:1",
     "schedule-overdue:4",
     "schedule-soon-unstaffed:5",
     "ticket-open-complete:2",
@@ -61,6 +63,17 @@ test("each check fires on its own case and nowhere else", () => {
 
 test("a match settled without a ticket is not asked for attendance", () => {
   const items = buildTodo({ matches: [match(9, 1, "complete")], rooms: [], marks: [], schedules: [], now });
+  assert.equal(items.length, 0);
+});
+
+test("a ticket settled without a schedule (a DQ) is not asked for attendance", () => {
+  const items = buildTodo({
+    matches: [match(9, 1, "complete")],
+    rooms: [{ challongeMatchId: 9, channelId: "ch9", status: "closed" }],
+    marks: [],
+    schedules: [],
+    now,
+  });
   assert.equal(items.length, 0);
 });
 
@@ -81,7 +94,13 @@ test("a declared result without attendance is reported", () => {
 });
 
 test("items come high first, then in bracket order", () => {
-  const items = buildTodo({ matches, rooms, marks, schedules: [schedule(4, hours(-3))], now });
+  const items = buildTodo({
+    matches,
+    rooms,
+    marks,
+    schedules: [schedule(1, hours(-30), { results: results(hours(-29)) }), schedule(4, hours(-3))],
+    now,
+  });
   const ranks = items.map((item) => item.priority);
   assert.deepEqual(ranks, [...ranks].sort((a, b) => ["high", "medium", "low"].indexOf(a) - ["high", "medium", "low"].indexOf(b)));
   assert.equal(items[0].matchId, 1);

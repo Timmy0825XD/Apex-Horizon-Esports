@@ -35,4 +35,17 @@ export const ticketGuides: GuideBook = {
     ],
     related: ["ticket close", "room create"],
   },
+  "ticket transcript": {
+    where: "Only inside a battle ticket, open or closed.",
+    steps: [
+      "Run it in the ticket.",
+      "A new transcript of the channel as it is now goes to the tournament transcript channel.",
+      "The old transcript posts are deleted, and the result posts and the {/bracket upload} card point to the new one.",
+    ],
+    notes: [
+      "If the new transcript cannot be published, nothing old is removed.",
+      "The bracket and the ticket state are not touched.",
+    ],
+    related: ["bracket upload", "ticket close"],
+  },
 };

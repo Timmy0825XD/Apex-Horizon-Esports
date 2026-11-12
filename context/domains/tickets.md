@@ -7,6 +7,7 @@ Cerrar un ticket **no** es lo mismo que reportar el score. El canal nace en [bra
 | `/ticket close` | Sala de partido: silencia y mueve a categoría de cerrados. Se puede reabrir. Ticket de `/tournament validate`: transcript HTML al canal guardado en el topic y el canal se borra. |
 | `/ticket reopen` | Restaura permisos y, si se sabe, la categoría original. |
 | `/ticket delete` | El canal desaparece; se olvida el vínculo partido↔canal. Irreversible. |
+| `/ticket transcript` | Battle ticket: genera de nuevo el transcript y reemplaza el anterior (borra sus posts, re-enlaza resultados y la tarjeta de `/bracket upload`). No cambia el estado del ticket. |
 | `/bracket upload` | Además de reportar al bracket, renombra/cierra/archiva y transcribe como parte del cierre **oficial** del partido. |
 
 Regla dura (producto): **un partido, una sala**. Ver [../product/overview.md](../product/overview.md).
@@ -17,7 +18,7 @@ Regla dura (producto): **un partido, una sala**. Ver [../product/overview.md](..
 
 El transcript es una **foto HTML** del estado final visible del canal, generada por el bot con su renderer propio. Incluye texto y markdown, menciones, comandos y respuestas, embeds, Components V2, imágenes, reacciones, stickers, emojis y archivos no audiovisuales. No incluye efímeros, hilos, audio, vídeo, mensajes eliminados ni versiones anteriores de mensajes editados. Las imágenes usan previews incrustados con enlace al original; si excede el tamaño seguro, el transcript se divide en varias páginas HTML bajo un mensaje índice.
 
-Vive en Discord (canal de transcripts del torneo). Si se pierde el mensaje, se perdió el archivo. Tras `/bracket upload`, la URL del mensaje índice se enlaza al título de los embeds de `/schedule results add`. Detalle técnico y límites: [../platform/transcripts.md](../platform/transcripts.md).
+Vive en Discord (canal de transcripts del torneo). Si se pierde el mensaje, se perdió el archivo. Tras `/bracket upload`, la URL del mensaje índice se enlaza al título de los posts de `/schedule results add`. `/ticket transcript` (Organiser, dentro del battle ticket) lo vuelve a generar y reemplaza el anterior: borra los posts viejos y re-enlaza resultados y la tarjeta de `/bracket upload`. Detalle técnico y límites: [../platform/transcripts.md](../platform/transcripts.md).
 
 Los transcripts **no** son el sistema de auditoría: son el archivo del chat, en otro canal, con otra identidad (ver [../platform/audit.md](../platform/audit.md)).
 

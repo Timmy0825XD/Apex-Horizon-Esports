@@ -114,11 +114,12 @@ export const helpCatalog: HelpCategory[] = [
   },
   {
     title: "Ticket",
-    description: "Close, reopen, or delete the match channel. The bracket is not touched.",
+    description: "Close, reopen, delete, or transcribe the match channel. The bracket is not touched.",
     entries: [
       { slash: "ticket close", summary: "Close this battle ticket: players can no longer write. A validation ticket is transcribed and deleted.", access: "Organiser" },
       { slash: "ticket reopen", summary: "Reopen this ticket: restore chat access and move it back to its original category.", access: "Organiser" },
       { slash: "ticket delete", summary: "Delete this ticket channel and unlink it from its match.", access: "Organiser" },
+      { slash: "ticket transcript", summary: "Generate this battle ticket's transcript again and replace the old one everywhere.", access: "Organiser" },
     ],
   },
   {

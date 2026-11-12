@@ -103,7 +103,7 @@ test("the schedules-channel post keeps Assign and the ticket link inside the car
   assert.doesNotMatch(out, /<#333333333333333333>/);
 });
 
-test("the results post shows the proofs by attachment name and its section title has no emoji", () => {
+test("the results post shows the proofs, links the title to the transcript and has no Transcript button", () => {
   const payload = resultsPayload({
     face,
     team1Score: 3,
@@ -113,7 +113,7 @@ test("the results post shows the proofs by attachment name and its section title
     declaredAt: new Date("2026-11-04T21:48:00Z"),
     uploadedById: "111111111111111111",
     transcriptUrl: "https://discord.com/channels/1/2/3",
-    proofNames: ["proof-1.png", "proof-2.jpg"],
+    gallery: ["attachment://proof-1.png", "attachment://proof-2.jpg"],
     intro: true,
   });
   const out = json(payload.components);
@@ -122,8 +122,9 @@ test("the results post shows the proofs by attachment name and its section title
   assert.match(out, /attachment:\/\/proof-1.png/);
   assert.match(out, /attachment:\/\/proof-2.jpg/);
   assert.match(out, /"label":"Recording 1"/);
-  assert.match(out, /"label":"Transcript"/);
-  assert.equal(resultsPayload({ ...{ face, team1Score: 3, team2Score: 1, notes: null, links: [], declaredAt: new Date(), uploadedById: null, transcriptUrl: null, proofNames: [] }, intro: false }).components.length, 1);
+  assert.doesNotMatch(out, /"label":"Transcript"/);
+  assert.match(out, /## \[.*\]\(https:\/\/discord.com\/channels\/1\/2\/3\)/);
+  assert.equal(resultsPayload({ ...{ face, team1Score: 3, team2Score: 1, notes: null, links: [], declaredAt: new Date(), uploadedById: null, transcriptUrl: null, gallery: [] }, intro: false }).components.length, 1);
 });
 
 test("the New Schedule alert pings the open seat role and uses the direct GIF as thumbnail", () => {

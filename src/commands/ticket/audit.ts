@@ -57,3 +57,33 @@ export async function auditTicket(
     actor: interaction.user,
   });
 }
+
+export async function auditTranscriptRegenerated(input: {
+  interaction: ChatInputCommandInteraction;
+  guild: Guild;
+  settings: GuildSettings;
+  channelId: string;
+  tournamentName: string;
+  matchId: number;
+  transcriptUrl: string;
+  removed: number;
+}): Promise<void> {
+  await publishAudit({
+    guild: input.guild,
+    channelId: input.settings.botLogsChannelId,
+    module: "ticketSystem",
+    action: "updated",
+    title: "Transcript regenerated",
+    summary: `A battle ticket transcript in **${input.tournamentName}** was replaced.`,
+    groups: [
+      {
+        lines: [
+          `${fact("Ticket", formatChannel(input.guild, input.channelId))} · ${fact("Match ID", `\`${input.matchId}\``)}`,
+          fact("Transcript", `[Open](${input.transcriptUrl})`),
+          fact("Old posts removed", `\`${input.removed}\``),
+        ],
+      },
+    ],
+    actor: input.interaction.user,
+  });
+}
