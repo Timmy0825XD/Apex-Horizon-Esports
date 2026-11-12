@@ -12,6 +12,7 @@ Slash: comando `utility`. Las respuestas de lectura y mutación son **Components
 | `/utility random` | Público | `options` STRING **sí**; `number` INTEGER **no** | Sorteo (coma, pipe o salto de línea). |
 | `/utility utc` | Público | `hour` `minute` `day` `month` `year` INTEGER **sí** | Misma idea de reloj UTC que schedules. |
 | `/utility discord tag` | Admin u Organiser | `ids` STRING **sí** | Puente a la hoja: IDs → usernames en el mismo orden. Efímero. |
+| `/utility duplicates` | Admin u Organiser | `ids` STRING **sí** | Revisa una lista de Discord IDs o IDs de juego separados por espacio: cuáles se repiten y qué IDs de juego están en la lista oficial de baneados. Efímero. |
 | `/utility avatar` | Público | `user` USER **no** | Avatar (por defecto tú). |
 | `/utility toss` | Público | — | Cara o cruz. |
 | `/utility enlarge` | Público | `emoji` STRING **sí** | Emoji a tamaño grande (custom o unicode). |
@@ -42,12 +43,13 @@ El panel de `/utility embed create` es un embed clásico (el draft es el preview
 - `toss`: el lado es el título (`## Heads` / `## Tails`), en azul. Footer *Flipped for*.
 - `utc`: `## UTC Timestamp`, en `-#` la fecha UTC escrita (`día/mes/año hora`) y que es el mismo reloj que los schedules. Debajo solo **Full**, **Short** y **Relative**: sin Unix ni el código `<t:…>`.
 - `discord tag`: `## Discord Tags`, en `-#` el conteo, y el bloque de código. Si no cabe, va un File. Los IDs sin resolver se avisan con `alert` y se quedan como ID en su fila.
+- `duplicates`: V2 efímero. Separa por espacios (y saltos de línea). Un Discord ID son 17–20 dígitos y se compara exacto; un ID de juego es hex (8–16, con alguna letra) y se compara sin mayúsculas ni caracteres extra, como en la hoja. Sin problemas: verde `## List Is Clean`. Si hay: rojo `## Issues Found` con **Duplicated** (mención o Game ID y cuántas veces) y **On the banned game-ID list** (máx. 25 por bloque y *and N more*). Lo que no es ID se lista en `-#` como omitido. Footer `Checked by`. Si la lista oficial de baneados no se puede leer, error y no revisa nada. El ban de Discord del servidor no entra.
 - `avatar` / `enlarge`: título `##` con quién (y si es el avatar del servidor o de la cuenta) o nombre, ID y tipo del emoji. Debajo, la galería y el botón de enlace **Open full size**.
 - `dot`: V2 verde `## Channel Marked` con el canal y el círculo. Si ya tenía ese color, info *Already marked* sin renombrar. Discord permite **2** renombres por canal cada **10 minutos**: si el rename no termina en 5 s, V2 azul *Dot Queued* y se aplica (y audita) cuando Discord lo deje. Footer `Marked by` / `Queued by`.
 - `add member`: V2 verde `## Member Added` con el usuario y el canal. Footer `Added by`. Si ya puede ver y escribir, info *Already has access* sin cambiar nada.
 - `v2 create` / `edit`: el panel de controles lleva `## Components V2 Builder` con el modo y el canal, y la nota de la sesión en `-#`. Al publicar o editar queda *Components V2 Published* / *Updated* con el botón **Jump to message**.
 
-`clear category` muta el servidor de forma destructiva. Lecturas (`random`, `utc`, `discord tag`, `avatar`, `toss`, `enlarge`) no entran en la auditoría.
+`clear category` muta el servidor de forma destructiva. Lecturas (`random`, `utc`, `discord tag`, `duplicates`, `avatar`, `toss`, `enlarge`) no entran en la auditoría.
 
 ## Relacionado
 
