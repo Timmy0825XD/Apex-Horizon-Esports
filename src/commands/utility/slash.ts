@@ -139,8 +139,11 @@ export const utilitySlash = new SlashCommandBuilder()
     subcommand
       .setName("duplicates")
       .setDescription("Find repeated or banned IDs in a list")
+      .addStringOption((option) =>
+        option.setName("ids").setDescription("Discord IDs or game IDs separated by spaces (or use file)"),
+      )
       .addAttachmentOption((option) =>
-        option.setName("file").setDescription(".txt with Discord IDs or game IDs separated by spaces").setRequired(true),
+        option.setName("file").setDescription(".txt with Discord IDs or game IDs separated by spaces (or use ids)"),
       ),
   )
   .addSubcommand((subcommand) =>
