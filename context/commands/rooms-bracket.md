@@ -25,8 +25,8 @@ Abre la cola pendiente de ese torneo ahora. Sin `group` ni `round`, abre toda. C
 
 La respuesta se publica en el canal (no efímera). V2 con el icono del servidor como thumbnail:
 
-- `## Battle Tickets Created` (verde), `Battle Tickets Opened` (naranja, con errores o partidos esperando) o `No Tickets Opened` (rojo). Si se filtró, `group`/`round` en `-#`, y el torneo.
-- Separador, y **Created**, **Errors** y **Waiting** en una línea, con viñetas para lo que falló (fuera de la hoja, canal no creado, bienvenida fallida).
+- `## Battle Tickets Created` (verde), `Battle Tickets Opened` (naranja, con errores, partidos esperando o tickets sin un capitán) o `No Tickets Opened` (rojo). Si se filtró, `group`/`round` en `-#`, y el torneo.
+- Separador, y **Created**, **Errors** y **Waiting** en una línea, con viñetas para lo que falló (fuera de la hoja, canal no creado, bienvenida fallida) y para los tickets abiertos sin un capitán (los organizadores recibieron ping dentro).
 - **Categories** y **Free slots** antes → después, con una viñeta si la cola no cabe.
 - Al final **Issues**: capitán que no está en el servidor como `- @capitán · **equipo**`, o `- **tag** · **equipo** · id` cuando el Discord ID es inválido o falta.
 - Footer `Opened by` con mención, hora y la mención de `/room available`.

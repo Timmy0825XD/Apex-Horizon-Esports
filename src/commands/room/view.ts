@@ -19,7 +19,7 @@ import { formatCategory, formatChannel, formatHelpEntry, formatRole, formatUser 
 import { roomCommandIdFor } from "../../lib/register-slash.js";
 import { type SheetTeam, type TeamFormat } from "../../lib/sheet.js";
 import { divider, headingWithThumbnail, textBlock, v2Flags } from "../../lib/v2.js";
-import { captainOf, gameIdLines, type BlockedMatch, type ReadyMatch } from "./bracket.js";
+import { captainOf, gameIdLines, type BlockedMatch, type CaptainIssue, type ReadyMatch } from "./bracket.js";
 import { escapeDiscord, matchLabel, stageLabel, ticketTopic } from "./labels.js";
 
 export const AVAILABLE_PAGE_SIZE = 20;
@@ -45,7 +45,9 @@ function titleSide(team: SheetTeam, format: TeamFormat, fallback: string): strin
 
 const TICKET_WINDOW_SECONDS = 36 * 60 * 60;
 
-type TicketCaptain = { id: string; avatar?: string };
+/** `present: false` is a captain who is not in the server: named on the card, but not pinged. */
+type TicketCaptain = { id: string; avatar?: string; present: boolean };
+export type TicketSide = { id: string; member: GuildMember | null };
 
 /** One team: its name, the captain mention and the in-game IDs, with the captain's avatar beside it. */
 function addTeam(container: ContainerBuilder, team: SheetTeam, format: TeamFormat, fallback: string, captain: TicketCaptain): void {
@@ -99,8 +101,20 @@ export function battleTicketPayload(input: {
     .addSeparatorComponents(divider())
     .addTextDisplayComponents(textBlock(`-# **Match ID:** \`${match.id}\` · Opened <t:${opened}:f>`));
 
-  const ping = textBlock(`${emojis.party} **Battle Ticket Open!** ${formatUser(captains.left.id)} ${formatUser(captains.right.id)}`);
+  const pinged = [captains.left, captains.right].filter((captain) => captain.present).map((captain) => formatUser(captain.id));
+  const ping = textBlock([`${emojis.party} **Battle Ticket Open!**`, ...pinged].join(" "));
   return { flags: v2Flags, components: [ping, container] };
+}
+
+/** Plain-text note for the tournament organisers when a captain could not join the ticket. */
+export function absentCaptainNotice(adminRoleId: string, absent: CaptainIssue[]): string {
+  const who = (issue: CaptainIssue) =>
+    `${issue.discordId ? formatUser(issue.discordId) : `**${escapeDiscord(issue.discordTag)}**`} (**${escapeDiscord(issue.teamName)}**)`;
+  const body =
+    absent.length === 1
+      ? `the captain ${who(absent[0])} is not in this server, so they could not be added to this ticket.`
+      : `these captains are not in this server, so they could not be added to this ticket: ${absent.map(who).join(", ")}.`;
+  return `${emojis.alert} ${formatRole(null, adminRoleId)} ${body} Add them to the channel once they join.`;
 }
 
 export async function publishBattleTicket(
@@ -108,16 +122,20 @@ export async function publishBattleTicket(
   guild: Guild,
   tournamentName: string,
   format: TeamFormat,
+  adminRoleId: string,
   helperRoleId: string,
   rulesChannelId: string,
   deadlineChannelId: string,
   match: ReadyMatch,
-  captains: { left: GuildMember; right: GuildMember },
+  captains: { left: TicketSide; right: TicketSide },
+  absent: CaptainIssue[],
 ): Promise<void> {
-  const captain = (member: GuildMember): TicketCaptain => ({
-    id: member.id,
-    avatar: member.displayAvatarURL({ extension: "png", size: 256 }),
+  const captain = (side: TicketSide): TicketCaptain => ({
+    id: side.member?.id ?? side.id,
+    avatar: side.member?.displayAvatarURL({ extension: "png", size: 256 }),
+    present: Boolean(side.member),
   });
+  const present = [captains.left.member, captains.right.member].flatMap((member) => (member ? [member.id] : []));
   const posted = await channel.send({
     ...battleTicketPayload({
       guild,
@@ -129,12 +147,18 @@ export async function publishBattleTicket(
       match,
       captains: { left: captain(captains.left), right: captain(captains.right) },
     }),
-    // Only the captains are notified; the helper role is named without a ping.
-    allowedMentions: { users: [...new Set([captains.left.id, captains.right.id])], parse: [] },
+    // Only the captains in the server are notified; the helper role is named without a ping.
+    allowedMentions: { users: [...new Set(present)], parse: [] },
   });
   await posted.pin("Battle ticket").catch((error) => {
     console.error(`Battle ticket pin failed for match ${match.id}`, error);
   });
+  if (absent.length > 0) {
+    await channel.send({
+      content: absentCaptainNotice(adminRoleId, absent),
+      allowedMentions: { roles: [adminRoleId], users: [], parse: [] },
+    });
+  }
 }
 
 export function channelOverwrites(

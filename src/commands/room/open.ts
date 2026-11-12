@@ -20,6 +20,8 @@ export type CreatedTicket = {
   channelId: string;
   matchId: number;
   label: string;
+  /** Captains left out because they are not in the server; the organisers were pinged in the ticket. */
+  absent: CaptainIssue[];
 };
 
 export type TicketFailureCode = "sheet" | "identity" | "capacity" | "discord" | "duplicate";
@@ -109,7 +111,7 @@ async function openOne(
   tournament: TournamentRecord,
   match: ReadyMatch,
   categoryId: string,
-): Promise<{ channelId: string; welcomeOk: boolean }> {
+): Promise<{ channelId: string; welcomeOk: boolean; absent: CaptainIssue[] }> {
   const leftCaptain = captainOf(match.left);
   const rightCaptain = captainOf(match.right);
   if (!leftCaptain || !rightCaptain) {
@@ -123,32 +125,32 @@ async function openOne(
     );
   }
 
-  const issues: CaptainIssue[] = [];
-  let left: GuildMember | null = null;
-  let right: GuildMember | null = null;
-  try {
-    left = await captainMember(guild, match.left.teamName || match.leftName, leftCaptain);
-  } catch (error) {
-    if (!(error instanceof TicketBuildError)) {
-      throw error;
+  // An invalid ID blocks the ticket; a captain who is not in the server does not:
+  // the ticket opens without them and the tournament organisers are pinged inside it.
+  const invalid: CaptainIssue[] = [];
+  const absent: CaptainIssue[] = [];
+  const resolve = async (team: string, captain: SheetPlayer): Promise<GuildMember | null> => {
+    try {
+      return await captainMember(guild, team, captain);
+    } catch (error) {
+      if (!(error instanceof TicketBuildError)) {
+        throw error;
+      }
+      for (const issue of error.issues) {
+        (issue.kind === "absent" ? absent : invalid).push(issue);
+      }
+      return null;
     }
-    issues.push(...error.issues);
-  }
-  try {
-    right = await captainMember(guild, match.right.teamName || match.rightName, rightCaptain);
-  } catch (error) {
-    if (!(error instanceof TicketBuildError)) {
-      throw error;
-    }
-    issues.push(...error.issues);
-  }
-  if (!left || !right) {
+  };
+  const left = await resolve(match.left.teamName || match.leftName, leftCaptain);
+  const right = await resolve(match.right.teamName || match.rightName, rightCaptain);
+  if (invalid.length > 0) {
     throw new TicketBuildError(
-      issues.length === 1
+      invalid.length === 1
         ? "A captain could not be added to the ticket."
         : "Captains could not be added to the ticket.",
       "identity",
-      issues,
+      [...invalid, ...absent],
     );
   }
   const name = ticketChannelName(guild, match);
@@ -157,10 +159,12 @@ async function openOne(
     type: ChannelType.GuildText,
     parent: categoryId,
     topic: ticketTopic(tournament.challongeId, match.id),
-    permissionOverwrites: channelOverwrites(guild.id, tournament.adminRoleId, tournament.helperRoleId, [
-      left.id,
-      right.id,
-    ]),
+    permissionOverwrites: channelOverwrites(
+      guild.id,
+      tournament.adminRoleId,
+      tournament.helperRoleId,
+      [left, right].flatMap((member) => (member ? [member.id] : [])),
+    ),
     reason: `Battle ticket for match ${match.id}`,
   });
 
@@ -194,18 +198,23 @@ async function openOne(
       guild,
       tournament.name,
       tournament.format,
+      tournament.adminRoleId,
       tournament.helperRoleId,
       tournament.rulesChannelId,
       tournament.deadlineChannelId,
       match,
-      { left, right },
+      {
+        left: { id: leftCaptain.discordId.trim(), member: left },
+        right: { id: rightCaptain.discordId.trim(), member: right },
+      },
+      absent,
     );
   } catch (error) {
     welcomeOk = false;
     console.error(`Battle ticket welcome failed for match ${match.id}`, error);
   }
 
-  return { channelId: channel.id, welcomeOk };
+  return { channelId: channel.id, welcomeOk, absent };
 }
 
 export type RoomScope = {
@@ -297,7 +306,7 @@ export async function openPendingTickets(
     try {
       const opened = await openOne(guild, tournament, match, categoryId);
       loads.set(categoryId, (loads.get(categoryId) ?? 0) + 1);
-      created.push({ channelId: opened.channelId, matchId: match.id, label });
+      created.push({ channelId: opened.channelId, matchId: match.id, label, absent: opened.absent });
       if (!opened.welcomeOk) {
         welcomeFailed += 1;
       }
