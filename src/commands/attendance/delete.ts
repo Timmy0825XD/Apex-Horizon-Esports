@@ -1,5 +1,5 @@
-import type { StaffConfig } from "@prisma/client";
-import { EmbedBuilder, MessageFlags, type ChatInputCommandInteraction } from "discord.js";
+import type { Attendance, StaffConfig } from "@prisma/client";
+import { EmbedBuilder, MessageFlags, type ChatInputCommandInteraction, type Guild, type TextChannel } from "discord.js";
 import { errorEmbed } from "../../lib/embeds.js";
 import { isGuildAdmin, isOrganiser } from "../../lib/permissions.js";
 import { prisma } from "../../lib/prisma.js";
@@ -12,6 +12,31 @@ import { v2Flags } from "../../lib/v2.js";
 import { deletedMessage, stageLabel } from "./view.js";
 import { deferPublic } from "./respond.js";
 import { listActiveAttendance } from "./store.js";
+
+/** Marks the rows as deleted and removes their cards from the ticket and the attendance channel. */
+export async function removeAttendanceRows(
+  guild: Guild,
+  ticket: TextChannel | null,
+  attendanceChannelId: string,
+  rows: Attendance[],
+  reason: string | null,
+): Promise<void> {
+  if (rows.length === 0) {
+    return;
+  }
+  await prisma.attendance.updateMany({
+    where: { id: { in: rows.map((row) => row.id) } },
+    data: { deletedAt: new Date(), deletedReason: reason },
+  });
+  const board = await textChannel(guild, attendanceChannelId);
+  await Promise.all(
+    rows.map(async (row) => {
+      const ticketMessage = await ticket?.messages.fetch(row.ticketMessageId).catch(() => null);
+      await ticketMessage?.delete().catch(() => undefined);
+      await board?.messages.delete(row.attendanceChannelMessageId).catch(() => undefined);
+    }),
+  );
+}
 
 export async function handleAttendanceDelete(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = interaction.guild;
@@ -45,19 +70,7 @@ export async function handleAttendanceDelete(interaction: ChatInputCommandIntera
   }
 
   const reason = interaction.options.getString("reason")?.trim() || null;
-  await prisma.attendance.updateMany({
-    where: { id: { in: rows.map((row) => row.id) } },
-    data: { deletedAt: new Date(), deletedReason: reason },
-  });
-
-  const board = await textChannel(guild, bundle.tournament.attendanceChannelId);
-  await Promise.all(
-    rows.map(async (row) => {
-      const ticketMessage = await bundle.channel.messages.fetch(row.ticketMessageId).catch(() => null);
-      await ticketMessage?.delete().catch(() => undefined);
-      await board?.messages.delete(row.attendanceChannelMessageId).catch(() => undefined);
-    }),
-  );
+  await removeAttendanceRows(guild, bundle.channel, bundle.tournament.attendanceChannelId, rows, reason);
   await attachResultsLinks(guild, bundle.tournament.id, bundle.match.challongeMatchId, []).catch(() => undefined);
 
   await auditAttendance({

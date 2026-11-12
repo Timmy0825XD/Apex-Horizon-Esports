@@ -90,7 +90,7 @@ Dos minutos antes, si falta un puesto o alguien asignado no confirmó, el canal 
 ## Salidas y borrado
 
 - `/schedule resign` es la salida voluntaria (Judge, Recorder o ambos). El partido puede volver a `/schedule unassigned`.
-- `/schedule delete` (con confirmación) borra los posts del schedule, recordatorios, urgencias y quita el `🔴`. No se recupera.
+- `/schedule delete` (con confirmación) borra los posts del schedule, recordatorios, urgencias y quita el `🔴`. También quita su resultado (`/schedule results add`) y la asistencia activa del partido (soft-delete, avisos del ticket y del canal de asistencia). No se recupera y no deshace `/bracket upload`.
 
 ## Results (declaración pública, no bracket)
 
