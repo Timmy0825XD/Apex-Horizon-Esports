@@ -12,7 +12,7 @@ import { deferStaff, respondStaff } from "./respond.js";
 import { loadGuildStaffState } from "./store.js";
 import { staffErrorMessage } from "./view.js";
 
-/** `matches` counts attendance records; `games` adds up both scores of each one. */
+/** `matches` counts attendance records (shown as rounds); `games` adds up both scores of each one (shown as matches). */
 const ROSTER_CHARS = 1200;
 
 type PersonStats = {
@@ -54,9 +54,9 @@ function roster(title: string, emoji: string, rows: PersonStats[], empty: string
     return `${heading}\n*${empty}*`;
   }
   const lines = rows.map((row, index) => {
-    const matches = row.matches === 1 ? "match" : "matches";
-    const games = row.games === 1 ? "game" : "games";
-    return `**${index + 1}.** ${formatUser(row.userId)} · \`${row.matches}\` ${matches} · \`${row.games}\` ${games}`;
+    const rounds = row.matches === 1 ? "round" : "rounds";
+    const matches = row.games === 1 ? "match" : "matches";
+    return `**${index + 1}.** ${formatUser(row.userId)} · \`${row.matches}\` ${rounds} · \`${row.games}\` ${matches}`;
   });
   const shown: string[] = [];
   let size = heading.length + 1;
