@@ -44,18 +44,20 @@ Permisos del canal:
 
 - `@everyone` no lo ve.
 - Rol admin y rol helper **de ese torneo** pueden chatear (el mensaje pide a los capitanes hacer ping al helper; el bot no lo pingea).
-- De la hoja solo entran los **capitanes**. Cada uno puede ver el canal, leer el historial, escribir, reaccionar, adjuntar archivos, embeds y emojis externos.
+- De la hoja solo entran los **capitanes** que están en el servidor. Cada uno puede ver el canal, leer el historial, escribir, reaccionar, adjuntar archivos, embeds y emojis externos.
 
 El canal abre con **un solo** mensaje Components V2, fijado:
 
-- Encima del container, un Text Display `Battle Ticket Open!` (emoji `party`) con la mención de los dos capitanes. Es lo único que notifica.
+- Encima del container, un Text Display `Battle Ticket Open!` (emoji `party`) con la mención de los capitanes que están en el servidor. Es lo único del V2 que notifica.
 - Dentro del container: torneo y fase (`Group A · Round 2`, `Losers Round 1`, sin grupo si no hay) en `-#` con el emoji `torneo`, y el título `lado VS lado` (emoji `vs`). En `1vs1` cada lado es el **tag** del capitán; en formatos de equipo, el **nombre del equipo**.
 - Un párrafo que pide acordar fecha y hora con el rival y hacer ping al rol helper para crear el schedule. El rol se menciona sin ping.
-- Cada equipo: nombre en `###`, el capitán mencionado (emoji `captains`), los **in-game ID** y el avatar del capitán.
+- Cada equipo: nombre en `###`, el capitán mencionado (emoji `captains`), los **in-game ID** y el avatar del capitán (sin avatar si no está en el servidor).
 - **Before you play**: canal de reglas, canal de deadline y la fecha y hora en que terminan las **36 horas** (absoluta y relativa, en la zona horaria de quien ve el mensaje). Debajo, en cita, el aviso de descalificación automática (emoji `alert`).
 - Footer: **Match ID** y cuándo se abrió el ticket.
 
-El lado de Challonge se busca en la copia de la hoja: en `1vs1` por el tag del capitán; en `2vs2`…`5vs5` por el nombre del equipo. Si un lado no está, o el capitán no tiene Discord ID o no está en el servidor, ese partido no se abre y se reporta.
+El lado de Challonge se busca en la copia de la hoja: en `1vs1` por el tag del capitán; en `2vs2`…`5vs5` por el nombre del equipo. Si un lado no está, o el capitán no tiene Discord ID o es inválido, ese partido no se abre y se reporta.
+
+Si el Discord ID es válido pero el capitán **no está en el servidor**, el ticket se abre igual: el V2 sale completo, ese capitán no entra al canal ni recibe ping, y justo después del V2 el bot publica un mensaje de **texto plano** (emoji `alert`) que hace **ping al rol admin del torneo** y dice qué capitán (mención y equipo) no está en el servidor, para que lo añadan cuando entre. Si faltan los dos, un solo mensaje los nombra a ambos. El partido sale en el reporte como creado y el capitán en **Issues · Not in this server**.
 
 ## Torneos de dos etapas
 
@@ -67,7 +69,7 @@ El lado de Challonge se busca en la copia de la hoja: en `1vs1` por el tag del c
 
 Discord limita 50 canales por categoría. El bot llena categoría 1 → 2 → 3 → 4. Si todas están llenas, el resto de la cola se reporta y no se abre.
 
-`/room create`, y encender auto-room cuando abre salas, publican ese reporte en el canal: cuántas se crearon, cuántas quedaron bien, cuántas fallaron y cuántas no cupieron. **Issues** lista capitanes fuera del servidor o con Discord ID inválido. No nombra cada canal.
+`/room create`, y encender auto-room cuando abre salas, publican ese reporte en el canal: cuántas se crearon, cuántas quedaron bien, cuántas fallaron y cuántas no cupieron. **Issues** lista capitanes fuera del servidor (su ticket sí se abrió) o con Discord ID inválido (su ticket no). No nombra cada canal. En consola, el worker escribe el motivo de cada partido que no abrió.
 
 ## Corrección aguas abajo
 

@@ -23,10 +23,10 @@ export type CreationReportOptions = {
   verb: string;
 };
 
-function uniqueIssues(failed: TicketFailure[]): CaptainIssue[] {
+function uniqueIssues(rows: Array<{ issues: CaptainIssue[] }>): CaptainIssue[] {
   const seen = new Set<string>();
   const issues: CaptainIssue[] = [];
-  for (const row of failed) {
+  for (const row of rows) {
     for (const issue of row.issues) {
       const key = `${issue.kind}:${issue.discordId ?? issue.rawId}:${issue.discordTag.toLowerCase()}:${issue.teamName.toLowerCase()}`;
       if (seen.has(key)) {
@@ -72,10 +72,11 @@ export function creationReport(
   const created = result.created.length;
   const held = result.capacity.overflow;
   const errors = result.failed.length - held;
-  const clean = errors === 0 && held === 0 && result.welcomeFailed === 0;
+  const withoutCaptain = result.created.filter((ticket) => ticket.absent.length > 0).length;
+  const clean = errors === 0 && held === 0 && result.welcomeFailed === 0 && withoutCaptain === 0;
   const sheetMisses = result.failed.filter((row) => row.sheetMiss).length;
   const channelErrors = result.failed.filter((row) => row.code === "discord" || row.code === "duplicate").length;
-  const issues = uniqueIssues(result.failed);
+  const issues = uniqueIssues([...result.failed, ...result.created.map((ticket) => ({ issues: ticket.absent }))]);
   const absent = issues.filter((issue) => issue.kind === "absent");
   const invalid = issues.filter((issue) => issue.kind === "invalid");
 
@@ -107,6 +108,11 @@ export function creationReport(
   }
   if (channelErrors > 0) {
     result_.push(`- ${count(channelErrors, "channel", "channels")} could not be created.`);
+  }
+  if (withoutCaptain > 0) {
+    result_.push(
+      `- ${count(withoutCaptain, "ticket", "tickets")} opened without a captain. The tournament organisers were pinged inside.`,
+    );
   }
   if (result.welcomeFailed > 0) {
     result_.push(

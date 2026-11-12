@@ -7,6 +7,7 @@ Bracket marca el partido OPEN
         ↓
 Se crea el TICKET (auto o manual)
   · permisos: organizers/helpers del torneo + ambos capitanes
+  · capitán fuera del servidor: el ticket se abre igual y se hace ping a los organizers
   · embed de bienvenida, nombre tipo ronda_equipo_vs_equipo
         ↓
 Se publica el SCHEDULE (hora UTC, mínimo +10 minutos)

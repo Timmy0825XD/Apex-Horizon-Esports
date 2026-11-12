@@ -58,10 +58,8 @@ async function flushSlot(client: Client): Promise<void> {
         const guild =
           client.guilds.cache.get(tournament.guildId) ?? (await client.guilds.fetch(tournament.guildId));
         const result = await openPendingTickets(guild, tournament, undefined, actor);
-        if (result.failed.length > 0) {
-          console.error(
-            `Auto-room left ${result.failed.length} matches unopened for ${tournament.name} (${tournament.id})`,
-          );
+        for (const row of result.failed) {
+          console.error(`Auto-room left match ${row.matchId} unopened for ${tournament.name}: [${row.code}] ${row.reason}`);
         }
         if (result.created.length === 0) {
           continue;
