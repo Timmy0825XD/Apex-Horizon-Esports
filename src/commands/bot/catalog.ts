@@ -154,7 +154,7 @@ export const helpCatalog: HelpCategory[] = [
       { slash: "utility random", summary: "Pick randomly from a list of options separated by commas, pipes, or new lines.", access: "Public" },
       { slash: "utility utc", summary: "Build a UTC timestamp the same way schedules read the time.", access: "Public" },
       { slash: "utility discord tag", summary: "Turn pasted Discord IDs into usernames, in the same order, ready for the sheet.", access: "Admin or Organiser" },
-      { slash: "utility duplicates", summary: "Check a list of Discord or game IDs for repeats and banned game IDs.", access: "Admin or Organiser" },
+      { slash: "utility duplicates", summary: "Check a .txt of Discord or game IDs for repeats and banned game IDs.", access: "Admin or Organiser" },
       { slash: "utility avatar", summary: "Show a user's avatar, or your own.", access: "Public" },
       { slash: "utility toss", summary: "Flip a coin: heads or tails.", access: "Public" },
       { slash: "utility enlarge", summary: "Show a custom or standard emoji at full size.", access: "Public" },
