@@ -34,7 +34,7 @@ El bot no habla “como el bot” en esos canales si puede evitarlo. Usa **un we
 | Bot logs | **Schedules** | Crear, actualizar, borrar, refresh, resign, puesto tomado, resultado declarado o borrado |
 | Bot logs | **Attendance** | Marcar, borrar, añadir o borrar links |
 | Bot logs | **Utility** | Purga, wipe de categoría, emoji, embed y Components V2 publicados o reescritos, círculo de canal y miembro añadido a canal |
-| Bot logs | **Ticket System** | Cerrar / reabrir / borrar ticket |
+| Bot logs | **Ticket System** | Cerrar / reabrir / borrar ticket; regenerar transcript |
 | Challonge logs | **Challonge Logs** | Vincular el bracket o reemplazar sus credenciales |
 | Challonge logs | **Score Upload** | `/bracket upload`, `/bracket dq both`, `/bracket correct` y forfeits automáticos |
 | Transcript logs | **Transcripts** | Archivo HTML (no es auditoría de “quién pulsó qué”) |
@@ -62,7 +62,7 @@ Las listas largas (tickets abiertos, hojas archivadas) muestran **15** y cierran
 | Bracket | Score subido; score corregido (marcador viejo → nuevo + ganador) |
 | Schedule | Crear, actualizar (con motivo), borrar, refresh, resign, asignar por botón, resultado declarado, resultado borrado |
 | Asistencia | Marcar, borrar, añadir link, borrar links |
-| Ticket | Close, reopen, delete. En un ticket de validación, close archiva y borra |
+| Ticket | Close, reopen, delete, transcript (reemplaza el anterior). En un ticket de validación, close archiva y borra |
 | Utility | Purga de canal; wipe de categoría; emoji robado; embed publicado o reescrito; Components V2 publicado o reescrito; círculo de canal (`dot`); miembro añadido a canal (`add member`) |
 
 Los transcripts **no** son este sistema: son el archivo del chat, en otro canal, con otra identidad.

@@ -29,7 +29,7 @@ Las **opciones** siguen en `snake_case` (`sheet_link`, `team1_score`, `discord_t
 | Salas y bracket | [rooms-bracket.md](rooms-bracket.md) | `/room auto` · `/room create` · `available` · `/bracket upload` · `/bracket dq both` · `/bracket correct` |
 | Schedule | [schedule.md](schedule.md) | `/schedule create` · `update` · `show` · `delete` · `unassigned` · `refresh` · `resign` · `results add` · `results delete` |
 | Attendance | [attendance.md](attendance.md) | `/attendance mark` · `delete` · `report` · `/get attendance` · `/get sheet` · `/link add` · `delete` · `missing` |
-| Tickets | [tickets.md](tickets.md) | `/ticket close` · `reopen` · `delete` |
+| Tickets | [tickets.md](tickets.md) | `/ticket close` · `reopen` · `delete` · `transcript` |
 | Roles | [roles.md](roles.md) | `/role user` · `add all` · `remove all` · `list` |
 | Server y usuario | [server-user.md](server-user.md) | `/server info` · `banlist` · `tree` · `invites` · `/user ban` · `unban` |
 | Panel | [panel.md](panel.md) | `/panel tutorial` · `tournament rules` · `tournament bracket` · `tournament deadline` |

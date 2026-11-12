@@ -18,6 +18,7 @@ import { findTournamentById } from "../tournament/store.js";
 import { auditTicket } from "./audit.js";
 import { repaintScheduleChannel } from "../schedule/live.js";
 import { closeTicket, deleteTicket, reopenTicket } from "./lifecycle.js";
+import { regenerateTranscript } from "./regenerate.js";
 import { closeValidationTicket } from "./validation.js";
 import { ticketActionMessage, type TicketAction } from "./view.js";
 
@@ -146,6 +147,10 @@ export async function handleTicketSlash(interaction: ChatInputCommandInteraction
         room.challongeMatchId,
         card,
       );
+      return;
+    }
+    if (sub === "transcript") {
+      await regenerateTranscript({ interaction, ticket: channel, guild, tournament, settings, room, match });
       return;
     }
     if (sub === "delete") {
