@@ -85,7 +85,7 @@ El libro tiene siete hojas, en este orden. Los nombres de usuario, rol y canal v
 
 | Prioridad | Comprobación | Se resuelve con |
 |---|---|---|
-| Alta | Partido completo en el bracket que tuvo ticket y no tiene asistencia activa. Los partidos cerrados sin ticket (forfeits automáticos) no cuentan. | `/attendance mark` |
+| Alta | Partido completo en el bracket que tuvo ticket **y schedule** y no tiene asistencia activa. Los partidos cerrados sin ticket (forfeits automáticos) o sin schedule (descalificaciones subidas directo al bracket) no cuentan: sin schedule no hubo staff que marcar. | `/attendance mark` |
 | Alta | Schedule cuya hora ya pasó y no tiene resultado declarado. | `/schedule results add` |
 | Alta | Schedule en las próximas **24 horas** sin juez, sin recorder o sin ambos. | `/schedule update` |
 | Media | Ticket abierto de un partido ya completo en el bracket. | `/ticket close` |

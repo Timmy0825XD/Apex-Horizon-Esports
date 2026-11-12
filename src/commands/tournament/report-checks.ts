@@ -182,7 +182,7 @@ export type TodoCheck =
   | "open-no-ticket";
 
 export const todoChecks: Record<TodoCheck, { priority: Priority; label: string; fix: string }> = {
-  "complete-no-attendance": { priority: "high", label: "Complete on the bracket, ticket had no attendance", fix: "/attendance mark" },
+  "complete-no-attendance": { priority: "high", label: "Complete on the bracket, schedule had no attendance", fix: "/attendance mark" },
   "schedule-overdue": { priority: "high", label: "Schedule passed, no result declared", fix: "/schedule results add" },
   "schedule-soon-unstaffed": { priority: "high", label: "Schedule in the next 24 h without judge or recorder", fix: "/schedule update" },
   "ticket-open-complete": { priority: "medium", label: "Ticket still open, match complete", fix: "/ticket close" },
@@ -222,6 +222,7 @@ export function buildTodo(input: {
   const byId = new Map(input.matches.map((match) => [match.challongeMatchId, match]));
   const roomById = new Map(input.rooms.map((room) => [room.challongeMatchId, room]));
   const marked = new Map(input.marks.map((mark) => [mark.challongeMatchId, mark]));
+  const scheduled = new Set(input.schedules.map((schedule) => schedule.challongeMatchId));
   const now = input.now.getTime();
   const soon = now + SOON_HOURS * 60 * 60 * 1000;
   const items: TodoItem[] = [];
@@ -243,8 +244,8 @@ export function buildTodo(input: {
     const id = match.challongeMatchId;
     const room = roomById.get(id);
     const state = stateOf(match);
-    // Matches settled without a ticket (forfeits, manual bracket edits) never had staff to mark.
-    if (state === "complete" && room && !marked.has(id)) {
+    // Attendance needs a schedule: a match settled without one (forfeit, DQ, manual bracket edit) had no staff to mark.
+    if (state === "complete" && room && scheduled.has(id) && !marked.has(id)) {
       push("complete-no-attendance", id, room.channelId, "Staff for this ticket are not on the board.");
     }
     if (state === "complete" && room?.status === "open") {
