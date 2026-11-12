@@ -389,9 +389,6 @@ export function resultsPayload(input: {
   }
   blocks.push("divider", staffBlock(face), { gallery: input.gallery });
   const buttons = input.links.filter(isHttps).map((url, index) => linkButton(`Recording ${index + 1}`, url.trim()));
-  if (isHttps(input.transcriptUrl)) {
-    buttons.push(linkButton("Transcript", input.transcriptUrl.trim()));
-  }
   for (let index = 0; index < buttons.length; index += 5) {
     blocks.push(new ActionRowBuilder<ButtonBuilder>().addComponents(buttons.slice(index, index + 5)));
   }
@@ -399,7 +396,10 @@ export function resultsPayload(input: {
     tone: "success",
     emoji: "",
     eyebrow: matchEyebrow(face.tournamentName, face),
-    title: postTitle(face, false),
+    // The transcript has no button: the title itself links to the transcript message.
+    title: isHttps(input.transcriptUrl)
+      ? `[${postTitle(face, false).replace(/[[\]]/g, "\\$&")}](${input.transcriptUrl.trim()})`
+      : postTitle(face, false),
     blocks,
     footer: input.uploadedById ? stampFooter("Uploaded", input.uploadedById, input.declaredAt) : null,
   });
