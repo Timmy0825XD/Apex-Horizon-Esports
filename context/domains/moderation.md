@@ -38,7 +38,7 @@ Al decidir, la tarjeta pendiente se **borra** y queda una tarjeta final: roja (*
 
 Banear o desbanear desde un aviso se audita en **Moderation** con el enlace al aviso. Cancelar no muta nada y no se audita.
 
-Un ban de Discord **no** es el cruce con la lista de IDs de juego baneados. Esa lista interviene al validar la hoja, al crear o cambiar la sheet de un torneo, y al asignar roles de torneo. Ver [sheet.md](sheet.md).
+Un ban de Discord **no** es el cruce con la lista de IDs de juego baneados. Esa lista interviene al validar la hoja, al crear o cambiar la sheet de un torneo, al asignar roles de torneo y en `/utility duplicates`. Ver [sheet.md](sheet.md).
 
 ## Roles (Discord, no torneo)
 

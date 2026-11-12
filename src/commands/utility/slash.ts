@@ -137,6 +137,14 @@ export const utilitySlash = new SlashCommandBuilder()
   )
   .addSubcommand((subcommand) =>
     subcommand
+      .setName("duplicates")
+      .setDescription("Find repeated or banned IDs in a list")
+      .addStringOption((option) =>
+        option.setName("ids").setDescription("Discord IDs or game IDs separated by spaces").setRequired(true),
+      ),
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName("avatar")
       .setDescription("Show a user's avatar")
       .addUserOption((option) => option.setName("user").setDescription("Whose avatar to show (default: you)")),

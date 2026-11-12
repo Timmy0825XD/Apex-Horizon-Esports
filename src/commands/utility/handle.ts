@@ -4,6 +4,7 @@ import { handleClear, handleClearCategory, handleClearCategoryButton } from "./c
 import { handleEmbedButton, handleEmbedCreate, handleEmbedEdit, handleEmbedModal } from "./embed.js";
 import { handleAddMember } from "./add-member.js";
 import { handleDot } from "./dot.js";
+import { handleDuplicates } from "./duplicates.js";
 import { handleEmojiSteal } from "./emoji-steal.js";
 import {
   handleAvatar,
@@ -53,6 +54,9 @@ export async function handleUtilitySlash(interaction: ChatInputCommandInteractio
       return;
     case "discord tag":
       await handleDiscordTag(interaction);
+      return;
+    case "duplicates":
+      await handleDuplicates(interaction);
       return;
     case "avatar":
       await handleAvatar(interaction, guild);

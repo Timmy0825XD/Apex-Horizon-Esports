@@ -23,7 +23,7 @@ export function normalizeGameId(value: string): string {
   return value.replace(/[^0-9A-Fa-f]/g, "").toUpperCase();
 }
 
-function isComparableGameId(value: string): boolean {
+export function isComparableGameId(value: string): boolean {
   const normalized = normalizeGameId(value);
   return normalized.length >= 8 && normalized.length <= 16 && /[A-F]/.test(normalized);
 }

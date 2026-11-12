@@ -100,6 +100,18 @@ export const utilityGuides: GuideBook = {
     ],
     related: ["sheet validate"],
   },
+  "utility duplicates": {
+    steps: [
+      "Paste the Discord IDs or game IDs, separated by spaces.",
+      "You get privately which IDs repeat and which game IDs are on the official banned list.",
+    ],
+    options: { ids: "The Discord IDs or game IDs to check." },
+    notes: [
+      "Game IDs match ignoring case. Anything that is not an ID is listed as skipped.",
+      "A Discord ban of this server is not checked here.",
+    ],
+    related: ["utility discord tag", "sheet validate"],
+  },
   "utility avatar": {
     steps: ["Pick a member, or leave it empty for yours.", "The bot shows the avatar with a full-size button."],
     options: { user: "Whose avatar. Yours if empty." },

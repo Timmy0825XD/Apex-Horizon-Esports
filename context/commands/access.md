@@ -1015,6 +1015,18 @@ Ninguna.
 
 Ninguna.
 
+### `/utility duplicates`
+
+- [x] Admin
+- [x] Organiser
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
+
+Ninguna.
+
 ### `/utility avatar`
 
 - [x] Admin
