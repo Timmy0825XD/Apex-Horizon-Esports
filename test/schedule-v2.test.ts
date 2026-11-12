@@ -123,7 +123,8 @@ test("the results post shows the proofs, links the title to the transcript and h
   assert.match(out, /attachment:\/\/proof-2.jpg/);
   assert.match(out, /"label":"Recording 1"/);
   assert.doesNotMatch(out, /"label":"Transcript"/);
-  assert.match(out, /## \[.*\]\(https:\/\/discord.com\/channels\/1\/2\/3\)/);
+  // Each side is its own link; the VS emoji stays outside, or Discord shows the raw markdown.
+  assert.match(out, /## \[[^\]<]+\]\(https:\/\/discord.com\/channels\/1\/2\/3\) <a?:[^>]+> \[[^\]<]+\]\(https:\/\/discord.com\/channels\/1\/2\/3\)/);
   assert.equal(resultsPayload({ ...{ face, team1Score: 3, team2Score: 1, notes: null, links: [], declaredAt: new Date(), uploadedById: null, transcriptUrl: null, gallery: [] }, intro: false }).components.length, 1);
 });
 

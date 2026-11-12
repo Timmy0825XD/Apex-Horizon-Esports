@@ -279,6 +279,15 @@ function postTitle(face: ScheduleFace, trophy: boolean): string {
   return `${trophy ? `${emojis.torneo} ` : ""}${escapeDiscord(face.leftName)} ${emojis.vs} ${escapeDiscord(face.rightName)}`;
 }
 
+/**
+ * `lado VS lado` with each side linking to the transcript. Discord drops a masked link whose text
+ * holds a custom emoji, so the VS emoji stays outside the links.
+ */
+function linkedTitle(face: ScheduleFace, url: string): string {
+  const side = (name: string) => `[${escapeDiscord(name).replace(/[[\]]/g, "\\$&")}](${url})`;
+  return `${side(face.leftName)} ${emojis.vs} ${side(face.rightName)}`;
+}
+
 function staffBlock(face: ScheduleFace): string {
   return [
     "### Staff",
@@ -396,10 +405,8 @@ export function resultsPayload(input: {
     tone: "success",
     emoji: "",
     eyebrow: matchEyebrow(face.tournamentName, face),
-    // The transcript has no button: the title itself links to the transcript message.
-    title: isHttps(input.transcriptUrl)
-      ? `[${postTitle(face, false).replace(/[[\]]/g, "\\$&")}](${input.transcriptUrl.trim()})`
-      : postTitle(face, false),
+    // The transcript has no button: the team names in the title link to the transcript message.
+    title: isHttps(input.transcriptUrl) ? linkedTitle(face, input.transcriptUrl.trim()) : postTitle(face, false),
     blocks,
     footer: input.uploadedById ? stampFooter("Uploaded", input.uploadedById, input.declaredAt) : null,
   });
