@@ -414,8 +414,9 @@ function plural(count: number, one: string, many: string): string {
 }
 
 function workLine(emoji: string, label: string, work: RoleWork, mode: PayMode, unit: SalaryUnit): string {
-  const matches = plural(work.matches, "match", "matches");
-  const done = mode === "per_game" ? `${matches} · ${plural(work.games, "game", "games")}` : matches;
+  // One attendance is a round; its matches are the two scores added up.
+  const rounds = plural(work.matches, "round", "rounds");
+  const done = mode === "per_game" ? `${rounds} · ${plural(work.games, "match", "matches")}` : rounds;
   return `${emoji} **${label}** \`${amount(work.gold, unit)}\` · *${done}*`;
 }
 

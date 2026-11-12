@@ -96,9 +96,9 @@ export function salaryFor(userId: string, rows: PayRow[], mode: PayMode): Person
   return salary;
 }
 
+/** ArtCoin has no fractions: 975 GOLD is 97 AC, never 97.5. */
 export function formatArtCoin(gold: number): string {
-  const artCoin = gold / 10;
-  return Number.isInteger(artCoin) ? String(artCoin) : artCoin.toFixed(1);
+  return String(Math.trunc(gold / 10));
 }
 
 function bump(map: Map<string, CountPerson>, userId: string, matches: number): void {

@@ -41,7 +41,7 @@ El link no cambia el salario. Recorder cobra su tarifa y la misma persona cobra 
 | 1v1 / 2v2 / 3v3 (por partido) | 450 gold | 450 gold | 575 gold |
 | 4v4 / 5v5 (por game) | 325 × games | 325 × games | 425 × games |
 
-`games` es `team1_score + team2_score`. `/attendance report` y `/get sheet` toman la tabla del formato guardado del torneo. ArtCoin = gold / 10.
+`games` es `team1_score + team2_score`. `/attendance report` y `/get sheet` toman la tabla del formato guardado del torneo. ArtCoin = gold / 10, **truncado** a entero (975 GOLD = 97 AC, nunca 97.5). Aplica al Salary Report, sus tarifas en `-#`, el Estimated payroll y la columna AC del Excel.
 
 ## Superficies de nómina
 
