@@ -102,10 +102,13 @@ export const utilityGuides: GuideBook = {
   },
   "utility duplicates": {
     steps: [
-      "Attach a .txt with the Discord IDs or game IDs, separated by spaces or new lines.",
+      "Write the Discord IDs or game IDs in ids, or attach a .txt in file. Use one, not both.",
       "You get privately which IDs repeat and which game IDs are on the official banned list.",
     ],
-    options: { file: "The .txt with the IDs to check (up to 512 KB)." },
+    options: {
+      ids: "The IDs to check, separated by spaces.",
+      file: "A .txt with the IDs to check (up to 512 KB), for lists too long to paste.",
+    },
     notes: [
       "Game IDs match ignoring case. Anything that is not an ID is listed as skipped.",
       "A Discord ban of this server is not checked here.",

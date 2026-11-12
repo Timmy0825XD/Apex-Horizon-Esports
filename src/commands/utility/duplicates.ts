@@ -95,15 +95,30 @@ export async function handleDuplicates(interaction: ChatInputCommandInteraction)
     return;
   }
 
-  const file = interaction.options.getAttachment("file", true);
-  if (!isTxt(file)) {
+  const typed = interaction.options.getString("ids")?.trim() || null;
+  const file = interaction.options.getAttachment("file");
+  if (typed && file) {
+    await respondUtility(
+      interaction,
+      utilityError("Pick one source", "Use **ids** or **file**, not both at the same time."),
+    );
+    return;
+  }
+  if (!typed && !file) {
+    await respondUtility(
+      interaction,
+      utilityError("No list given", "Write the IDs in **ids** or attach a `.txt` in **file**."),
+    );
+    return;
+  }
+  if (file && !isTxt(file)) {
     await respondUtility(
       interaction,
       utilityError("Need a .txt", "Attach a `.txt` with the Discord IDs or game IDs separated by spaces."),
     );
     return;
   }
-  if (file.size > MAX_FILE_BYTES) {
+  if (file && file.size > MAX_FILE_BYTES) {
     await respondUtility(
       interaction,
       utilityError("File too large", `Keep the \`.txt\` under **${MAX_FILE_BYTES / 1024} KB**.`),
@@ -113,7 +128,7 @@ export async function handleDuplicates(interaction: ChatInputCommandInteraction)
 
   await deferUtility(interaction, true);
 
-  const input = await readTxt(file);
+  const input = file ? await readTxt(file) : typed;
   if (input === null) {
     await respondUtility(interaction, utilityError("Could not read file", "Discord did not hand me the `.txt`. Try again."));
     return;
@@ -133,7 +148,10 @@ export async function handleDuplicates(interaction: ChatInputCommandInteraction)
   if (checked === 0) {
     await respondUtility(
       interaction,
-      utilityError("No IDs found", "The `.txt` has no Discord IDs or game IDs. Separate them with spaces."),
+      utilityError(
+        "No IDs found",
+        `${file ? "The `.txt`" : "Your list"} has no Discord IDs or game IDs. Separate them with spaces.`,
+      ),
     );
     return;
   }
