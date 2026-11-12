@@ -15,7 +15,7 @@ Se publica **el mismo aviso** en el ticket y en el canal de asistencia del torne
 
 **Métrica:** 1 asistencia = 1 **round**. **Matches** = `team1_score + team2_score`.
 
-No hay “editar asistencia”. Se **borra en suave** (queda marca de borrado y motivo) y se vuelve a marcar.
+No hay “editar asistencia”. Se **borra en suave** (queda marca de borrado y motivo) y se vuelve a marcar. `/schedule delete` también la borra en suave, con motivo `Schedule deleted`, porque la asistencia cuelga del schedule.
 
 ## Links
 

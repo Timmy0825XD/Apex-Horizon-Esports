@@ -78,7 +78,7 @@ La ficha de `match`: eyebrow con torneo, grupo y ronda; título `lado vs lado`; 
 | confirm | BOOLEAN | Sí |
 | reason | STRING | No |
 
-`confirm=False` cancela (V2 azul *Delete cancelled* con el partido). Quita `🔴`. Admin o helper del torneo, u Organiser. La respuesta es un V2 rojo **Schedule deleted**: el partido y la hora que tenía, qué se quitó, el motivo en cita si se dio, cómo volver a programarlo con `/schedule create` y footer *Deleted by*.
+`confirm=False` cancela (V2 azul *Delete cancelled* con el partido). Quita `🔴`. Arrastra lo que cuelga del schedule: si tenía `/schedule results add`, quita la declaración (posts del ticket y del canal de resultados); si el partido tenía asistencia activa, la borra en suave (motivo `Schedule deleted`, más el `reason` si se dio) y quita sus avisos del ticket y del canal de asistencia. Los posts de `events_links` no se tocan, igual que en `/attendance delete`. No deshace `/bracket upload`. La auditoría lista el resultado y la asistencia quitados. Admin o helper del torneo, u Organiser. La respuesta es un V2 rojo **Schedule deleted**: el partido y la hora que tenía, qué se quitó (incluidos el resultado y la asistencia si los había), el motivo en cita si se dio, cómo volver a programarlo con `/schedule create` y footer *Deleted by*.
 
 ## `/schedule unassigned`
 
