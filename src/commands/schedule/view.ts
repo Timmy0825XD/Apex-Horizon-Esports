@@ -374,7 +374,8 @@ export function resultsPayload(input: {
   declaredAt: Date;
   uploadedById: string | null;
   transcriptUrl: string | null;
-  proofNames: string[];
+  /** Gallery sources: `attachment://proof-1.png` for files in the same request. */
+  gallery: string[];
   intro: boolean;
 }): CardMessage {
   const { face } = input;
@@ -386,7 +387,7 @@ export function resultsPayload(input: {
   if (input.notes) {
     blocks.push(quote(input.notes));
   }
-  blocks.push("divider", staffBlock(face), { gallery: input.proofNames.map((name) => `attachment://${name}`) });
+  blocks.push("divider", staffBlock(face), { gallery: input.gallery });
   const buttons = input.links.filter(isHttps).map((url, index) => linkButton(`Recording ${index + 1}`, url.trim()));
   if (isHttps(input.transcriptUrl)) {
     buttons.push(linkButton("Transcript", input.transcriptUrl.trim()));

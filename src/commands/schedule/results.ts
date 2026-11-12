@@ -1,4 +1,4 @@
-import { AttachmentBuilder, MessageFlags, type ChatInputCommandInteraction, type Guild, type Message } from "discord.js";
+import { AttachmentBuilder, ComponentType, MessageFlags, type ChatInputCommandInteraction, type Guild, type Message } from "discord.js";
 import type { Schedule, ScheduleResults } from "@prisma/client";
 import { formatChannel } from "../../lib/formatters.js";
 import { prisma } from "../../lib/prisma.js";
@@ -33,6 +33,10 @@ async function proofFiles(interaction: ChatInputCommandInteraction): Promise<Pro
       picked.push({ url: attachment.url, name: proofName(index, attachment.name) });
     }
   }
+  return downloadProofs(picked);
+}
+
+function downloadProofs(picked: { url: string; name: string }[]): Promise<ProofFile[]> {
   return Promise.all(
     picked.map(async ({ url, name }) => {
       const response = await fetch(url, { signal: AbortSignal.timeout(20_000) });
@@ -46,6 +50,37 @@ async function proofFiles(interaction: ChatInputCommandInteraction): Promise<Pro
 
 function proofAttachments(files: ProofFile[]): AttachmentBuilder[] {
   return files.map((file) => new AttachmentBuilder(file.data, { name: file.name }));
+}
+
+function proofRefs(files: ProofFile[]): string[] {
+  return files.map((file) => `attachment://${file.name}`);
+}
+
+/**
+ * Image URLs in the message's media galleries. A Components V2 message reports its files only inside
+ * its components (`message.attachments` comes back empty), so this is where the proofs are read from.
+ */
+function galleryUrls(message: Message): string[] {
+  const urls: string[] = [];
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (!node || typeof node !== "object") {
+      return;
+    }
+    const record = node as { type?: number; items?: { media?: { url?: string } }[]; components?: unknown };
+    if (record.type === ComponentType.MediaGallery) {
+      for (const item of record.items ?? []) {
+        if (item.media?.url) urls.push(item.media.url);
+      }
+      return;
+    }
+    walk(record.components);
+  };
+  walk(message.components.map((component) => component.toJSON()));
+  return urls;
 }
 
 function storedResults(results: ScheduleResults, patch: { links?: string[]; transcriptUrl?: string | null } = {}): ScheduleResults {
@@ -64,14 +99,15 @@ function storedResults(results: ScheduleResults, patch: { links?: string[]; tran
 }
 
 /**
- * Repaint one result post after its links or transcript changed. The message keeps its own attachments,
- * so the gallery points at them by name. Posts from before the V2 redesign keep their embed.
+ * Repaint one result post after its links or transcript changed. The proofs are read from the current
+ * gallery and uploaded again with the edit, so the new gallery points at files of the same request.
+ * Posts from before the V2 redesign keep their embed.
  */
 async function editResultsPost(
   guild: Guild,
   channelId: string,
   messageId: string | null | undefined,
-  render: { v2: (proofNames: string[]) => ReturnType<typeof resultsPayload>; legacy: () => Promise<ReturnType<typeof resultsEmbed>> },
+  render: { v2: (gallery: string[]) => ReturnType<typeof resultsPayload>; legacy: () => Promise<ReturnType<typeof resultsEmbed>> },
 ): Promise<void> {
   if (!messageId) {
     return;
@@ -82,8 +118,24 @@ async function editResultsPost(
     return;
   }
   if (message.flags.has(MessageFlags.IsComponentsV2)) {
-    const names = [...message.attachments.values()].map((file) => file.name);
-    await message.edit({ ...render.v2(names), allowedMentions: { parse: [] } });
+    const urls = galleryUrls(message);
+    const proofs = await downloadProofs(
+      urls.map((url, index) => ({ url, name: proofName(index + 1, new URL(url).pathname) })),
+    ).catch((error) => {
+      console.error(`Result proofs could not be reloaded for message ${message.id}`, error);
+      return null;
+    });
+    if (!proofs) {
+      // Keep the current images by URL rather than dropping the gallery.
+      await message.edit({ ...render.v2(urls), allowedMentions: { parse: [] } });
+      return;
+    }
+    await message.edit({
+      ...render.v2(proofRefs(proofs)),
+      files: proofAttachments(proofs),
+      attachments: [],
+      allowedMentions: { parse: [] },
+    });
     return;
   }
   await message.edit({ embeds: [await render.legacy()], allowedMentions: { parse: [] } });
@@ -113,11 +165,11 @@ async function repaintResults(guild: Guild, schedule: Schedule, results: Schedul
     return resultsEmbed({ ...card, uploadedBy: uploaded?.username ?? "Unknown" });
   };
   await editResultsPost(guild, schedule.channelId, results.ticketMessageId, {
-    v2: (proofNames) => resultsPayload({ ...card, proofNames, intro: true }),
+    v2: (gallery) => resultsPayload({ ...card, gallery, intro: true }),
     legacy,
   });
   await editResultsPost(guild, tournament.resultChannelId, results.messageId, {
-    v2: (proofNames) => resultsPayload({ ...card, proofNames, intro: false }),
+    v2: (gallery) => resultsPayload({ ...card, gallery, intro: false }),
     legacy,
   });
 }
@@ -201,7 +253,7 @@ export async function runResults(interaction: ChatInputCommandInteraction, bundl
       declaredAt,
       uploadedById: interaction.user.id,
       transcriptUrl: null,
-      proofNames: proofs.map((file) => file.name),
+      gallery: proofRefs(proofs),
     };
     ticketPost = await bundle.channel.send({
       ...resultsPayload({ ...card, intro: true }),
@@ -213,7 +265,7 @@ export async function runResults(interaction: ChatInputCommandInteraction, bundl
       files: proofAttachments(proofs),
       allowedMentions: { parse: [] },
     });
-    const imageUrls = [...channelPost.attachments.values()].map((file) => file.url);
+    const imageUrls = galleryUrls(channelPost);
     // Store only if no other judge declared meanwhile; the loser's posts are removed below.
     const stored = await prisma.schedule.updateMany({
       where: { id: schedule.id, OR: [{ results: null }, { results: { isSet: false } }] },
