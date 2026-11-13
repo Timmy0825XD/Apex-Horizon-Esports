@@ -14,6 +14,29 @@ export function unlockDelay(random: () => number = Math.random): number {
   return UNLOCK_MIN_MS + Math.floor(random() * (UNLOCK_SPREAD_MS + 1));
 }
 
+/** A too-fast or early click bars that member from this schedule's Assign for this long. */
+export const CLAIM_BLOCK_MS = 5 * 60_000;
+
+type ClaimBlock = { userId: string; until: Date };
+
+/** When the member's block on this schedule ends, or null if they are free to claim. */
+export function blockedUntil(blocks: ClaimBlock[] | null | undefined, userId: string, now: number): Date | null {
+  const active = (blocks ?? []).filter((block) => block.userId === userId && block.until.getTime() > now);
+  return active.length ? new Date(Math.max(...active.map((block) => block.until.getTime()))) : null;
+}
+
+/** The block list with this member barred for CLAIM_BLOCK_MS from `now`; expired blocks are dropped. */
+export function withBlock(blocks: ClaimBlock[] | null | undefined, userId: string, now: number): ClaimBlock[] {
+  const kept = (blocks ?? []).filter((block) => block.userId !== userId && block.until.getTime() > now);
+  return [...kept, { userId, until: new Date(now + CLAIM_BLOCK_MS) }];
+}
+
+export async function blockClaims(scheduleId: string, blocks: ClaimBlock[] | null | undefined, userId: string, now: number): Promise<Date> {
+  const next = withBlock(blocks, userId, now);
+  await prisma.schedule.update({ where: { id: scheduleId }, data: { claimBlocks: { set: next } } });
+  return next[next.length - 1].until;
+}
+
 /** Milliseconds between Assign turning on and the click, by Discord's own clock (the interaction ID). */
 export function reactionMs(clickedAt: number, unlockAt: Date | null | undefined): number | null {
   return unlockAt ? clickedAt - unlockAt.getTime() : null;

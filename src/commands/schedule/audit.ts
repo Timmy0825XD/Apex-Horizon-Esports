@@ -41,16 +41,23 @@ export function ticketLine(guild: Guild, channelId: string): string {
   return fact("Ticket", formatChannel(guild, channelId));
 }
 
-/** A claim this soon after Assign turned on is faster than a person can react; the audit flags it. */
+/** A click this soon after Assign turned on is faster than a person can react: it is blocked. */
 export const FAST_CLAIM_MS = 700;
 
-/** How fast the seat was taken after Assign turned on; faster than a person can react gets a warning. */
+/** How fast the click came after Assign turned on. */
 export function reactionLine(ms: number | null): string {
-  if (ms === null) {
-    return fact("Reaction", "*unknown*");
-  }
-  const shown = fact("Reaction", `\`${Math.max(0, ms)} ms\` after Assign turned on`);
-  return ms < FAST_CLAIM_MS ? `${shown}\n${emojis.alert} **Fast click** · under \`${FAST_CLAIM_MS} ms\`, faster than a person reacts.` : shown;
+  return ms === null ? fact("Reaction", "*unknown*") : fact("Reaction", `\`${Math.max(0, ms)} ms\` after Assign turned on`);
+}
+
+/** Why a too-fast click was refused. */
+export function fastLine(): string {
+  return `${emojis.alert} **Fast click** · under \`${FAST_CLAIM_MS} ms\`, faster than a person reacts.`;
+}
+
+/** Until when the member cannot claim this schedule. */
+export function blockLine(until: Date): string {
+  const unix = Math.floor(until.getTime() / 1000);
+  return fact("Blocked", `from this match until <t:${unix}:t> (<t:${unix}:R>)`);
 }
 
 /** When a blocked claim was pressed, relative to the unlock it did not wait for. */

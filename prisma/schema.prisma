@@ -181,6 +181,8 @@ model Schedule {
   claimsOpenUntil  DateTime?
   /// Assign stays disabled until this moment; null while a fresh claim window waits to be armed.
   claimsUnlockAt   DateTime?
+  /// Members barred from Assign on this schedule after a too-fast or early click, and until when.
+  claimBlocks      ClaimBlock[]
   reminderPhase    String
   results          ScheduleResults?
   createdAt        DateTime               @default(now())
@@ -197,6 +199,11 @@ type ScheduleMessages {
   thumbnailMessageId       String?
   t10MessageId             String?
   t0MessageId              String?
+}
+
+type ClaimBlock {
+  userId String
+  until  DateTime
 }
 
 type ScheduleConfirmations {

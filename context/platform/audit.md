@@ -15,7 +15,7 @@ Solo se auditan mutaciones. Extraer o visualizar información **no** genera log.
 | **Borrar** | Sí | `/tournament delete`, `/ticket delete`, `/attendance delete`, `/user unban` |
 | **Leer / listar / extraer** | No | `/bot ping`, `/settings show`, `/tournament list`, `/sheet find player`, `/sheet get`, `/sheet validate`, `/team info`, `/team list`, `/staff work`, `/server banlist` |
 
-**Excepción — intento bloqueado:** un intento que el bot rechaza porque parece trampa también se audita, aunque no cambie nada. Hoy solo existe uno: **Early claim blocked** (Schedules), cuando alguien pulsa **Assign** por la API mientras el botón sigue desactivado. Detalle en [../domains/schedules.md](../domains/schedules.md).
+**Excepción — intento bloqueado:** un intento que el bot rechaza porque parece trampa también se audita, aunque no cambie nada. Hoy existen dos, en Schedules: **Early claim blocked** (pulsar **Assign** por la API mientras sigue desactivado) y **Fast claim blocked** (pulsarlo en menos de 700 ms desde que se encendió). Los dos dejan a esa persona fuera del schedule 5 minutos. Detalle en [../domains/schedules.md](../domains/schedules.md).
 
 `/panel tutorial` publica mensajes pero **no** audita: las guías son material informativo, no un cambio del servidor.
 
@@ -33,7 +33,7 @@ El bot no habla “como el bot” en esos canales si puede evitarlo. Usa **un we
 | Bot logs | **Moderation** | `/role` individual y masivo, `/user` ban/unban, y ban/unban aplicados desde un aviso de `bans_channel` (con enlace al aviso) |
 | Bot logs | **Tournaments** | Alta, edición y baja de torneo; `/sheet add`; `/tournament role`; `/tournament validate` |
 | Bot logs | **Rooms** | `/room create`, `/room auto`, franjas de auto-room (incluida la recuperada) |
-| Bot logs | **Schedules** | Crear, actualizar, borrar, refresh, resign, puesto tomado (con el tiempo de reacción y aviso **Fast click** si fue en menos de 700 ms), resultado declarado o borrado, y **Early claim blocked** |
+| Bot logs | **Schedules** | Crear, actualizar, borrar, refresh, resign, puesto tomado (con el tiempo de reacción), resultado declarado o borrado, y los intentos bloqueados **Early claim blocked** y **Fast claim blocked** |
 | Bot logs | **Attendance** | Marcar, borrar, añadir o borrar links |
 | Bot logs | **Utility** | Purga, wipe de categoría, emoji, embed y Components V2 publicados o reescritos, círculo de canal y miembro añadido a canal |
 | Bot logs | **Ticket System** | Cerrar / reabrir / borrar ticket; regenerar transcript |
