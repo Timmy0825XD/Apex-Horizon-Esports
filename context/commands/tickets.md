@@ -8,13 +8,13 @@ Reglas: [../domains/tickets.md](../domains/tickets.md).
 
 Sin campos. Solo dentro de un canal que es ticket. Persona de log: **Ticket System**.
 
-En una **sala de partido**: silencia (los capitanes y los roles del torneo dejan de escribir; siguen pudiendo leer) y mueve a la categoría de cerrados, o a la de desborde si la primera está llena. Se puede reabrir.
+En una **sala de partido**: mueve a la categoría de cerrados, o a la de desborde si la primera está llena, y cierra el acceso. Solo los roles Organiser y Helper del torneo siguen en el canal, con el mismo chat que cuando está abierto. Los capitanes pierden *Ver canal* y el staff sentado en el schedule (juez y grabador) pierde su permiso en el canal. Se puede reabrir.
 
 En un **ticket de `/tournament validate`** (el topic guarda el canal de transcript elegido al crearlo, no el de las salas): avisa en efímero que el canal se borra en **5** segundos, genera el HTML, lo envía a ese canal y **borra** el canal. No se reabre. `reopen` y `delete` en ese canal no lo archivan; hay que usar `close`.
 
 ## `/ticket reopen`
 
-Sin campos. Restaura el chat y devuelve el canal a la categoría abierta en la que nació, o a la siguiente con sitio. **Ticket System**.
+Sin campos. Devuelve el chat a los capitanes (Organiser y Helper nunca lo pierden) y devuelve el canal a la categoría abierta en la que nació, o a la siguiente con sitio. El staff del schedule **no** recupera el acceso. **Ticket System**.
 
 ## `/ticket delete`
 
