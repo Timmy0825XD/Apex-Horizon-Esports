@@ -12,6 +12,7 @@ Detalle de canales, identidades y eventos: [context/platform/audit.md](context/p
 | Modificar | Sí |
 | Borrar | Sí |
 | Leer / listar / visualizar / extraer | No |
+| Intento bloqueado por parecer trampa (`Early claim blocked`) | Sí, en morado |
 
 Se publica **después de que la mutación tenga éxito**. Fallar el log no deshace la acción.
 

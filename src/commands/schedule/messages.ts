@@ -76,7 +76,10 @@ export async function postTicketSchedule(ticket: TextChannel, face: ScheduleFace
   return upsertTicket(ticket, null, face, "captains");
 }
 
-/** First schedules-channel post of a new schedule: names the captains without pinging them. */
+/**
+ * First schedules-channel post of a new schedule: names the captains without pinging them. Assign
+ * starts disabled; `armClaimUnlock` turns it on a few seconds later.
+ */
 export async function postBoardSchedule(
   guild: Guild,
   schedulesChannelId: string,
@@ -88,7 +91,7 @@ export async function postBoardSchedule(
   if (!board) {
     throw new Error("The schedules channel is missing or is not a text channel.");
   }
-  return upsertBoard(board, null, face, scheduleId, true, openUntil);
+  return upsertBoard(board, null, face, scheduleId, false, openUntil);
 }
 
 export async function publishThumbnail(
@@ -136,7 +139,7 @@ export async function syncPosts(
   if (!board) {
     throw new Error("The schedules channel is missing or is not a text channel.");
   }
-  const unlocked = claimsAreOpen(schedule.claimsOpenUntil) && !(await seatsAreClosed(schedule, roomStatus));
+  const unlocked = claimsAreOpen(schedule.claimsOpenUntil, schedule.claimsUnlockAt) && !(await seatsAreClosed(schedule, roomStatus));
   const ticketMessageId = await upsertTicket(ticket, schedule.messages.ticketMessageId, face, ping);
   const scheduleChannelMessageId = await upsertBoard(
     board,
@@ -169,7 +172,7 @@ export async function publishUrgent(guild: Guild, schedulesChannelId: string, sc
     }
   }
   const sent = await board.send({
-    ...urgentPayload({ face, scheduleId, unlocked: true, roleIds }),
+    ...urgentPayload({ face, scheduleId, unlocked: false, roleIds }),
     allowedMentions: { roles: roleIds, parse: [] },
   });
   return sent.id;

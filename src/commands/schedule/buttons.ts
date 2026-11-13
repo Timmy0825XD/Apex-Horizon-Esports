@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ContainerBuilder, MessageFlags, type ButtonInteraction, type Guild } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ContainerBuilder, MessageFlags, SnowflakeUtil, type ButtonInteraction, type Guild } from "discord.js";
 import type { Schedule } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
 import { formatUser } from "../../lib/formatters.js";
@@ -7,7 +7,7 @@ import { loadGuildSettings } from "../settings/store.js";
 import { loadGuildStaffState } from "../staff/store.js";
 import { findTournamentById } from "../tournament/store.js";
 import { isJudge, isRecorder } from "./access.js";
-import { auditSchedule, peopleLine, ticketLine } from "./audit.js";
+import { auditSchedule, earlyLine, peopleLine, reactionLine, ticketLine } from "./audit.js";
 import { grantTicket, ticketChannel } from "./channel.js";
 import { paintSchedule } from "./live.js";
 import { bookedAround, selfBusyBody, staffBusyTitle, staffClash } from "./conflicts.js";
@@ -26,6 +26,7 @@ import { closedSeatBody, closedSeatTitle, postSeatLine, seatAssignedLine, seatHe
 import { handleOpenButton } from "./query.js";
 import { handleShowButton } from "./show.js";
 import { presentFace } from "./store.js";
+import { reactionMs } from "./unlock.js";
 import { claimsAreOpen, confirmRow, parseScheduleButton, reminderMentions, reminderPayload } from "./view.js";
 
 /** Private V2 answer to whoever pressed. */
@@ -100,10 +101,28 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
     }
     return;
   }
-  if (!claimsAreOpen(schedule.claimsOpenUntil)) {
+  // Discord's own click time (from the interaction ID), not when the bot received it.
+  const clickedAt = SnowflakeUtil.timestampFrom(interaction.id);
+  const windowOpen = Boolean(schedule.claimsOpenUntil && schedule.claimsOpenUntil.getTime() > clickedAt);
+  if (windowOpen && !claimsAreOpen(schedule.claimsOpenUntil, schedule.claimsUnlockAt, new Date(clickedAt))) {
+    // Assign is still disabled, so this click came through the API (a modified client or a script).
+    await privateReply(interaction, "warning", "Not open yet", "Assign turns on a few seconds after the post. Wait for the button to light up.");
+    await auditSchedule({
+      guild,
+      settings,
+      actor: interaction.user,
+      action: "blocked",
+      title: "Early claim blocked",
+      summary: `A ${seat} pressed Assign before it turned on. The seat was not given.`,
+      details: [ticketLine(guild, schedule.channelId), earlyLine(clickedAt, schedule.claimsUnlockAt)],
+    });
+    return;
+  }
+  if (!claimsAreOpen(schedule.claimsOpenUntil, schedule.claimsUnlockAt, new Date(clickedAt))) {
     await privateReply(interaction, "warning", "Buttons locked", "The claim window closed. A judge or recorder can run refresh to open it for 10 more minutes.");
     return;
   }
+  const reaction = reactionMs(clickedAt, schedule.claimsUnlockAt);
   const holder = seat === "judge" ? schedule.judgeId : schedule.recorderId;
   if (holder) {
     await privateReply(interaction, "warning", "Seat taken", `${formatUser(holder)} already holds the **${seatName(seat)}** seat.`);
@@ -175,7 +194,7 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
     action: "updated",
     title: "Seat claimed",
     summary: `A ${seat} took a seat in **${tournament.name}**.`,
-    details: [ticketLine(guild, ticket.id), peopleLine(next.judgeId, next.recorderId)],
+    details: [ticketLine(guild, ticket.id), peopleLine(next.judgeId, next.recorderId), reactionLine(reaction)],
   });
 }
 

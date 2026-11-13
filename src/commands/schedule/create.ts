@@ -17,6 +17,7 @@ import { bothSeatsAssignedLine, postSeatLine, seatAssignedLine } from "./seat.js
 import { presentFace } from "./store.js";
 import { loadThumbnailFace, renderScheduleThumbnail } from "./thumbnail.js";
 import type { TicketBundle } from "./ticket.js";
+import { armClaimUnlock } from "./unlock.js";
 import { newSchedulePayload, type ScheduleFace } from "./view.js";
 
 export async function runCreate(interaction: ChatInputCommandInteraction, bundle: TicketBundle): Promise<void> {
@@ -190,6 +191,9 @@ export async function runCreate(interaction: ChatInputCommandInteraction, bundle
     await rollback(guild, bundle, published);
     throw error;
   }
+
+  // The board post went out with Assign disabled; it turns on after a random 2–3 s.
+  void armClaimUnlock(guild, scheduleId).catch((error) => console.error("Schedule claim arm failed", error));
 
   // Non-blocking steps: the schedule stands, and failures only reach the creator.
   const [marked, eventId] = await Promise.all([

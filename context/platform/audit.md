@@ -15,6 +15,8 @@ Solo se auditan mutaciones. Extraer o visualizar información **no** genera log.
 | **Borrar** | Sí | `/tournament delete`, `/ticket delete`, `/attendance delete`, `/user unban` |
 | **Leer / listar / extraer** | No | `/bot ping`, `/settings show`, `/tournament list`, `/sheet find player`, `/sheet get`, `/sheet validate`, `/team info`, `/team list`, `/staff work`, `/server banlist` |
 
+**Excepción — intento bloqueado:** un intento que el bot rechaza porque parece trampa también se audita, aunque no cambie nada. Hoy solo existe uno: **Early claim blocked** (Schedules), cuando alguien pulsa **Assign** por la API mientras el botón sigue desactivado. Detalle en [../domains/schedules.md](../domains/schedules.md).
+
 `/panel tutorial` publica mensajes pero **no** audita: las guías son material informativo, no un cambio del servidor.
 
 - Se escribe el log **después de que la mutación tenga éxito**.
@@ -31,7 +33,7 @@ El bot no habla “como el bot” en esos canales si puede evitarlo. Usa **un we
 | Bot logs | **Moderation** | `/role` individual y masivo, `/user` ban/unban, y ban/unban aplicados desde un aviso de `bans_channel` (con enlace al aviso) |
 | Bot logs | **Tournaments** | Alta, edición y baja de torneo; `/sheet add`; `/tournament role`; `/tournament validate` |
 | Bot logs | **Rooms** | `/room create`, `/room auto`, franjas de auto-room (incluida la recuperada) |
-| Bot logs | **Schedules** | Crear, actualizar, borrar, refresh, resign, puesto tomado, resultado declarado o borrado |
+| Bot logs | **Schedules** | Crear, actualizar, borrar, refresh, resign, puesto tomado (con el tiempo de reacción y aviso **Fast click** si fue en menos de 700 ms), resultado declarado o borrado, y **Early claim blocked** |
 | Bot logs | **Attendance** | Marcar, borrar, añadir o borrar links |
 | Bot logs | **Utility** | Purga, wipe de categoría, emoji, embed y Components V2 publicados o reescritos, círculo de canal y miembro añadido a canal |
 | Bot logs | **Ticket System** | Cerrar / reabrir / borrar ticket; regenerar transcript |
@@ -45,7 +47,7 @@ Si el webhook no se puede crear o falló el envío, se **reintenta** y, si sigue
 
 Cada log es un **contenedor de Components V2**, en inglés:
 
-1. **Franja de color según la acción**: verde = se creó algo, dorado = se modificó, rojo = se borró (o se baneó, despidió, purgó, descalificó).
+1. **Franja de color según la acción**: verde = se creó algo, dorado = se modificó, rojo = se borró (o se baneó, despidió, purgó, descalificó), morado = intento bloqueado.
 2. **Título = la acción** (`Tournament deleted`, `Seat claimed`…), precedido del emoji del módulo desde `emojis.ts`. Nunca repite el nombre del módulo, que ya firma el mensaje.
 3. **Resumen de una frase** con las entidades en negrita o mencionables. El avatar de quien disparó la acción va de miniatura al lado.
 4. **Grupos** separados por una línea: cada uno con un rótulo pequeño opcional (`Records removed`, `Changes`, `Match`…). Los datos van como `**Etiqueta** valor`; los contadores y listas cortas, en una sola línea unida con `·`; los cambios, como `viejo → nuevo`.

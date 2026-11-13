@@ -37,13 +37,17 @@ export const auditModules = {
 
 export type AuditModule = keyof typeof auditModules;
 
-/** Only mutations are audited; the stripe color tells which kind. */
-export type AuditAction = "created" | "updated" | "deleted";
+/**
+ * Mutations are audited; the stripe color tells which kind. `blocked` is the one exception: an attempt
+ * the bot refused because it looks like cheating (e.g. Assign pressed through the API while disabled).
+ */
+export type AuditAction = "created" | "updated" | "deleted" | "blocked";
 
 const actionColors: Record<AuditAction, number> = {
   created: 0x3fae6a,
   updated: 0xd9ad45,
   deleted: 0xd8453d,
+  blocked: 0x8e5bd6,
 };
 
 /** A block of the card. `label` prints as a small caption; `inline` joins the lines with " · ". */

@@ -8,6 +8,7 @@ import { paintSchedule } from "../commands/schedule/live.js";
 import { publishUrgent, thumbnailImageUrl } from "../commands/schedule/messages.js";
 import { presentFace } from "../commands/schedule/store.js";
 import { postSeatLine, seatHeldBy, seatResignedLine, seatsAreClosed, seatWrite, type Seat } from "../commands/schedule/seat.js";
+import { armClaimUnlock, resumeClaimUnlocks } from "../commands/schedule/unlock.js";
 import { reminderMentions, reminderPayload } from "../commands/schedule/view.js";
 
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -22,6 +23,8 @@ export function startScheduleWorker(client: Client): void {
   };
   timer = setInterval(tick, 60_000);
   tick();
+  // Claim windows open across a restart lost their unlock timer.
+  void resumeClaimUnlocks(client).catch((error) => console.error("Schedule claim unlock resume failed", error));
 }
 
 export function stopScheduleWorker(): void {
@@ -158,11 +161,15 @@ async function startTime(guild: Guild, schedule: Schedule): Promise<void> {
     data: {
       reminderPhase: "t0",
       claimsOpenUntil,
+      ...(needsUrgent ? { claimsUnlockAt: null } : {}),
       ...(alert && needsUrgent ? { alert } : {}),
     },
   });
   const painted = await paintSchedule(guild, ticket, settings, tournament, match, next, false);
   if (!needsUrgent || !alert || painted.messages.t0MessageId) {
+    if (needsUrgent) {
+      await armClaimUnlock(guild, painted.id);
+    }
     return;
   }
   const imageUrl = await thumbnailImageUrl(guild, settings.thumbnailChannelId, painted.messages.thumbnailMessageId);
@@ -172,6 +179,7 @@ async function startTime(guild: Guild, schedule: Schedule): Promise<void> {
     where: { id: painted.id },
     data: { messages: { ...painted.messages, t0MessageId } },
   });
+  await armClaimUnlock(guild, painted.id);
 }
 
 async function raiseStaffAlert(guild: Guild, schedule: Schedule): Promise<void> {
@@ -188,7 +196,7 @@ async function raiseStaffAlert(guild: Guild, schedule: Schedule): Promise<void> 
   }
   const next = await prisma.schedule.update({
     where: { id: schedule.id },
-    data: { alert, claimsOpenUntil: new Date(Date.now() + 10 * 60 * 1000) },
+    data: { alert, claimsOpenUntil: new Date(Date.now() + 10 * 60 * 1000), claimsUnlockAt: null },
   });
   const painted = await paintSchedule(guild, ticket, settings, tournament, match, next, false);
   const imageUrl = await thumbnailImageUrl(guild, settings.thumbnailChannelId, painted.messages.thumbnailMessageId);
@@ -198,6 +206,7 @@ async function raiseStaffAlert(guild: Guild, schedule: Schedule): Promise<void> 
     where: { id: painted.id },
     data: { messages: { ...painted.messages, t0MessageId } },
   });
+  await armClaimUnlock(guild, painted.id);
 }
 
 async function loadScheduleContext(guild: Guild, schedule: Schedule) {

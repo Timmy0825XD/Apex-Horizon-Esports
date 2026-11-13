@@ -179,6 +179,8 @@ model Schedule {
   confirmations    ScheduleConfirmations
   alert            ScheduleAlert?
   claimsOpenUntil  DateTime?
+  /// Assign stays disabled until this moment; null while a fresh claim window waits to be armed.
+  claimsUnlockAt   DateTime?
   reminderPhase    String
   results          ScheduleResults?
   createdAt        DateTime               @default(now())
