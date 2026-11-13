@@ -4,8 +4,8 @@ Cerrar un ticket **no** es lo mismo que reportar el score. El canal nace en [bra
 
 | Comando | Efecto |
 |---|---|
-| `/ticket close` | Sala de partido: silencia y mueve a categoría de cerrados. Se puede reabrir. Ticket de `/tournament validate`: transcript HTML al canal guardado en el topic y el canal se borra. |
-| `/ticket reopen` | Restaura permisos y, si se sabe, la categoría original. |
+| `/ticket close` | Sala de partido: mueve a categoría de cerrados; solo Organiser y Helper siguen dentro, con chat completo, capitanes y staff del schedule pierden el acceso. Se puede reabrir. Ticket de `/tournament validate`: transcript HTML al canal guardado en el topic y el canal se borra. |
+| `/ticket reopen` | Devuelve el chat a los capitanes (el staff del schedule no vuelve) y, si se sabe, la categoría original. |
 | `/ticket delete` | El canal desaparece; se olvida el vínculo partido↔canal. Irreversible. |
 | `/ticket transcript` | Battle ticket: genera de nuevo el transcript y reemplaza el anterior (borra sus posts, re-enlaza resultados y la tarjeta de `/bracket upload`). No cambia el estado del ticket. |
 | `/bracket upload` | Además de reportar al bracket, renombra/cierra/archiva y transcribe como parte del cierre **oficial** del partido. |

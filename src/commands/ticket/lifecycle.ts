@@ -1,17 +1,7 @@
-import type { Guild, TextChannel } from "discord.js";
+import { OverwriteType, type Guild, type TextChannel } from "discord.js";
 import { prisma } from "../../lib/prisma.js";
 import { categoryLoads, nextOpenCategory } from "../room/categories.js";
 import type { TournamentRecord } from "../tournament/fields.js";
-
-const SILENCE = {
-  ViewChannel: true,
-  ReadMessageHistory: true,
-  SendMessages: false,
-  AddReactions: false,
-  AttachFiles: false,
-  EmbedLinks: false,
-  UseExternalEmojis: false,
-} as const;
 
 const CHAT = {
   ViewChannel: true,
@@ -23,9 +13,43 @@ const CHAT = {
   UseExternalEmojis: true,
 } as const;
 
-async function editAccess(channel: TextChannel, guildId: string, access: typeof SILENCE | typeof CHAT): Promise<void> {
-  const overwrites = [...channel.permissionOverwrites.cache.values()].filter((overwrite) => overwrite.id !== guildId);
-  await Promise.all(overwrites.map((overwrite) => overwrite.edit(access, "Battle ticket access")));
+const LOCKED = { ViewChannel: false } as const;
+
+/** Judges and recorders seated on this ticket's schedules; they only get access through a seat. */
+async function staffIds(channelId: string): Promise<Set<string>> {
+  const schedules = await prisma.schedule.findMany({
+    where: { channelId },
+    select: { judgeId: true, recorderId: true },
+  });
+  return new Set(schedules.flatMap((row) => [row.judgeId, row.recorderId]).filter((id): id is string => Boolean(id)));
+}
+
+/**
+ * Roles (organiser, helper) keep full chat whether the ticket is open or closed. Seated staff lose
+ * their overwrite. Any other member (the captains) gets `memberAccess`: locked out while closed,
+ * back in chat when reopened.
+ */
+async function editAccess(
+  channel: TextChannel,
+  guildId: string,
+  memberAccess: typeof LOCKED | typeof CHAT,
+): Promise<void> {
+  const staff = await staffIds(channel.id);
+  const botId = channel.client.user.id;
+  const overwrites = [...channel.permissionOverwrites.cache.values()].filter(
+    (overwrite) => overwrite.id !== guildId && overwrite.id !== botId,
+  );
+  await Promise.all(
+    overwrites.map((overwrite) => {
+      if (overwrite.type === OverwriteType.Role) {
+        return overwrite.edit(CHAT, "Battle ticket access");
+      }
+      if (staff.has(overwrite.id)) {
+        return overwrite.delete("Battle ticket staff access removed");
+      }
+      return overwrite.edit(memberAccess, "Battle ticket access");
+    }),
+  );
 }
 
 async function move(channel: TextChannel, categoryId: string): Promise<void> {
@@ -48,7 +72,7 @@ export async function closeTicket(
   const previous = channel.parentId;
   await move(channel, categoryId);
   try {
-    await editAccess(channel, guild.id, SILENCE);
+    await editAccess(channel, guild.id, LOCKED);
   } catch (error) {
     if (previous) {
       await channel.setParent(previous, { lockPermissions: false }).catch(() => undefined);
