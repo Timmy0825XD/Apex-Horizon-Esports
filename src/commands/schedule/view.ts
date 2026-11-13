@@ -279,13 +279,45 @@ function postTitle(face: ScheduleFace, trophy: boolean): string {
   return `${trophy ? `${emojis.torneo} ` : ""}${escapeDiscord(face.leftName)} ${emojis.vs} ${escapeDiscord(face.rightName)}`;
 }
 
+/** A custom emoji, or a Unicode emoji with its modifiers, ZWJ sequence, flag pair or keycap. */
+const EMOJI =
+  /<a?:\w+:\d+>|\p{Regional_Indicator}{2}|[#*0-9]️?⃣|\p{Extended_Pictographic}(?:️|\p{Emoji_Modifier})*(?:‍\p{Extended_Pictographic}(?:️|\p{Emoji_Modifier})*)*/gu;
+
 /**
- * `lado VS lado` with each side linking to the transcript. Discord drops a masked link whose text
- * holds a custom emoji, so the VS emoji stays outside the links.
+ * A team name linking to `url`. Discord prints a masked link raw when its text holds an emoji, so
+ * every emoji (and the spaces around it) stays outside the link: `Red 🥚` → `[Red](url) 🥚`.
+ * Returns `linked: false` when the name has no text to link.
  */
-function linkedTitle(face: ScheduleFace, url: string): string {
-  const side = (name: string) => `[${escapeDiscord(name).replace(/[[\]]/g, "\\$&")}](${url})`;
-  return `${side(face.leftName)} ${emojis.vs} ${side(face.rightName)}`;
+export function linkedName(name: string, url: string): { text: string; linked: boolean } {
+  let linked = false;
+  const text = name
+    .split(new RegExp(`(${EMOJI.source})`, "u"))
+    .map((part, index) => {
+      if (index % 2 === 1) {
+        return part;
+      }
+      const core = part.trim();
+      if (!core) {
+        return part;
+      }
+      linked = true;
+      const start = part.indexOf(core);
+      const label = escapeDiscord(core).replace(/[[\]]/g, "\\$&");
+      return `${part.slice(0, start)}[${label}](${url})${part.slice(start + core.length)}`;
+    })
+    .join("");
+  return { text, linked };
+}
+
+/**
+ * `lado VS lado` with each side linking to the transcript. The VS emoji and any emoji in a name stay
+ * outside the links. If neither name has text to link, a `Transcript` link follows the title.
+ */
+export function linkedTitle(face: Pick<ScheduleFace, "leftName" | "rightName">, url: string): string {
+  const left = linkedName(face.leftName, url);
+  const right = linkedName(face.rightName, url);
+  const title = `${left.text} ${emojis.vs} ${right.text}`;
+  return left.linked || right.linked ? title : `${title} · [Transcript](${url})`;
 }
 
 function staffBlock(face: ScheduleFace): string {
