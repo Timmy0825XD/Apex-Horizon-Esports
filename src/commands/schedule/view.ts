@@ -158,8 +158,9 @@ export function claimRow(scheduleId: string, judgeId: string | null, recorderId:
   );
 }
 
-export function claimsAreOpen(until: Date | null | undefined, now = new Date()): boolean {
-  return Boolean(until && until.getTime() > now.getTime());
+/** Assign works only after the unlock moment (unset = still locked) and before the window closes. */
+export function claimsAreOpen(until: Date | null | undefined, unlockAt: Date | null | undefined, now = new Date()): boolean {
+  return Boolean(until && unlockAt && unlockAt.getTime() <= now.getTime() && until.getTime() > now.getTime());
 }
 
 export function confirmRow(scheduleId: string, judgeId: string | null, recorderId: string | null, judgeConfirmed: boolean, recorderConfirmed: boolean): ActionRowBuilder<ButtonBuilder> | null {

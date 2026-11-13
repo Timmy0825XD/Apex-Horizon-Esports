@@ -25,6 +25,7 @@ import {
 } from "./respond.js";
 import { emojis } from "../../emojis.js";
 import { closedSeatBody, closedSeatTitle, postSeatLine, seatAssignedLine, seatClashLine, seatResignedLine, seatsAreClosed, type Seat } from "./seat.js";
+import { armClaimUnlock } from "./unlock.js";
 import { bookedAround, fullMinuteBody, fullMinuteTitle, minuteIsFull, staffBusyBody, staffBusyTitle, staffClash } from "./conflicts.js";
 import { formatUser } from "../../lib/formatters.js";
 import { slashMention } from "../../lib/register-slash.js";
@@ -311,9 +312,10 @@ export async function runRefresh(interaction: ChatInputCommandInteraction): Prom
   }
   const opened = await prisma.schedule.update({
     where: { id: schedule.id },
-    data: { claimsOpenUntil: new Date(Date.now() + 10 * 60 * 1000) },
+    data: { claimsOpenUntil: new Date(Date.now() + 10 * 60 * 1000), claimsUnlockAt: null },
   });
   const painted = await paintSchedule(guild, ticket, settings, tournament, match, opened, false);
+  void armClaimUnlock(guild, opened.id).catch((error) => console.error("Schedule claim arm failed", error));
   const boardUrl = `https://discord.com/channels/${guild.id}/${settings.schedulesChannelId}/${painted.messages.scheduleChannelMessageId}`;
   const openUntil = Math.floor((opened.claimsOpenUntil?.getTime() ?? Date.now()) / 1000);
   await replySchedule(
