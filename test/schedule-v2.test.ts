@@ -4,6 +4,8 @@ import { MessageFlags } from "discord.js";
 import { legacyNotice, scheduleCard, scheduleNotice, stampFooter } from "../src/commands/schedule/respond.js";
 import {
   boardPostPayload,
+  linkedName,
+  linkedTitle,
   newSchedulePayload,
   postMentionIds,
   reminderMentions,
@@ -126,6 +128,19 @@ test("the results post shows the proofs, links the title to the transcript and h
   // Each side is its own link; the VS emoji stays outside, or Discord shows the raw markdown.
   assert.match(out, /## \[[^\]<]+\]\(https:\/\/discord.com\/channels\/1\/2\/3\) <a?:[^>]+> \[[^\]<]+\]\(https:\/\/discord.com\/channels\/1\/2\/3\)/);
   assert.equal(resultsPayload({ ...{ face, team1Score: 3, team2Score: 1, notes: null, links: [], declaredAt: new Date(), uploadedById: null, transcriptUrl: null, gallery: [] }, intro: false }).components.length, 1);
+});
+
+test("emoji in a team name stay outside the transcript link", () => {
+  const url = "https://discord.com/channels/1/2/3";
+  assert.deepEqual(linkedName("Red 🥚", url), { text: `[Red](${url}) 🥚`, linked: true });
+  assert.equal(linkedName("🔥 Fire <:egg:123456789012345678> Team 👨‍👩‍👧", url).text, `🔥 [Fire](${url}) <:egg:123456789012345678> [Team](${url}) 👨‍👩‍👧`);
+  assert.equal(linkedName("GVNN", url).text, `[GVNN](${url})`);
+  assert.equal(linkedName("Team #1", url).text, `[Team #1](${url})`);
+  assert.equal(linkedName("[A]_b", url).text, `[\\[A\\]\\_b](${url})`);
+  assert.deepEqual(linkedName("🥚🇨🇴", url), { text: "🥚🇨🇴", linked: false });
+  // Nothing to link on either side: the transcript still has a link.
+  assert.match(linkedTitle({ leftName: "🥚", rightName: "🐔" }, url), /^🥚 <a?:[^>]+> 🐔 · \[Transcript\]\(https:/);
+  assert.doesNotMatch(linkedTitle({ leftName: "GVNN", rightName: "Red 🥚" }, url), /Transcript/);
 });
 
 test("the New Schedule alert pings the open seat role and uses the direct GIF as thumbnail", () => {
