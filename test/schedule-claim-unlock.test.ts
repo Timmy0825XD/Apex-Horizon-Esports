@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { earlyLine, FAST_CLAIM_MS, reactionLine } from "../src/commands/schedule/audit.js";
-import { reactionMs, unlockDelay } from "../src/commands/schedule/unlock.js";
+import { blockLine, earlyLine, FAST_CLAIM_MS, fastLine, reactionLine } from "../src/commands/schedule/audit.js";
+import { blockedUntil, CLAIM_BLOCK_MS, reactionMs, unlockDelay, withBlock } from "../src/commands/schedule/unlock.js";
 import { claimsAreOpen } from "../src/commands/schedule/view.js";
 
 const now = new Date("2026-11-13T20:00:00Z");
@@ -23,15 +23,29 @@ test("the unlock delay is random between 2 and 3 seconds", () => {
   assert.equal(unlockDelay(() => 0.9999999), 3_000);
 });
 
-test("reaction counts from Assign turning on and flags clicks faster than a person", () => {
+test("reaction counts from Assign turning on", () => {
   assert.equal(reactionMs(now.getTime() + 450, now), 450);
   assert.equal(reactionMs(now.getTime(), null), null);
   assert.match(reactionLine(450), /`450 ms`/);
-  assert.match(reactionLine(450), /Fast click/);
   assert.match(reactionLine(-80), /`0 ms`/);
-  assert.doesNotMatch(reactionLine(FAST_CLAIM_MS), /Fast click/);
-  assert.doesNotMatch(reactionLine(1_800), /Fast click/);
   assert.match(reactionLine(null), /unknown/);
+  assert.match(fastLine(), new RegExp(`${FAST_CLAIM_MS} ms`));
+});
+
+test("a too-fast click bars that member from the schedule for 5 minutes", () => {
+  const t = now.getTime();
+  const blocks = withBlock([], "1", t);
+  assert.equal(blocks.length, 1);
+  assert.equal(blocks[0].until.getTime() - t, CLAIM_BLOCK_MS);
+  assert.equal(CLAIM_BLOCK_MS, 5 * 60_000);
+  assert.deepEqual(blockedUntil(blocks, "1", t + 60_000), blocks[0].until);
+  assert.equal(blockedUntil(blocks, "2", t + 60_000), null, "other members are free");
+  assert.equal(blockedUntil(blocks, "1", t + CLAIM_BLOCK_MS), null, "free again after 5 minutes");
+  assert.equal(blockedUntil(undefined, "1", t), null);
+  // A new block replaces the member's old one and drops expired blocks of others.
+  const later = withBlock([...blocks, { userId: "2", until: at(-1) }], "1", t + 60_000);
+  assert.deepEqual(later.map((block) => [block.userId, block.until.getTime() - t]), [["1", 60_000 + CLAIM_BLOCK_MS]]);
+  assert.match(blockLine(blocks[0].until), /<t:\d+:R>/);
 });
 
 test("a blocked claim says how early it was pressed", () => {

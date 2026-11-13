@@ -7,7 +7,7 @@ import { loadGuildSettings } from "../settings/store.js";
 import { loadGuildStaffState } from "../staff/store.js";
 import { findTournamentById } from "../tournament/store.js";
 import { isJudge, isRecorder } from "./access.js";
-import { auditSchedule, earlyLine, peopleLine, reactionLine, ticketLine } from "./audit.js";
+import { auditSchedule, blockLine, earlyLine, FAST_CLAIM_MS, fastLine, peopleLine, reactionLine, ticketLine } from "./audit.js";
 import { grantTicket, ticketChannel } from "./channel.js";
 import { paintSchedule } from "./live.js";
 import { bookedAround, selfBusyBody, staffBusyTitle, staffClash } from "./conflicts.js";
@@ -26,7 +26,7 @@ import { closedSeatBody, closedSeatTitle, postSeatLine, seatAssignedLine, seatHe
 import { handleOpenButton } from "./query.js";
 import { handleShowButton } from "./show.js";
 import { presentFace } from "./store.js";
-import { reactionMs } from "./unlock.js";
+import { blockClaims, blockedUntil, reactionMs } from "./unlock.js";
 import { claimsAreOpen, confirmRow, parseScheduleButton, reminderMentions, reminderPayload } from "./view.js";
 
 /** Private V2 answer to whoever pressed. */
@@ -71,6 +71,11 @@ export async function handleScheduleButton(interaction: ButtonInteraction): Prom
   await confirmSeat(interaction, guild, schedule, parsed.seat);
 }
 
+function blockedBody(reason: string, until: Date): string {
+  const unix = Math.floor(until.getTime() / 1000);
+  return `${reason}, so the seat was not given. You can try this match again <t:${unix}:R>.`;
+}
+
 async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule: Schedule, seat: "judge" | "recorder"): Promise<void> {
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const { staff } = await loadGuildStaffState(guild.id);
@@ -103,10 +108,22 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
   }
   // Discord's own click time (from the interaction ID), not when the bot received it.
   const clickedAt = SnowflakeUtil.timestampFrom(interaction.id);
+  const barred = blockedUntil(schedule.claimBlocks, interaction.user.id, clickedAt);
+  if (barred) {
+    const unix = Math.floor(barred.getTime() / 1000);
+    await privateReply(
+      interaction,
+      "warning",
+      "Claim blocked",
+      `Your last click on this match came faster than a person can react, so you cannot take a seat here until <t:${unix}:t> (<t:${unix}:R>).`,
+    );
+    return;
+  }
   const windowOpen = Boolean(schedule.claimsOpenUntil && schedule.claimsOpenUntil.getTime() > clickedAt);
   if (windowOpen && !claimsAreOpen(schedule.claimsOpenUntil, schedule.claimsUnlockAt, new Date(clickedAt))) {
     // Assign is still disabled, so this click came through the API (a modified client or a script).
-    await privateReply(interaction, "warning", "Not open yet", "Assign turns on a few seconds after the post. Wait for the button to light up.");
+    const until = await blockClaims(schedule.id, schedule.claimBlocks, interaction.user.id, clickedAt);
+    await privateReply(interaction, "warning", "Not open yet", blockedBody("You pressed Assign before it turned on", until));
     await auditSchedule({
       guild,
       settings,
@@ -114,7 +131,7 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
       action: "blocked",
       title: "Early claim blocked",
       summary: `A ${seat} pressed Assign before it turned on. The seat was not given.`,
-      details: [ticketLine(guild, schedule.channelId), earlyLine(clickedAt, schedule.claimsUnlockAt)],
+      details: [ticketLine(guild, schedule.channelId), earlyLine(clickedAt, schedule.claimsUnlockAt), blockLine(until)],
     });
     return;
   }
@@ -123,6 +140,20 @@ async function claimSeat(interaction: ButtonInteraction, guild: Guild, schedule:
     return;
   }
   const reaction = reactionMs(clickedAt, schedule.claimsUnlockAt);
+  if (reaction !== null && reaction < FAST_CLAIM_MS) {
+    const until = await blockClaims(schedule.id, schedule.claimBlocks, interaction.user.id, clickedAt);
+    await privateReply(interaction, "warning", "Too fast", blockedBody("Your click came faster than a person can react", until));
+    await auditSchedule({
+      guild,
+      settings,
+      actor: interaction.user,
+      action: "blocked",
+      title: "Fast claim blocked",
+      summary: `A ${seat} pressed Assign faster than a person can react. The seat was not given.`,
+      details: [ticketLine(guild, schedule.channelId), reactionLine(reaction), fastLine(), blockLine(until)],
+    });
+    return;
+  }
   const holder = seat === "judge" ? schedule.judgeId : schedule.recorderId;
   if (holder) {
     await privateReply(interaction, "warning", "Seat taken", `${formatUser(holder)} already holds the **${seatName(seat)}** seat.`);
