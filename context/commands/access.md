@@ -251,6 +251,18 @@ Ninguna.
 
 - Hace falta que `/settings set` ya exista.
 
+### `/tournament refresh`
+
+- [x] Admin
+- [x] Organiser
+- [ ] Helper
+- [ ] Staff
+- [ ] Juez
+- [ ] Grabador
+- [ ] Público
+
+- Hace falta que `/settings set` ya exista.
+
 ### `/tournament delete`
 
 - [x] Admin

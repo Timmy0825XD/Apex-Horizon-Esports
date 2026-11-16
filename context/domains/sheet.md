@@ -11,7 +11,7 @@ Los campos adicionales **siempre van al final**. El bot detecta el formato cogie
 
 El torneo y la copia en BD guardan `format` y `additionalFieldCount`. Los extra se almacenan con el **nombre del header** de la fila 1; `/team` los muestra al final del V2. `/sheet find player` **no** los usa.
 
-Operar un torneo vivo (`/sheet validate`, `/team info`, `/tournament role`) **sigue leyendo Google**. Además, el bot **almacena copias** de hojas en un archivo **global** (todos los servidores del bot). `/sheet find player` no relee Google: mira esas copias, en cualquier gremio.
+Operar un torneo vivo (`/sheet validate`, `/team info`, `/tournament role`) **sigue leyendo Google**. Los tickets y los schedules leen la **copia almacenada**: tras cambiar la hoja, `/tournament refresh` la actualiza. Además, el bot **almacena copias** de hojas en un archivo **global** (todos los servidores del bot). `/sheet find player` no relee Google: mira esas copias, en cualquier gremio.
 
 ## Archivo de sheets (BD)
 
@@ -19,7 +19,7 @@ Un solo pozo de búsqueda para **todo el bot**. Cada copia recuerda de qué serv
 
 | Origen | Cuándo entra | Qué pasa después |
 |---|---|---|
-| `/tournament add` | Al crear el torneo se **copia** la sheet | Cruza in-game IDs con la lista oficial de baneados; si hay alguno, **no** crea. Si `/tournament edit` cambia `sheet_link`, esa copia se **reemplaza** (mismo cruce). |
+| `/tournament add` | Al crear el torneo se **copia** la sheet | Cruza in-game IDs con la lista oficial de baneados; si hay alguno, **no** crea. Si `/tournament edit` cambia `sheet_link`, esa copia se **reemplaza** (mismo cruce). `/tournament refresh` la vuelve a leer con el mismo link (mismo cruce). |
 | `/sheet add` | Alta manual: **link + name**, o un **CSV** (nombre, link, sin headers; coma, `;` o tab) | Detecta formato y extra igual que add. Un link ya archivado se omite. |
 | `/sheet get` | Lookup por nombre, o CSV de todo el archivo | Lectura. Autocomplete global. No audita. |
 | `/tournament delete` | La config del torneo y sus partidos / salas / schedules / asistencias se borran | La sheet **pasa a histórico**. Sigue saliendo en `/sheet find player` / `/sheet get` (global). |

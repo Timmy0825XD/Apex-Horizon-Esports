@@ -33,6 +33,12 @@ Valida bracket + layout de la hoja. Cada jugador tiene **5** columnas (tag, Disc
 
 **Para qué:** Parchear el mundo del torneo. Admin u Organiser. Mismos campos que add (excepto `id` de alta): `id` (autocomplete, obligatorio) + el resto opcional. No toca auto-room. Si cambia `sheet_link`, la copia almacenada se **reemplaza** y se vuelve a cruzar la lista oficial de IDs baneados (si hay coincidencias, no se aplica el cambio). Audita.
 
+## `/tournament refresh`
+
+**Para qué:** Volver a leer la Google Sheet del torneo (mismo `sheet_link`) y **reemplazar la copia almacenada**. Tickets (`/room`, auto-room) y schedules leen esa copia, no Google: sin refresh, un cambio en la hoja (p. ej. otro capitán) no llega a ellos. Admin u Organiser. `id` (autocomplete, obligatorio).
+
+Cruza otra vez la lista oficial de IDs baneados; si hay coincidencias, **no** cambia nada y lista a los jugadores. Si el formato o los campos extra cambiaron, también los actualiza en el torneo. Los tickets ya abiertos y los schedules ya creados **no** se tocan. Responde con un V2 verde `## Sheet Refreshed` (entradas y formato). Audita (`Tournament sheet refreshed`).
+
 ## `/tournament delete`
 
 | Campo | Tipo | Obligatorio |

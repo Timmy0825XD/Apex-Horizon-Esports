@@ -99,6 +99,14 @@ export const tournamentSlash = new SlashCommandBuilder()
   )
   .addSubcommand((subcommand) =>
     subcommand
+      .setName("refresh")
+      .setDescription("Re-read the tournament's sheet into the bot")
+      .addStringOption((option) =>
+        option.setName("id").setDescription("Tournament to refresh").setRequired(true).setAutocomplete(true),
+      ),
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName("delete")
       .setDescription("Remove a tournament from the bot")
       .addStringOption((option) =>

@@ -31,7 +31,7 @@ El bot no habla “como el bot” en esos canales si puede evitarlo. Usa **un we
 | Bot logs | **Server Config** | `/settings` set/edit, `/staff` set/edit (roles y canales del servidor y del staff) |
 | Bot logs | **Staff** | Recruit, fire, staff info registrada o editada |
 | Bot logs | **Moderation** | `/role` individual y masivo, `/user` ban/unban, y ban/unban aplicados desde un aviso de `bans_channel` (con enlace al aviso) |
-| Bot logs | **Tournaments** | Alta, edición y baja de torneo; `/sheet add`; `/tournament role`; `/tournament validate` |
+| Bot logs | **Tournaments** | Alta, edición, refresh de la sheet y baja de torneo; `/sheet add`; `/tournament role`; `/tournament validate` |
 | Bot logs | **Rooms** | `/room create`, `/room auto`, franjas de auto-room (incluida la recuperada) |
 | Bot logs | **Schedules** | Crear, actualizar, borrar, refresh, resign, puesto tomado (con el tiempo de reacción), resultado declarado o borrado, y los intentos bloqueados **Early claim blocked** y **Fast claim blocked** |
 | Bot logs | **Attendance** | Marcar, borrar, añadir o borrar links |
@@ -60,7 +60,7 @@ Las listas largas (tickets abiertos, hojas archivadas) muestran **15** y cierran
 | Familia | Eventos |
 |---|---|
 | Servidor | Settings set/edit; staff config set/edit; recruit; fire; staff info add/edit; rol individual; rol masivo; ban; unban |
-| Torneo | Alta, edición, baja; `/sheet add`; `/tournament role`; `/tournament validate` (si abrió al menos un ticket); auto-room on/off; salas creadas |
+| Torneo | Alta, edición, refresh de la sheet, baja; `/sheet add`; `/tournament role`; `/tournament validate` (si abrió al menos un ticket); auto-room on/off; salas creadas |
 | Bracket | Score subido; score corregido (marcador viejo → nuevo + ganador) |
 | Schedule | Crear, actualizar (con motivo), borrar, refresh, resign, asignar por botón, resultado declarado, resultado borrado |
 | Asistencia | Marcar, borrar, añadir link, borrar links |
