@@ -44,6 +44,19 @@ export const tournamentGuides: GuideBook = {
     ],
     related: ["tournament info", "tournament add"],
   },
+  "tournament refresh": {
+    steps: [
+      "Pick the tournament. The bot reads its Google Sheet again, with the same link.",
+      "Every in-game ID is checked against the official ban list. If anyone is banned, the stored copy is not changed.",
+      "If all is fine, the stored copy is replaced. New tickets and schedules use the new roster.",
+    ],
+    options: { id: pickTournament },
+    notes: [
+      "Use it after changing a captain or a player on the sheet.",
+      "Open tickets keep their members. Fix those by hand.",
+    ],
+    related: ["tournament edit", "tournament info"],
+  },
   "tournament delete": {
     steps: [
       "Pick the tournament.",

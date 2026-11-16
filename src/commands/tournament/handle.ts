@@ -9,6 +9,7 @@ import { handleTournamentDelete } from "./delete.js";
 import { handleTournamentEdit } from "./edit.js";
 import { handleTournamentInfo } from "./info.js";
 import { handleTournamentList } from "./list.js";
+import { handleTournamentRefresh } from "./refresh.js";
 import { handleTournamentReport } from "./report.js";
 import { handleTournamentRole, handleTournamentRoleButton, isTournamentRoleButton } from "./role.js";
 import { handleTournamentValidate } from "./validate.js";
@@ -33,6 +34,10 @@ export async function handleTournamentSlash(interaction: ChatInputCommandInterac
   }
   if (sub === "edit") {
     await handleTournamentEdit(interaction, commandId);
+    return;
+  }
+  if (sub === "refresh") {
+    await handleTournamentRefresh(interaction);
     return;
   }
   if (sub === "delete") {
@@ -68,7 +73,7 @@ export async function handleTournamentAuto(interaction: AutocompleteInteraction)
 
   const sub = interaction.options.getSubcommand(false);
   const organiserOnly = sub === "role" || sub === "validate" || sub === "report";
-  const adminOrOrganiser = sub === "add" || sub === "edit" || sub === "delete" || sub === "info" || sub === "list";
+  const adminOrOrganiser = sub === "add" || sub === "edit" || sub === "refresh" || sub === "delete" || sub === "info" || sub === "list";
   if (organiserOnly && !(await canUseTournamentRole(interaction))) {
     await interaction.respond([]);
     return;

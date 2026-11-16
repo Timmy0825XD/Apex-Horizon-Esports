@@ -127,6 +127,33 @@ export async function auditTournamentEdit(
   }
 }
 
+export async function auditTournamentRefresh(
+  interaction: ChatInputCommandInteraction,
+  guild: Guild,
+  settings: GuildSettings,
+  tournament: TournamentRecord,
+  entries: number,
+): Promise<void> {
+  await publishAudit({
+    guild,
+    channelId: settings.botLogsChannelId,
+    module: "tournaments",
+    action: "updated",
+    title: "Tournament sheet refreshed",
+    summary: `The stored roster of **${tournament.name}** was re-read from Google.`,
+    groups: [
+      {
+        lines: [
+          fact("Sheet", formatSheetLink(tournament.sheetLink)),
+          fact("Entries", `\`${entries}\``),
+          fact("Format", `\`${tournament.format}\``),
+        ],
+      },
+    ],
+    actor: interaction.user,
+  });
+}
+
 export async function auditTournamentDelete(
   interaction: ChatInputCommandInteraction,
   guild: Guild,

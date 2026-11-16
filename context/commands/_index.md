@@ -24,7 +24,7 @@ Las **opciones** siguen en `snake_case` (`sheet_link`, `team1_score`, `discord_t
 | Bot | [bot.md](bot.md) | `/bot ping` · `/bot about` · `/bot help` |
 | Settings | [settings.md](settings.md) | `/settings set` · `edit` · `show` |
 | Staff | [staff.md](staff.md) | `/staff config set` · `edit` · `view` · `/staff info add` · `edit` · `export` · `/staff recruit` · `fire` · `work` |
-| Tournament | [tournament.md](tournament.md) | `/tournament add` · `edit` · `delete` · `info` · `list` · `report` · `role` · `validate` |
+| Tournament | [tournament.md](tournament.md) | `/tournament add` · `edit` · `refresh` · `delete` · `info` · `list` · `report` · `role` · `validate` |
 | Sheet y equipos | [sheet-teams.md](sheet-teams.md) | `/sheet add` · `get` · `find player` · `validate` · `/team info` · `list` · `/utility discord tag` |
 | Salas y bracket | [rooms-bracket.md](rooms-bracket.md) | `/room auto` · `/room create` · `available` · `/bracket upload` · `/bracket dq both` · `/bracket correct` |
 | Schedule | [schedule.md](schedule.md) | `/schedule create` · `update` · `show` · `delete` · `unassigned` · `refresh` · `resign` · `results add` · `results delete` |

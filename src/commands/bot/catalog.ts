@@ -50,6 +50,7 @@ export const helpCatalog: HelpCategory[] = [
     entries: [
       { slash: "tournament add", summary: "Register a tournament with its bracket, sheet, roles, and channels. Blocks if any in-game ID is officially banned.", access: "Admin or Organiser" },
       { slash: "tournament edit", summary: "Change a registered tournament's bracket, roles, channels, or ticket categories.", access: "Admin or Organiser" },
+      { slash: "tournament refresh", summary: "Re-read a tournament's Google Sheet so new tickets and schedules use the current roster.", access: "Admin or Organiser" },
       { slash: "tournament delete", summary: "Remove a tournament and its bot records. The stored sheet stays as history.", access: "Admin or Organiser" },
       { slash: "tournament info", summary: "Show a tournament's setup: identity, roles, channels, and ticket categories.", access: "Admin or Organiser" },
       { slash: "tournament list", summary: "List every tournament registered in this server.", access: "Admin or Organiser" },
