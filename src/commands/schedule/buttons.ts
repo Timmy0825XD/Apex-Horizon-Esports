@@ -29,10 +29,16 @@ import { presentFace } from "./store.js";
 import { blockClaims, blockedUntil, reactionMs } from "./unlock.js";
 import { claimsAreOpen, confirmRow, parseScheduleButton, reminderMentions, reminderPayload } from "./view.js";
 
+/** Presses acknowledged with deferUpdate: a private answer must be a follow-up, or it would overwrite the card. */
+const updateDeferred = new WeakSet<ButtonInteraction>();
+
 /** Private V2 answer to whoever pressed. */
 function privateReply(interaction: ButtonInteraction, tone: CardTone, title: string, body: string, extra?: ActionRowBuilder<ButtonBuilder>) {
   const card = scheduleCard({ tone, title, blocks: extra ? [body, extra] : [body] });
   const payload = { components: [card], allowedMentions: { parse: [] as const } };
+  if (updateDeferred.has(interaction)) {
+    return interaction.followUp({ ...payload, flags: [...v2Flags, MessageFlags.Ephemeral] });
+  }
   if (interaction.deferred || interaction.replied) {
     return interaction.editReply({ ...payload, flags: v2Flags });
   }
@@ -58,6 +64,11 @@ export async function handleScheduleButton(interaction: ButtonInteraction): Prom
   const guild = interaction.guild;
   if (!parsed || !guild) {
     return;
+  }
+  if (parsed.action === "confirm") {
+    // Acknowledge before any lookup: a slow database must not outlast Discord's 3-second window.
+    await interaction.deferUpdate();
+    updateDeferred.add(interaction);
   }
   const schedule = await prisma.schedule.findUnique({ where: { id: parsed.scheduleId } });
   if (!schedule || schedule.guildId !== guild.id) {
@@ -269,17 +280,16 @@ async function confirmSeat(interaction: ButtonInteraction, guild: Guild, schedul
 async function repaintReminder(interaction: ButtonInteraction, guild: Guild, schedule: Schedule): Promise<void> {
   const row = confirmRow(schedule.id, schedule.judgeId, schedule.recorderId, schedule.confirmations.judge, schedule.confirmations.recorder);
   if (!interaction.message.flags.has(MessageFlags.IsComponentsV2)) {
-    await interaction.update({ components: row ? [row] : [], allowedMentions: { parse: [] } });
+    await interaction.editReply({ components: row ? [row] : [], allowedMentions: { parse: [] } });
     return;
   }
   const tournament = await findTournamentById(guild.id, schedule.tournamentId);
   const match = await loadMatch(schedule);
   if (!tournament || !match) {
-    await interaction.deferUpdate();
     return;
   }
   const face = await presentFace(guild, tournament, match, schedule);
-  await interaction.update({
+  await interaction.editReply({
     ...reminderPayload({
       face,
       scheduleId: schedule.id,
