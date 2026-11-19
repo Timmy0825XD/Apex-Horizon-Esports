@@ -5,7 +5,7 @@ import { findBannedPlayers, type BannedPlayerHit } from "../tournament/banned-id
 import { SheetError, loadParsedSheet } from "../tournament/sheet.js";
 import { isSheetAdmin, requireSheetAdmin } from "./access.js";
 import { deferSheet, respondSheet } from "./respond.js";
-import { sheetErrorMessage, sheetValidateMessage, type SheetIssueKind, type SheetValidateReport } from "./view.js";
+import { sheetErrorMessage, sheetValidateMessages, type SheetIssueKind, type SheetValidateReport } from "./view.js";
 import { loadGuildConfig } from "../../lib/guild-config.js";
 
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
@@ -327,5 +327,10 @@ export async function handleSheetValidate(
 
   const roleIds = await staffRoleIds(access.guild.id);
   const report = collectReport(access.guild, parsed, banned, membersKnown, fullRoster, roleIds);
-  await respondSheet(interaction, sheetValidateMessage(report, commandIds));
+  const [first, ...rest] = sheetValidateMessages(report, commandIds);
+  await respondSheet(interaction, first);
+  // One by one keeps the order; each message is already packed to Discord's limits.
+  for (const message of rest) {
+    await interaction.followUp(message);
+  }
 }

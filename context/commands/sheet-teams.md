@@ -64,7 +64,7 @@ Un V2 **por jugador distinto**. El título `##` es el nombre y debajo, en `-#`, 
 
 Admin u Organiser. Previo a crear torneo. Efímero. No archiva la hoja y no audita. Relación: `/utility discord tag` para corregir tags, `/tournament add` para registrar después.
 
-Recorre cada jugador de la hoja viva y aplica las comprobaciones de [../domains/sheet.md](../domains/sheet.md). Si algo falla, un V2 de resumen y un V2 por tipo de fallo. El resumen es *Sheet Needs Fixes*, con formato, equipos, jugadores y **Failed checks** en una línea, y el footer con la mención de `/sheet validate`. Cada tipo de fallo lleva el conteo en el título `###` y la explicación en `-#`. Si pasa, es *Sheet Passed* y el footer indica que se puede registrar con `/tournament add`.
+Recorre cada jugador de la hoja viva y aplica las comprobaciones de [../domains/sheet.md](../domains/sheet.md). Si algo falla, un V2 de resumen y un V2 por tipo de fallo. El resumen es *Sheet Needs Fixes*, con formato, equipos, jugadores y **Failed checks** en una línea, y el footer con la mención de `/sheet validate`. Cada tipo de fallo lleva el conteo en el título `###` y la explicación en `-#`. Salen **todos** los jugadores con fallos, sin recorte. Los bloques se empaquetan en mensajes efímeros respetando los límites de Discord por mensaje (**40** componentes y **4000** caracteres): el primero es la respuesta y el resto van como follow-ups, en orden. Si un tipo de fallo no cabe en un bloque, sigue en otro titulado *<tipo> · continued*. Si pasa, es *Sheet Passed* y el footer indica que se puede registrar con `/tournament add`.
 
 ## `/utility discord tag`
 

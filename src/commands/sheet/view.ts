@@ -424,19 +424,51 @@ const ISSUE_COPY: Record<SheetIssueKind, { title: string; body: string }> = {
   },
 };
 
-function clipLines(lines: string[]): string {
-  const max = 12;
-  if (lines.length <= max) {
-    return lines.join("\n");
+/** Text kept per message below Discord's 4000, so mentions and emoji markup never tip it over. */
+const VALIDATE_MESSAGE_CHARS = 3800;
+
+type ValidateBlock = { container: ContainerBuilder; chars: number };
+
+/** Every line of a failed check, split into blocks that each fit in one message. */
+function issueBlocks(head: string, nextHead: string, lines: string[]): ValidateBlock[] {
+  const blocks: ValidateBlock[] = [];
+  let title = head;
+  let chunk: string[] = [];
+  let used = 0;
+  const flush = () => {
+    const body = chunk.join("\n");
+    blocks.push({
+      container: new ContainerBuilder()
+        .setAccentColor(embedColors.error)
+        .addTextDisplayComponents(textBlock(title), textBlock(body)),
+      chars: title.length + body.length,
+    });
+    title = nextHead;
+    chunk = [];
+    used = 0;
+  };
+  for (const line of lines) {
+    const cost = line.length + 1;
+    if (chunk.length > 0 && title.length + used + cost > VALIDATE_MESSAGE_CHARS) {
+      flush();
+    }
+    chunk.push(line);
+    used += cost;
   }
-  const extra = lines.length - max;
-  return `${lines.slice(0, max).join("\n")}\n*And **${extra}** more.*`;
+  if (chunk.length > 0) {
+    flush();
+  }
+  return blocks;
 }
 
-export function sheetValidateMessage(
+/**
+ * The whole report: every failing player is listed. Blocks are packed into as few ephemeral messages as
+ * Discord allows (40 components, 4000 characters); the first is the reply and the rest go as follow-ups.
+ */
+export function sheetValidateMessages(
   report: SheetValidateReport,
   commandIds: { tournamentCommandId?: string; utilityCommandId?: string; sheetCommandId?: string },
-): InteractionReplyOptions {
+): InteractionReplyOptions[] {
   const issueCount = report.buckets.reduce((sum, bucket) => sum + bucket.lines.length, 0);
   const containers = [];
   const facts = `\`${report.format}\` · ${plural(report.teams, "team", "teams")} · ${plural(report.players, "player", "players")}`;
@@ -470,25 +502,33 @@ export function sheetValidateMessage(
     );
   }
 
+  const blocks: ValidateBlock[] = containers.map((container) => ({ container, chars: 600 }));
   for (const bucket of report.buckets) {
     const copy = ISSUE_COPY[bucket.kind];
     const tagHint =
       bucket.kind === "tag"
         ? `\n${formatHelpEntry("utility discord tag", commandIds.utilityCommandId)} turns Discord IDs into usernames in sheet order.`
         : "";
-    containers.push(
-      new ContainerBuilder()
-        .setAccentColor(embedColors.error)
-        .addTextDisplayComponents(
-          textBlock(`### ${emojis.error} ${copy.title} · ${bucket.lines.length}\n-# ${copy.body}${tagHint}`),
-          textBlock(clipLines(bucket.lines)),
-        ),
-    );
+    const head = `### ${emojis.error} ${copy.title} · ${bucket.lines.length}\n-# ${copy.body}${tagHint}`;
+    const nextHead = `### ${emojis.error} ${copy.title} · continued`;
+    blocks.push(...issueBlocks(head, nextHead, bucket.lines));
   }
 
-  return {
+  // A block is a container + up to 4 children, so 7 per message stays under 40 components.
+  const pages: ValidateBlock[][] = [[]];
+  for (const block of blocks) {
+    let page = pages[pages.length - 1];
+    const chars = page.reduce((sum, item) => sum + item.chars, 0);
+    if (page.length > 0 && (page.length >= 7 || chars + block.chars > VALIDATE_MESSAGE_CHARS)) {
+      page = [];
+      pages.push(page);
+    }
+    page.push(block);
+  }
+
+  return pages.map((page) => ({
     flags: [...v2Flags, MessageFlags.Ephemeral],
     allowedMentions: { parse: [] },
-    components: containers,
-  };
+    components: page.map((block) => block.container),
+  }));
 }
