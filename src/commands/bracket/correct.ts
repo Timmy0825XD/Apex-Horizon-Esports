@@ -316,7 +316,7 @@ async function applyCorrection(
     rebuilt = await deleteDownstreamRooms(guild, tournament.id, downstream);
   }
 
-  await updateChallongeMatch(tournament.challongeId, match.id, apiKey, scoresCsv(score1, score2), newWinner);
+  await updateChallongeMatch(tournament.challongeId, match, apiKey, scoresCsv(score1, score2), newWinner);
   if (old && (old.score1 < 0 || old.score2 < 0)) {
     await clearPendingForfeits(tournament.id, [match.player1Id, match.player2Id]);
   }

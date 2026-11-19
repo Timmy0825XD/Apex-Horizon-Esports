@@ -20,6 +20,9 @@ export type ChallongeMatch = {
   groupId: number | null;
   player1Id: number | null;
   player2Id: number | null;
+  /** Side ids as Challonge sent them; in group stages these are group player ids. */
+  rawPlayer1Id: number | null;
+  rawPlayer2Id: number | null;
   winnerId: number | null;
   scoresCsv: string | null;
   player1PrereqMatchId: number | null;
@@ -175,6 +178,7 @@ type RawParticipant = {
   id?: number;
   name?: string | null;
   group_id?: number | null;
+  group_player_ids?: unknown[] | null;
 };
 
 type RawMatch = {
@@ -208,16 +212,23 @@ function asId(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-function mapMatch(match: RawMatch, matchId: number): ChallongeMatch {
+/** Group-stage matches name sides by group player id; map them back to participant ids. */
+function mapMatch(match: RawMatch, matchId: number, toParticipant?: Map<number, number>): ChallongeMatch {
   const round = typeof match.round === "number" ? match.round : 0;
+  const side = (value: unknown): number | null => {
+    const id = asId(value);
+    return id == null ? null : (toParticipant?.get(id) ?? id);
+  };
   return {
     id: matchId,
     state: match.state ?? "pending",
     round,
     groupId: asId(match.group_id),
-    player1Id: asId(match.player1_id),
-    player2Id: asId(match.player2_id),
-    winnerId: asId(match.winner_id),
+    player1Id: side(match.player1_id),
+    player2Id: side(match.player2_id),
+    rawPlayer1Id: asId(match.player1_id),
+    rawPlayer2Id: asId(match.player2_id),
+    winnerId: side(match.winner_id),
     scoresCsv: match.scores_csv?.trim() || null,
     player1PrereqMatchId: asId(match.player1_prereq_match_id),
     player2PrereqMatchId: asId(match.player2_prereq_match_id),
@@ -242,12 +253,19 @@ export async function fetchChallongeBracket(id: string, apiKey: string): Promise
     throw new ChallongeError("bad-response", "Challonge returned an unexpected payload.");
   }
 
+  const toParticipant = new Map<number, number>();
   const participants = (tournament.participants ?? []).flatMap((row) => {
     const participant = unwrap<RawParticipant>(row, "participant");
     const participantId = asId(participant?.id);
     const name = participant?.name?.trim();
     if (!participant || participantId == null || !name) {
       return [];
+    }
+    for (const groupPlayerId of participant.group_player_ids ?? []) {
+      const id = asId(groupPlayerId);
+      if (id != null) {
+        toParticipant.set(id, participantId);
+      }
     }
     return [{ id: participantId, name, groupId: asId(participant.group_id) }];
   });
@@ -258,7 +276,7 @@ export async function fetchChallongeBracket(id: string, apiKey: string): Promise
     if (!match || matchId == null) {
       return [];
     }
-    return [mapMatch(match, matchId)];
+    return [mapMatch(match, matchId, toParticipant)];
   });
 
   return {
@@ -270,17 +288,25 @@ export async function fetchChallongeBracket(id: string, apiKey: string): Promise
 
 export async function updateChallongeMatch(
   tournamentId: string,
-  matchId: number,
+  target: ChallongeMatch,
   apiKey: string,
   scoresCsv: string,
   winnerId: number,
 ): Promise<ChallongeMatch> {
+  const matchId = target.id;
+  // Challonge expects the side id it sent: the group player id in group stages.
+  const rawWinner =
+    winnerId === target.player1Id
+      ? (target.rawPlayer1Id ?? winnerId)
+      : winnerId === target.player2Id
+        ? (target.rawPlayer2Id ?? winnerId)
+        : winnerId;
   const body = (await challongeRequest(
     "PUT",
     `tournaments/${encodeURIComponent(tournamentId)}/matches/${matchId}.json`,
     apiKey,
     20_000,
-    { match: { scores_csv: scoresCsv, winner_id: winnerId } },
+    { match: { scores_csv: scoresCsv, winner_id: rawWinner } },
   )) as { match?: RawMatch };
 
   const match = unwrap<RawMatch>(body?.match ?? body, "match");

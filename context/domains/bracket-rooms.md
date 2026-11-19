@@ -64,6 +64,8 @@ Si el Discord ID es válido pero el capitán **no está en el servidor**, el tic
 - En grupos (`group_stages_underway`): solo partidos de grupo.
 - Cuando los grupos cierran: **no** se crean salas para slots `pending` del cuadro final.
 - En eliminación: solo partidos de etapa final que el bracket ya abrió.
+- En los partidos de grupo, Challonge nombra a los lados (y al ganador) con el **ID de jugador de grupo** (`group_player_ids` del participante), no con el ID de participante. El bot los traduce a ID de participante al leer el bracket, y al subir un marcador devuelve el ID que Challonge mandó para ese lado.
+- Si no queda ningún partido abierto con los dos lados listos para ticket, `/room available` responde *No rooms available*.
 
 ## Desbordamiento de categorías
 

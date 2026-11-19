@@ -123,7 +123,7 @@ export async function runBracketDqBoth(interaction: ChatInputCommandInteraction)
     const winnerId = winnerIdFromScores(match.player1Id, match.player2Id, score1, score2);
     const winnerName = names.get(winnerId) ?? "Unknown";
 
-    await updateChallongeMatch(tournament.challongeId, match.id, apiKey, scoresCsv(score1, score2), winnerId);
+    await updateChallongeMatch(tournament.challongeId, match, apiKey, scoresCsv(score1, score2), winnerId);
     // Challonge already holds the score: log it now, so a later Discord failure never hides it.
     await auditScoreUpload(interaction, guild, settings, {
       action: "disqualified",
