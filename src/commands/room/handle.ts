@@ -157,7 +157,7 @@ async function availableReply(guildId: string, tournamentId: string, page: numbe
   const queue = await loadTicketQueue(tournament);
   if (queue.ready.length === 0 && queue.blocked.length === 0) {
     return roomPanel("info", "No rooms available", [
-      `Every open match in **${tournament.name}** already has a battle ticket.`,
+      `**${tournament.name}** has no open match with both teams waiting for a battle ticket.`,
     ]);
   }
   if (queue.ready.length === 0) {

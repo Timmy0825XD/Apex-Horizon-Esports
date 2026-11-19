@@ -164,7 +164,7 @@ export async function runBracketUpload(interaction: ChatInputCommandInteraction)
     const winnerName = names.get(winnerId) ?? "Unknown";
     const csv = scoresCsv(score1, score2);
 
-    await updateChallongeMatch(tournament.challongeId, match.id, apiKey, csv, winnerId);
+    await updateChallongeMatch(tournament.challongeId, match, apiKey, csv, winnerId);
     // Challonge already holds the score: log it now, so a later Discord failure never hides it.
     await auditScoreUpload(interaction, guild, settings, {
       action: "uploaded",

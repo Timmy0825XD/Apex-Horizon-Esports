@@ -165,7 +165,7 @@ export async function settlePendingForfeits(input: {
       const winnerName = names.get(winnerId) ?? "Unknown";
       await updateChallongeMatch(
         input.tournament.challongeId,
-        match.id,
+        match,
         apiKey,
         scoresCsv(plan.score1, plan.score2),
         winnerId,
