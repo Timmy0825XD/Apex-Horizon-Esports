@@ -32,11 +32,9 @@ Preferir helpers frente a `` `<@&${id}>` `` inline.
 
 **Excepciones:** CSV/Excel y nombres de archivo de audit pueden llevar identificadores en texto plano (no son UI de Discord). El ID *es* el dato en banlist/sheet.
 
-**Menciones de usuario sin ping.** Discord solo adjunta los datos de un `<@id>` que el mensaje puede notificar; con `allowedMentions: { parse: [] }` el cliente del lector lo resuelve con su caché y los miembros no cargados salen como `@unknown-user`. `installMentionResolver` (`lib/mentions.ts`, se instala en `index.ts`) lo arregla para todo el bot desde la capa REST:
+**Menciones de usuario sin ping.** Discord solo adjunta los datos de un `<@id>` que el mensaje puede notificar; con `allowedMentions: { parse: [] }` el cliente del lector lo resuelve con su caché y los miembros no cargados salen como `@unknown-user`. El bot **no** lo corrige en general: editar un mensaje para permitir esas menciones deja la marca *(edited)*, y las respuestas no deben llevarla.
 
-- Toda edición de mensaje (`editReply`, `update`, `message.edit`, webhooks) permite a los usuarios que menciona. Las ediciones nunca notifican.
-- Un mensaje nuevo con menciones sin resolver recibe **una** edición silenciosa a los 1,5 s con el mismo contenido. Si el comando lo edita antes, esa edición basta y no se repite. No se repite si el mensaje usa archivos subidos (`attachment://`).
-- Los pings al enviar siguen siendo los que cada comando pide en `allowedMentions`. Los comandos no hacen nada extra.
+La única excepción es `/team list` (`commands/team/respond.ts`). La primera tarjeta, que es la edición de la respuesta diferida, permite a los usuarios que menciona. Cada tarjeta siguiente, si Discord dejó alguna mención sin resolver, recibe **una** edición silenciosa a los 1,5 s con el mismo contenido y esos usuarios permitidos. Las ediciones nunca notifican.
 
 Menciones de slash commands: siempre clicables, `</name sub:id>`. Al registrar los comandos, el bot guarda el ID de **todos** por servidor; `slashMention(guildId, "name sub")` arma la mención. Lo usan `/bot help` y cualquier mensaje que nombre un comando (errores incluidos). Solo si el ID aún no existe (antes del registro) cae a `` `/comando` `` en código. Un comando con subcomandos no se puede mencionar sin el subcomando.
 

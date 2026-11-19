@@ -57,9 +57,9 @@ export async function handleTeamList(interaction: ChatInputCommandInteraction): 
       });
 
       if (index === 0) {
-        await respondTeam(interaction, payload);
+        await respondTeam(interaction, payload, true);
       } else {
-        await followTeam(interaction, payload);
+        await followTeam(interaction, payload, true);
       }
       posted += 1;
 
